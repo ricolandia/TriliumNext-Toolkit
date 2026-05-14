@@ -1,0 +1,37 @@
+# TriliumNext Plugins & Tools Collection
+
+A collection of plugins, widgets, and scripts for TriliumNext, focused on writing, productivity, canvas workflows, and note organization.
+This repository serves as a centralized hub for all these projects.
+
+## 📦 How to Install
+
+1. Navigate to the folder of the plugin you want.
+2. Download the `.zip` release.
+3. Import it into Trilium. (The imported notes behave like a custom plugin).
+4. To import correctly, right-click a parent note on Windows/Linux (or Control-click on macOS) and choose **Import**.
+
+> **Tip:** For better organization, you may want to import everything inside a dedicated parent note such as “Tools”, “Plugins”, or “Addons”.
+
+---
+
+## 🛠️ Collection Index
+
+### Productivity & Workflow
+* **[Weekly Planner & Open Tasks Panel](./Weekly-Planner)** - A drag-and-drop task board integrated with a global open tasks searcher.
+* **[Minimalist Pomodoro + Time Tracker](./Minimalist-Pomodoro)** - A monochromatic Pomodoro timer widget with per-note time tracking and report generation.
+
+### Canvas & Note Organization
+* **[Canvas Note Tools](./Canvas-Note-Tools)** - Insert notes as interactive cards, create on the fly, and synthesize knowledge directly on the canvas.
+* **[Canvas Template Loader Widget](./Canvas-Template-Loader)** - Insert reusable Excalidraw templates into any canvas with a single click.
+* **[Canvas Templates Pack](./Canvas-Templates)** - A collection of ready-to-use frameworks (OKR, GTD, Feynman, SCAMPER, etc.) for visual thinking.
+
+### Writing & Creative Tools
+* **[Word Counter + Daily Goal](./Word-Counter)** - A compact right-pane widget tracking your daily writing progress.
+* **[Custom Scripts for Writers](./Writers-Tools)** - Includes a Longform Compiler (Grid View) and a Fountain Screenplay Renderer.
+* **[AI Chat inside Trilium](./AI-Chat)** - A no-code approach to interacting with AI directly within your notes.
+
+### UI
+* **[CSS Tweaks: Polished UI](./UI-Tweaks)** - Polishing the UI for better readability and elegance.
+
+---
+*I will continue updating this collection as new tools and experiments are developed.*
