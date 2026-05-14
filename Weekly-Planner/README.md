@@ -18,3 +18,7 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 
 ## Original link
 [https://github.com/orgs/TriliumNext/discussions/9676](https://github.com/orgs/TriliumNext/discussions/9676)
+
+### Images  
+
+![screen capture](imagens/weekly-1-.webp)

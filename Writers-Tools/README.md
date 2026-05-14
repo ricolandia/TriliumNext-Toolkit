@@ -21,3 +21,9 @@ For audiovisual scriptwriters.
 
 ## Original link
 [https://github.com/orgs/TriliumNext/discussions/9494](https://github.com/orgs/TriliumNext/discussions/9494)
+
+
+### Images  
+
+![screen capture](imagens/grid-1-.webp)
+![screen capture](imagens/fountain-1-.webp)

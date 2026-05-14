@@ -25,3 +25,9 @@ A monochromatic Pomodoro timer widget with per-note time tracking and automated 
 
 ## Original link
 [https://github.com/orgs/TriliumNext/discussions/9710](https://github.com/orgs/TriliumNext/discussions/9710)
+
+### Images  
+
+![screen capture](imagens/pomodoro-1-.webp)
+![screen capture](imagens/pomodoro-2-.webp)
+![screen capture](imagens/pomodoro-3-.webp)

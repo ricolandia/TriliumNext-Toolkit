@@ -20,3 +20,7 @@ A compact right-pane panel showing word and character counts for the current not
 
 ## Original link
 [https://github.com/orgs/TriliumNext/discussions/9711](https://github.com/orgs/TriliumNext/discussions/9711)
+
+### Images  
+
+![screen capture](imagens/counter-1-.webp)

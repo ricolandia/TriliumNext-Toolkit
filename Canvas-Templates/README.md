@@ -20,3 +20,18 @@ Import `Canvas_Templates.zip` into Trilium. The notes will appear with the `#can
 
 ## Original link
 [https://github.com/orgs/TriliumNext/discussions/9621](https://github.com/orgs/TriliumNext/discussions/9621)
+
+### Images  
+
+![screen capture](imagens/template-1-.webp)
+![screen capture](imagens/template-2-.webp)
+![screen capture](imagens/template-3-.webp)
+![screen capture](imagens/template-4-.webp)
+![screen capture](imagens/template-5-.webp)
+![screen capture](imagens/template-6-.webp)
+![screen capture](imagens/template-7-.webp)
+![screen capture](imagens/template-8-.webp)
+![screen capture](imagens/template-9-.webp)
+![screen capture](imagens/template-10-.webp)
+![screen capture](imagens/template-11-.webp)
+![screen capture](imagens/template-12-.webp)

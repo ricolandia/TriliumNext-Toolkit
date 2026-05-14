@@ -19,3 +19,9 @@ An experimental, command-driven AI chat interface built directly into Trilium No
 3. Inside the config note, add your API keys in the text:
    `openrouter_key: YOUR_API_KEY_HERE`
    `model: anthropic/claude-3.5-sonnet` (or your preferred model).
+   
+### Images  
+
+![screen capture](imagens/chat-1-.webp)
+![screen capture](imagens/chat-2-.webp)
+   

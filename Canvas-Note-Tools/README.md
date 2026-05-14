@@ -24,3 +24,12 @@ Open any Canvas note. Use the `🔗` button to search, the `🎯` button to capt
 
 ## Original link
 [https://github.com/orgs/TriliumNext/discussions/9668](https://github.com/orgs/TriliumNext/discussions/9668)
+
+
+### Images  
+
+![screen capture](imagens/canvas-1-.webp)
+![screen capture](imagens/canvas-2-.webp)
+![screen capture](imagens/canvas-3-.webp)
+![screen capture](imagens/canvas-4-.webp)
+![screen capture](imagens/canvas-5-.webp)

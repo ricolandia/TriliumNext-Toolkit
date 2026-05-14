@@ -24,3 +24,7 @@ The widget will automatically detect it and populate the menu!
 
 ## Original link
 [https://github.com/orgs/TriliumNext/discussions/9667](https://github.com/orgs/TriliumNext/discussions/9667)
+
+### Images  
+
+![screen capture](imagens/templater-1-.webp)
