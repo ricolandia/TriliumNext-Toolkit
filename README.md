@@ -34,4 +34,12 @@ This repository serves as a centralized hub for all these projects.
 * **[CSS Tweaks: Polished UI](./UI-Tweaks)** - Polishing the UI for better readability and elegance.
 
 ---
+
+## 🌐 Language / Idioma
+
+**Note on language:** Since I am from Brazil, the interface and text within all these tools are currently in **Brazilian Portuguese (PT-BR)**. 
+However, you can easily translate them to English or your preferred language by simply opening the code files inside Trilium and replacing the text strings.
+
+
+---
 *I will continue updating this collection as new tools and experiments are developed.*
