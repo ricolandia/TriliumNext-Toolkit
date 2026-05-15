@@ -33,6 +33,10 @@ This repository serves as a centralized hub for all these projects.
 ### UI
 * **[CSS Tweaks: Polished UI](./UI-Tweaks)** - Polishing the UI for better readability and elegance.
 
+
+### Maintenance Tools
+* **[Attribute-Garbage-Collector](./Attribute-Garbage-Collector )** - A TriliumNext garbage collector that finds broken, unused, or duplicate attributes, letting you safely preview and delete them individually or in bulk.
+
 ---
 
 ## 🌐 Language / Idioma
