@@ -39,6 +39,10 @@ This repository serves as a centralized hub for all these projects.
 
 * **[Knowledge-Debt-Dashboard](./Knowledge-Debt-Dashboard)** - A full-page Render Note dashboard that audits your knowledge base for orphan notes, stubs, empty notes, old TODOs, and abandoned notes.
 
+### Backup & External Scripts
+
+* **[Incremental Markdown Backup](./Incremental-Markdown-Backup)** - A lightweight Python script that uses the ETAPI to incrementally back up your notes as individual, folder-organized `.md` files (only downloading what has changed).
+
 ---
 
 ## 🌐 Language / Idioma
