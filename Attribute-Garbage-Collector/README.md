@@ -102,5 +102,5 @@ MIT
 
 ### Images  
 
-![screen capture](imagens/garbage-1-.webp)
-![screen capture](imagens/garbage-2-.webp)
+![screen capture](imagens/garbage-3-.webp)
+
