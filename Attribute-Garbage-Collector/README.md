@@ -1,106 +1,102 @@
 # Attribute GC — TriliumNext Maintenance Tool
 
-A garbage collector for TriliumNext attributes. Scans all notes to find broken relations, unused labels, rare attributes, and near-duplicate names. Lets you preview them in a dashboard — with batch delete on classic Trilium.
+Scans all notes in your TriliumNext database for broken relations, unused labels, rare attributes, and near-duplicate names. Preview and batch-delete them — **deletions persist**.
 
-> **⚠ Status (TriliumNext)**: Detection works fully — all 83 notes, 66+ attribute groups scanned via `froca`. Deletion in the UI succeeds (cache is updated, re-scan confirms), but **changes are lost on page reload** because TriliumNext's frontend froca cache doesn't sync writes back to the server in the Render Note sandbox. Classic Trilium (`api.runOnBackend`) path works end-to-end. See [Persistence issue](#-persistence-issue-triliumnext).
+> **v2.0** — Rewritten as a JS Frontend note with full `api.runOnBackend()` access. Scan and delete both work end-to-end on TriliumNext. The previous HTML Render Note approach (v1.x) could only detect — deletion did not persist. See [Why this works](#why-this-works).
 
 ## Features
 
-- **Full scan** — Reads all notes via `froca` (TriliumNext) or `api.runOnBackend` (classic Trilium). Classifies every label and relation by usage count and health.
-- **Broken relation detection** — Finds relations pointing to deleted or missing target notes.
-- **Rare attribute flagging** — Highlights attributes used ≤2 times, plus temp/draft/test patterns.
-- **Semantic duplicate finder** — Uses Levenshtein distance to surface near-identical names (`pipeline` vs `pipelne`, `autor` vs `autores`).
+- **Full scan** — SQL-backed via `api.sql.getRows`. Classifies every label and relation by usage count and health.
+- **Broken relation detection** — Relations pointing to deleted or missing target notes.
+- **Rare attribute flagging** — Attributes used ≤2 times, plus temp/draft/test patterns.
+- **Semantic duplicate finder** — Levenshtein distance to surface near-identical names (`pipeline` vs `pipelne`, `autor` vs `autores`).
 - **Dry run mode** — Toggle on to preview what would be deleted without making changes.
-- **Batch selection** — Auto-select all problematic attributes with one click.
-- **Scoped CSS** — All styles are prefixed under `#attrgc-root` — nothing leaks into the Trilium UI.
+- **Batch deletion** — Auto-select all problematic attributes, then delete in one click.
+- **Protected attributes** — 50+ system/internal labels and relations are locked from deletion.
+- **Theme-aware** — Uses Trilium CSS variables, matches your theme automatically.
 
 ## Installation
 
-1. In TriliumNext, import the .zip file (the plugin) into any root note of your choice (e.g., Tools, Plugins, or Add-ons).
-
-2. The import contains two notes: a Render note and an HTML code note. Simply click on the Render note to view the panel.
+1. Create a **JS Frontend** code note in TriliumNext
+2. Paste the full content of `attribute-gc.js`
+3. Choose your mode:
+   - **Right panel widget**: add label `#widget`, reload (Ctrl+R), open any note
+   - **Full-page Render Note**: create a Render Note, add relation `~renderNote` → JS Frontend, open the Render Note
 
 ## Usage
 
-1. Click **Escanear** — the tool reads all notes and shows a dashboard of attribute stats.
-2. Use the filter tabs (**Quebrados**, **Raros**, **Sem uso**, **Sistema**) and search bar to narrow down.
-3. Click **Auto-selecionar problemáticos** to check all non-system problematic attributes, or tick individual checkboxes.
-4. **Toggle Dry Run OFF** (the yellow banner disappears).
-5. Click **Executar limpeza** → confirm. The tool attempts to delete and runs a re-scan.
+1. Click **Escanear** — stats dashboard appears with attribute counts
+2. Filter by status (**Quebrados**, **Raros**, **Sem uso**, **Sistema**, **Saudáveis**) or search by name
+3. Click **Auto-selecionar** to check all non-system problematic attributes, or tick individual rows
+4. **Toggle Dry Run OFF** (yellow banner disappears)
+5. Click **Executar limpeza** → confirm — attributes are permanently removed
 
-> In classic Trilium, deletion persists to the database. In TriliumNext, the re-scan will show the attributes gone from the cache, but they reappear on reload (see below).
+The individual **remover** button on each row works the same way (skips the batch dialog).
 
 ## Compatibility
 
-| Environment | Scan | Delete | Notes |
-|---|---|---|---|
-| **Classic Trilium** | `api.sql.getRows` | `note.removeLabel` / `note.removeRelation` | Full end-to-end. |
-| **TriliumNext** | `froca.notes` | `attr.update({ isDeleted: true })` | Detects everything. Delete works in UI but **not persisted**. |
-| **Browser (demo)** | Mock data | Simulated (noop) | For testing outside Trilium. |
+| Environment | Scan | Delete |
+|---|---|---|
+| **TriliumNext** | `api.sql.getRows` | `getNotesWithLabel` / `removeLabel` |
+| **Classic Trilium** | `api.sql.getRows` | `getNotesWithLabel` / `removeLabel` |
 
-## ⚠ Persistence issue (TriliumNext)
+Both use the same backend path — `api.runOnBackend()` with the standard entity API. Becca stays in sync, changes persist.
 
-### What works
+## Why this works
 
-- The froca path scans all 83 notes and 66+ attribute groups correctly.
-- `note.getOwnedAttributes(type, name)` returns proper `FAttribute` objects.
-- `attr.update({ isDeleted: true })` marks attributes deleted in the frontend cache.
-- The re-scan confirms the deletions (groups count drops).
-- `_clw.confirmSaveRelations()` exists and returns a Promise (talks to backend), but is scope-limited to the relations panel and doesn't propagate general attribute deletions.
+v1.x used an **HTML Render Note** with inline `<script>` tags. TriliumNext sandboxes HTML notes — `api` is not available, `fetch()` calls return 401, froca mutations are local-only, and all deletion attempts failed to persist.
 
-### What doesn't
+v2.0 is a **JS Frontend note** — the standard Trilium extension format (same as Canvas Linker, Word Count, Task Planner). It has direct access to:
 
-- On page reload, the froca cache is rebuilt from the server — deleted attributes reappear.
-- `attr.update()` and `note.update()` are synchronous and local-only (no backend RPC).
-- `note.executeScript()` only works on script-type notes, not on arbitrary text/HTML notes.
-- `api.runOnBackend` is not exposed in the Render Note sandbox (it's available to JS Frontend notes via `frontend_script_api-*.js`, but not to `<script>` tags in HTML Render Notes).
-- The REST API (`/api/notes`, `/api/tree`) returns 401 — `glob.getHeaders()` returns an empty object, and session cookies + CSRF token don't authenticate from the sandbox.
+- `api.runOnBackend()` — execute backend code
+- `api.sql.getRows()` — SQL queries for fast aggregation
+- `api.getNotesWithLabel()` / `api.getNotesWithRelation()` — find notes by attribute
+- `note.removeLabel()` / `note.removeRelation()` — delete through the entity lifecycle
 
-### Workaround ideas (for contributors)
-
-1. **JS Backend note approach**: Create a temporary JS Backend note, put the deletion script in it, execute via `note.executeScript()`, then delete the temp note.
-2. **Proxy note mutations**: Find how the TriliumNext UI (e.g. relation map) communicates attribute changes to the server and replicate that protocol.
-3. **Module import**: If dynamic `import()` is available from Render Notes, try importing `frontend_script_api-*.js` to access `runOnBackend` directly.
-
-Pull requests welcome for any of these approaches.
+No hacks, no workarounds. The same pattern used by every other Trilium plugin.
 
 ## How it works
 
-### Scan (TriliumNext — froca path)
+### Scan
 
-```
-glob.getActiveContextNote() → froca → froca.notes / froca.attributes
-```
-
-The Render Note accesses TriliumNext's frontend object cache (`froca`) via the active context note. All notes and their attributes are already in memory — no backend calls needed. Broken relations are detected by building a `Set` of all valid `noteId`s and checking whether each relation's target exists.
-
-### Scan (Classic Trilium — SQL path)
-
-If `api.runOnBackend` is detected, the tool runs SQL aggregation queries directly for maximum performance.
-
-### Delete (Classic Trilium)
-
-```
-api.runOnBackend → note.removeLabel() / note.removeRelation()
+```js
+api.runOnBackend(() => {
+    // SQL aggregation — one query, instant results
+    api.sql.getRows(`SELECT name, type, COUNT(*) ... GROUP BY name, type`);
+    // Broken relation detection
+    api.sql.getRows(`SELECT ... LEFT JOIN ... WHERE target IS NULL`);
+});
 ```
 
-Uses the high-level entity API so Becca stays in sync.
+### Delete
+
+```js
+api.runOnBackend((names, types) => {
+    for (const name of names) {
+        const notes = api.getNotesWithLabel(name);  // or getNotesWithRelation
+        for (const note of notes) {
+            note.removeLabel(name);  // goes through Becca → persisted to DB
+        }
+    }
+}, [names, types]);
+```
+
+### Context detection
+
+The same JS file auto-detects whether it's loaded as a widget (`#widget` label) or a render note dependency (`~renderNote` relation), adjusting layout and sizes accordingly.
 
 ## Protected attributes
 
-These system/internal attributes are locked and cannot be deleted:
-
 `template`, `workspace`, `iconClass`, `cssClass`, `run`, `runOnInstance`, `runAtStartup`, `shareAlias`, `shareHiddenFromTree`, `archived`, `pinned`, `bookmarked`, `weight`, `color`, `renderNote`, `child`, `runOnNoteCreation`, `noteType`, `mime`, `shareCss`, `shareJs`, `shareRaw`, `shareDisallowRobotIndexing`, `keyboardShortcut`, `label`, `relation`, `promoted`, `multiplicity`, `labelDefinition`, `relationDefinition`, `toc`, `readOnly`, `excludeFromExport`, `appCss`, `appTheme`, `sorted`, `sortDirection`, `sortFoldersFirst`, `top`, `hide`, `hidePromotedAttributes`, `disableVersioning`, `calendarRoot`, `dateNote`, `datePattern`, `inbox`, `sqlConsole`, `searchHome`, `hoistedNote`, `similarNotes`, `versioningLimit`, `mapRootNoteId`, `system`, `root`
+
+---
+
+🌐 **Idioma / Language**: A interface está em português brasileiro (PT-BR). Para traduzir, abra o arquivo `attribute-gc.js` no Trilium e substitua as strings de texto.
 
 ## License
 
 MIT
 
-
-## 🌐 Language / Idioma
-
-**Note on language:** Since I am from Brazil, the interface and text within this tool are currently in **Brazilian Portuguese (PT-BR)**. 
-However, you can easily translate them to English or your preferred language by simply opening the code files inside Trilium and replacing the text strings.
 
 ---
 
