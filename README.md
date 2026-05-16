@@ -35,7 +35,9 @@ This repository serves as a centralized hub for all these projects.
 
 
 ### Maintenance Tools
-* **[Attribute-Garbage-Collector](./Attribute-Garbage-Collector )** - A TriliumNext garbage collector that finds broken, unused, or duplicate attributes, letting you safely preview and delete them individually or in bulk.
+* **[Attribute-Garbage-Collector](./Attribute-Garbage-Collector)** - A TriliumNext garbage collector that finds broken, unused, or duplicate attributes, letting you safely preview and delete them individually or in bulk.
+
+* **[Knowledge-Debt-Dashboard](./Knowledge-Debt-Dashboard)** - A full-page Render Note dashboard that audits your knowledge base for orphan notes, stubs, empty notes, old TODOs, and abandoned notes.
 
 ---
 
