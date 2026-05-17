@@ -55,15 +55,8 @@ A set of CSS styles to improve readability and elegance of the TriliumNext inter
 * **Row Hover Effects:** Entire rows softly highlight when hovered.
 * **Refined Resize Handles:** Column resize handles only appear on hover to keep headers looking clean.
 
-### 7. Promoted Attributes & Tags
 
-* **Attribute Table Layout:** Transforms standard promoted attributes into a clean, aligned table layout (`Label:` `Value`).
-* **Rounded Pills:** Note attributes in the list view are transformed into beautiful rounded pills with a monospace font.
-* **Labels (`#`):** Rendered with a soft green background and border.
-* **Relations (`~`):** Rendered with a soft blue background and border.
-
-
-### 8. Mobile Optimization
+### 7. Mobile Optimization
 
 * **Single-Column Cards:** Forces card views into a single column on mobile screens to prevent text from being squished or cut off.
 * **Hidden Code Blocks in Cards:** Hides `<pre>` and `<code>` blocks within card previews on mobile, as long lines of code (like shebangs) often break the card layout.
@@ -72,3 +65,132 @@ A set of CSS styles to improve readability and elegance of the TriliumNext inter
 * **Scaled Typography:** Dynamically reduces font sizes for titles, headers, and UI elements to fit perfectly on smaller viewports.
 
 
+### 8. Promoted Attributes & Tags
+
+* **Attribute Table Layout:** Transforms standard promoted attributes into a clean, aligned table layout (`Label:` `Value`).
+* **Rounded Pills:** Note attributes in the list view are transformed into beautiful rounded pills with a monospace font.
+* **Labels (`#`):** Rendered with a soft green background and border.
+* **Relations (`~`):** Rendered with a soft blue background and border.
+
+**Context:** When a note uses the `collection` type with **List view**, attributes shown on the right side of each item are rendered as a single raw text string inside `.rendered-note-attributes` — something like:
+
+```
+~renderNote=AI Code #color="#4de64d" #subtreeHidden
+```
+
+There's no per-attribute markup, so CSS alone can't target individual labels or relations. This snippet uses a small frontend script to re-parse and re-render those strings as styled pills, then CSS to style them.
+
+---
+
+## How it works
+
+The `.rendered-note-attributes` span contains a mix of raw text nodes and `<a>` anchor elements (for relation targets). The script walks those child nodes, identifies labels (`#`) and relations (`~`) by their prefix, and rebuilds the element as a sequence of individual `<span class="attr-pill ...">` elements. A `MutationObserver` watches for new list items so it works dynamically as you navigate.
+
+A configurable `HIDDEN` set lets you suppress noisy system attributes (like `#color`, `#subtreeHidden`, `#iconClass`) that are already expressed visually elsewhere in the UI.
+
+---
+
+
+## Setup
+
+### 1. Frontend Script
+
+Create a new note of type **JS Frontend** and add the attribute `#run=frontendStartup`.
+
+Paste the following code:
+
+```javascript
+const HIDDEN = new Set(['subtreeHidden', 'color', 'iconClass', 'viewType']);
+
+function parsePills(el) {
+  if (el.dataset.pillified === '1') return;
+  el.dataset.pillified = '1';
+
+  const pills = [];
+  let pending = null;
+
+  for (const node of el.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      for (const part of node.textContent.split(/\s+/).filter(Boolean)) {
+        if (pending) { pills.push(pending); pending = null; }
+
+        if (part.endsWith('=')) {
+          pending = { type: 'relation', prefix: part, link: null };
+        } else {
+          pills.push({
+            type: part.startsWith('~') ? 'relation' : 'label',
+            prefix: part,
+            link: null
+          });
+        }
+      }
+    } else if (node.tagName === 'A') {
+      if (pending) {
+        pending.link = node.cloneNode(true);
+        pills.push(pending);
+        pending = null;
+      } else {
+        pills.push({ type: 'relation', prefix: '~', link: node.cloneNode(true) });
+      }
+    }
+  }
+  if (pending) pills.push(pending);
+
+  el.innerHTML = '';
+
+  for (const pill of pills) {
+    const name = (pill.prefix || '').replace(/^[~#]/, '').replace(/=$/, '');
+    if (HIDDEN.has(name)) continue;
+
+    const span = document.createElement('span');
+    span.className = `attr-pill attr-pill-${pill.type}`;
+
+    if (pill.link) {
+      span.appendChild(document.createTextNode(pill.prefix));
+      span.appendChild(pill.link);
+    } else {
+      span.textContent = pill.prefix;
+    }
+    el.appendChild(span);
+  }
+}
+
+function processAll() {
+  document.querySelectorAll('.rendered-note-attributes:not([data-pillified])').forEach(parsePills);
+}
+
+processAll();
+
+new MutationObserver(mutations => {
+  for (const m of mutations) {
+    m.addedNodes.forEach(node => {
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+      if (node.matches?.('.rendered-note-attributes')) parsePills(node);
+      node.querySelectorAll?.('.rendered-note-attributes:not([data-pillified])').forEach(parsePills);
+    });
+  }
+}).observe(document.body, { childList: true, subtree: true });
+```
+
+## Customization
+
+- **Pill size:** adjust `font-size` in `.attr-pill` (e.g. `0.8em`) and `padding` as needed.
+- **Hidden attributes:** edit the `HIDDEN` set in the script to add or remove attribute names you want suppressed.
+- **Colors:** the green/teal tones are for labels, blue/purple for relations — change `rgba()` values freely to match your theme.
+
+---
+
+## Notes
+
+- Tested on TriliumNext with List view on `collection`-type notes.
+- The `MutationObserver` handles dynamic navigation without needing to reload.
+- This does not affect other note views (Book, Grid, etc.) — only `.rendered-note-attributes` elements are targeted.
+---
+
+### Screenshots
+
+![screen capture](imagens/ui-tw-01.webp)
+![screen capture](imagens/ui-tw-02.webp)
+![screen capture](imagens/ui-tw-03.webp)
+![screen capture](imagens/ui-tw-04.webp)
+![screen capture](imagens/ui-tw-05.webp)
