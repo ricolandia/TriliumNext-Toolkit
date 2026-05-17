@@ -3,6 +3,14 @@
 A collection of plugins, widgets, and scripts for TriliumNext, focused on writing, productivity, canvas workflows, and note organization.
 This repository serves as a centralized hub for all these projects.
 
+---
+
+**Note:** This project is mirrored on my personal **Forgejo server**. You can also access the repository by clicking below:
+
+[![Forgejo MIRROR](https://img.shields.io/badge/Mirror-Forgejo-orange?logo=gitea)](https://repo.rizomatico.org/ricograca/TriliumNext-Toolkit)
+
+---
+
 ## 📦 How to Install
 
 1. Navigate to the folder of the plugin you want.
