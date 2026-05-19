@@ -1,5 +1,8 @@
-# shared-notes - Secure P2P exchange between TriliumNext instances
+# Shared-notes - Secure P2P exchange between TriliumNext instances
 
+## This is still an early experiment!!!
+
+## 
 Sharing and commenting system between Trilium instances.
 No external server. No CORS. ETAPI token never exposed.
 
@@ -92,7 +95,7 @@ The handler will return a 404 error on any attempt to use it.
 
 ----
 
-# shared-notes - Troca P2P segura entre instâncias TriliumNext
+# Shared-notes - Troca P2P segura entre instâncias TriliumNext
 
 ( versão em Português do Brasil )
 
