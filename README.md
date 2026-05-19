@@ -51,6 +51,9 @@ This repository serves as a centralized hub for all these projects.
 
 * **[Incremental Markdown Backup](./Incremental-Markdown-Backup)** - A lightweight Python script that uses the ETAPI to incrementally back up your notes as individual, folder-organized `.md` files (only downloading what has changed).
 
+### Collaboration & Sharing
+* **[Shared Notes P2P](./Shared-Notes)** - A secure, serverless peer-to-peer sharing and commenting system to exchange notes between different Trilium instances without exposing your ETAPI token.
+
 ---
 
 ## 🌐 Language / Idioma
