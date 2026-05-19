@@ -1,7 +1,3 @@
-# shared-notes - Troca P2P segura entre instâncias TriliumNext
-
-English version:
-
 # shared-notes - Secure P2P exchange between TriliumNext instances
 
 Sharing and commenting system between Trilium instances.
@@ -95,6 +91,8 @@ Deleting the child gate note (🔒 Pending invite…) invalidates the token.
 The handler will return a 404 error on any attempt to use it.
 
 ----
+
+# shared-notes - Troca P2P segura entre instâncias TriliumNext
 
 ( versão em Português do Brasil )
 
