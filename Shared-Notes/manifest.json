@@ -9,13 +9,13 @@
       "title": "shared-notes-widget",
       "type": "code",
       "mime": "application/javascript;env=frontend",
-      "sourceUrl": "https://github.com/ricolandia/TriliumNext-Toolkit/blob/main/Shared-Notes/shared-notes-widget.js"
+      "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Shared-Notes/shared-notes-widget.js"
     },
     {
       "title": "shared-notes-handler",
       "type": "code",
       "mime": "application/javascript;env=backend",
-      "sourceUrl": "https://github.com/ricolandia/TriliumNext-Toolkit/blob/main/Shared-Notes/shared-notes-handler.js"
+      "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Shared-Notes/shared-notes-handler.js"
     },
     {
       "title": "Shared Notes Config",

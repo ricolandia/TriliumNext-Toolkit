@@ -9,7 +9,7 @@
       "title": "attribute-gc",
       "type": "code",
       "mime": "application/javascript;env=frontend",
-      "sourceUrl": "attribute-gc.js"
+      "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Attribute-Garbage-Collector/attribute-gc.js"
     }
   ],
   "relations": [
