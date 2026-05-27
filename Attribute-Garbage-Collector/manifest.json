@@ -1,0 +1,21 @@
+{
+  "notes": [
+    {
+      "title": "Attribute Garbage Collector",
+      "type": "text",
+      "content": "Escaneia atributos orfaos. Abra esta nota para usar."
+    },
+    {
+      "title": "attribute-gc",
+      "type": "code",
+      "mime": "application/javascript;env=frontend",
+      "sourceUrl": "attribute-gc.js"
+    }
+  ],
+  "relations": [
+    { "type": "renderNote", "from": "Attribute Garbage Collector", "to": "attribute-gc" }
+  ],
+  "labels": [
+    { "note": "attribute-gc", "name": "readOnly", "value": "" }
+  ]
+}

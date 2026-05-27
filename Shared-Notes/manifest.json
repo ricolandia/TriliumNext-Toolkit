@@ -1,0 +1,40 @@
+{
+  "notes": [
+    {
+      "title": "Shared Notes",
+      "type": "text",
+      "content": "Compartilhe notas entre instancias. Abra esta nota para usar."
+    },
+    {
+      "title": "shared-notes-widget",
+      "type": "code",
+      "mime": "application/javascript;env=frontend",
+      "sourceUrl": "shared-notes-widget.js"
+    },
+    {
+      "title": "shared-notes-handler",
+      "type": "code",
+      "mime": "application/javascript;env=backend",
+      "sourceUrl": "shared-notes-handler.js"
+    },
+    {
+      "title": "Shared Notes Config",
+      "type": "text",
+      "content": "Configure #myName e #myEndpoint na label desta nota."
+    }
+  ],
+  "relations": [
+    { "type": "renderNote", "from": "Shared Notes", "to": "shared-notes-widget" }
+  ],
+  "labels": [
+    { "note": "shared-notes-widget", "name": "widget", "value": "" },
+    { "note": "shared-notes-widget", "name": "originalFileName", "value": "shared-notes-widget.js" },
+    { "note": "shared-notes-widget", "name": "readOnly", "value": "" },
+    { "note": "shared-notes-handler", "name": "customRequestHandler", "value": "shared-notes-reply" },
+    { "note": "shared-notes-handler", "name": "originalFileName", "value": "shared-notes-handler.js" },
+    { "note": "shared-notes-handler", "name": "readOnly", "value": "" },
+    { "note": "Shared Notes Config", "name": "sharedNotesConfig", "value": "" },
+    { "note": "Shared Notes Config", "name": "myName", "value": "yourname" },
+    { "note": "Shared Notes Config", "name": "myEndpoint", "value": "http://yoururl/" }
+  ]
+}

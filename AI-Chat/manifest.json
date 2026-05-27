@@ -1,0 +1,27 @@
+{
+  "notes": [
+    {
+      "title": "AI Chat",
+      "type": "text",
+      "content": "AI Chat com OpenRouter. Abra esta nota para usar o chat."
+    },
+    {
+      "title": "AI Code",
+      "type": "code",
+      "mime": "application/javascript;env=frontend",
+      "sourceUrl": "AI Code.js"
+    },
+    {
+      "title": "AI Chat Config",
+      "type": "text",
+      "content": "openrouter_key: your key\nmodel: deepseek/deepseek-v4-flash\n# Opcionais:\n# temperature: 0.7\n# max_tokens: 4096"
+    }
+  ],
+  "relations": [
+    { "type": "renderNote", "from": "AI Chat", "to": "AI Code" }
+  ],
+  "labels": [
+    { "note": "AI Code", "name": "readOnly", "value": "" },
+    { "note": "AI Chat Config", "name": "sharedNotesConfig", "value": "" }
+  ]
+}

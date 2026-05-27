@@ -1,0 +1,21 @@
+{
+  "notes": [
+    {
+      "title": "Knowledge Debt",
+      "type": "text",
+      "content": "Gerencia divida tecnica de conhecimento. Abra esta nota para usar."
+    },
+    {
+      "title": "js knowledge",
+      "type": "code",
+      "mime": "application/javascript;env=frontend",
+      "sourceUrl": "js knowledge.js"
+    }
+  ],
+  "relations": [
+    { "type": "renderNote", "from": "Knowledge Debt", "to": "js knowledge" }
+  ],
+  "labels": [
+    { "note": "js knowledge", "name": "readOnly", "value": "" }
+  ]
+}
