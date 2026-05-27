@@ -1,0 +1,29 @@
+{
+  "notes": [
+    {
+      "title": "Weekly Planner",
+      "type": "text",
+      "content": "Planejador semanal com colunas de backlog e dias da semana. Abra esta nota para usar."
+    },
+    {
+      "title": "js planejador",
+      "type": "code",
+      "mime": "application/javascript;env=frontend",
+      "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Weekly-Planner/js-planejador.js"
+    },
+    {
+      "title": "planner-data",
+      "type": "code",
+      "mime": "application/json",
+      "content": "[]"
+    }
+  ],
+  "relations": [
+    { "type": "renderNote", "from": "Weekly Planner", "to": "js planejador" }
+  ],
+  "labels": [
+    { "note": "js planejador", "name": "readOnly", "value": "" },
+    { "note": "planner-data", "name": "plannerdata", "value": "" },
+    { "note": "planner-data", "name": "readOnly", "value": "" }
+  ]
+}
