@@ -1,4 +1,24 @@
-// shared-notes-widget.js
+// shared-notes.jsx
+// ══════════════════════════════════════════════════════════════════════════════
+//  TriliumNext Plugin: Shared Notes
+//  Auto-generates 3 notes on first render:
+//    1. Shared Notes Widget   (code, env=frontend, #widget)
+//    2. Shared Notes Handler  (code, env=backend,  #customRequestHandler=shared-notes-reply)
+//    3. Shared Notes Config   (text, #sharedNotesConfig)
+//
+//  Modo de usar (Plugin Manager):
+//    Crie uma nota Code, MIME application/javascript;env=frontend
+//    Adicione ~renderNote apontando para a nota onde quer exibir este painel
+// ══════════════════════════════════════════════════════════════════════════════
+
+import { useEffect, useState, useCallback } from "trilium:preact";
+import { runAsyncOnBackendWithManualTransactionHandling } from "trilium:api";
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Source codes for the child notes (escaped for template literal)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const WIDGET_SOURCE = `// shared-notes-widget.js
 // ══════════════════════════════════════════════════════════════════════════════
 // NOTA TRILIUM:
 //   Tipo : Code
@@ -17,7 +37,7 @@
 //   - Expiração de 7 dias verificada no handler
 // ══════════════════════════════════════════════════════════════════════════════
 
-const STYLE = `<style>
+const STYLE = \`<style>
 .sn-wrap {
     border-bottom: 1px solid var(--main-border-color);
     background: var(--accented-background-color);
@@ -71,7 +91,7 @@ const STYLE = `<style>
 .sn-badge { display: inline-block; padding: 3px 10px; font-size: .78rem; background: #14532d; color: #4ade80; border-radius: 10px; }
 .sn-info { font-size: .82rem; color: var(--muted-text-color); line-height: 1.5; margin-bottom: 8px; }
 .sn-icon { vertical-align: middle; margin-right: 4px; }
-</style>`;
+</style>\`;
 
 const ICONS = {
     share: '<svg class="sn-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M5 3v18h14v-2H7V5h12V3H5zm12 4l-1.41 1.41L18.17 11H9v2h9.17l-2.58 2.58L17 17l5-5-5-5z"/></svg>',
@@ -83,12 +103,12 @@ const ICONS = {
     warn: '<svg class="sn-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>'
 };
 
-const HTML = `${STYLE}
+const HTML = \`\${STYLE}
 <div class="sn-wrap">
   <div class="sn-tabs">
-    <button class="sn-tab active" data-tab="gerar">${ICONS.share} Gerar convite</button>
-    <button class="sn-tab"        data-tab="aceitar">${ICONS.inbox} Aceitar convite</button>
-    <button class="sn-tab hidden" data-tab="enviar" id="sn-tab-enviar">${ICONS.reply} Enviar respostas</button>
+    <button class="sn-tab active" data-tab="gerar">\${ICONS.share} Gerar convite</button>
+    <button class="sn-tab"        data-tab="aceitar">\${ICONS.inbox} Aceitar convite</button>
+    <button class="sn-tab hidden" data-tab="enviar" id="sn-tab-enviar">\${ICONS.reply} Enviar respostas</button>
   </div>
 
   <!-- PAINEL 1: Gerar convite -->
@@ -99,7 +119,7 @@ const HTML = `${STYLE}
     </p>
     <div class="sn-row">
       <button class="sn-btn primary" id="sn-gerar-btn">Gerar string de convite</button>
-      <button class="sn-btn" id="sn-copiar-btn" style="display:none">${ICONS.copy} Copiar</button>
+      <button class="sn-btn" id="sn-copiar-btn" style="display:none">\${ICONS.copy} Copiar</button>
     </div>
     <textarea class="sn-textarea" id="sn-convite-out" rows="3"
       placeholder="A string aparecerá aqui. Copie e envie por email ou mensagem." readonly></textarea>
@@ -135,7 +155,7 @@ const HTML = `${STYLE}
     </div>
     <p class="sn-status" id="sn-enviar-status"></p>
   </div>
-</div>`;
+</div>\`;
 
 // ── Widget ────────────────────────────────────────────────────────────────────
 
@@ -174,7 +194,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
                     [note.noteId]
                 );
                 this.$widget.find('#sn-replies-count').text(
-                    count === 0 ? 'Nenhuma nota filha ainda.' : `${count} nota(s) filha(s) prontas para envio.`
+                    count === 0 ? 'Nenhuma nota filha ainda.' : \`\${count} nota(s) filha(s) prontas para envio.\`
                 );
             }
         }
@@ -187,11 +207,11 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
     _bindTabs() {
         this.$widget.find('.sn-tab').on('click', (e) => {
-            const tab = $(e.currentTarget).data('tab');
+            const tab = \\$(e.currentTarget).data('tab');
             this.$widget.find('.sn-tab').removeClass('active');
             this.$widget.find('.sn-panel').removeClass('active');
-            $(e.currentTarget).addClass('active');
-            this.$widget.find(`[data-panel="${tab}"]`).addClass('active');
+            \\$(e.currentTarget).addClass('active');
+            this.$widget.find(\`[data-panel="\${tab}"]\`).addClass('active');
         });
     }
 
@@ -269,7 +289,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 noteId:      noteId,
                 noteTitle:   result.noteTitle,
                 noteContent: result.noteContent,
-            endpoint:    result.myEndpoint.replace(/\/+$/, '') + '/custom/shared-notes-reply',
+            endpoint:    result.myEndpoint.replace(/\\/+$/, '') + '/custom/shared-notes-reply',
                 inviteToken: inviteToken
             };
 
@@ -281,8 +301,8 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
             const kb = (str.length / 1024).toFixed(1);
             const aviso = str.length > 5000
-                ? ` String grande (${kb} KB) — prefira enviar por email.`
-                : ` (${kb} KB)`;
+                ? \` String grande (\${kb} KB) — prefira enviar por email.\`
+                : \` (\${kb} KB)\`;
             this._status('gerar', 'ok', 'Convite gerado!' + aviso);
 
         } catch(e) {
@@ -363,7 +383,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
             this.$widget.find('#sn-convite-in').val('');
             this._status('aceitar', 'ok',
-                `Nota criada em 📥 Shared Inbox! Abra-a na árvore, adicione notas filhas como respostas e use a aba "↩️ Enviar respostas".`
+                \`Nota criada em 📥 Shared Inbox! Abra-a na árvore, adicione notas filhas como respostas e use a aba "↩️ Enviar respostas".\`
             );
 
         } catch(e) {
@@ -417,7 +437,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 return;
             }
 
-            this._status('enviar', '', `Enviando ${children.length} resposta(s) via backend…`);
+            this._status('enviar', '', \`Enviando \${children.length} resposta(s) via backend…\`);
 
             // Envio servidor→servidor via require('https') — sem CORS
             const result = await api.runOnBackend((ep, tok, repls, from) => {
@@ -477,7 +497,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 return;
             }
             if (result.status !== 200) {
-                const msg = result.data?.error || `Erro HTTP ${result.status}`;
+                const msg = result.data?.error || \`Erro HTTP \${result.status}\`;
                 this._status('enviar', 'err', '' + msg);
                 $btn.prop('disabled', false);
                 return;
@@ -493,7 +513,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
             }
 
             const received = result.data?.received ?? children.length;
-            this._status('enviar', 'ok', `${received} resposta(s) enviada(s) com sucesso!`);
+            this._status('enviar', 'ok', \`\${received} resposta(s) enviada(s) com sucesso!\`);
 
             // Atualiza UI
             this.$widget.find('#sn-enviar-form').hide();
@@ -508,7 +528,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
     // ── Helper de status ──────────────────────────────────────────────────────
 
     _status(panel, type, msg) {
-        const $el = this.$widget.find(`#sn-${panel}-status`);
+        const $el = this.$widget.find(\`#sn-\${panel}-status\`);
         const icon = type === 'ok' ? ICONS.ok : type === 'err' ? ICONS.err : type === 'warn' ? ICONS.warn : '';
         $el.html((icon ? icon + ' ' : '') + (msg ?? ''))
            .removeClass('ok err warn').addClass(type || '');
@@ -516,3 +536,322 @@ class SharedNotesWidget extends api.RightPanelWidget {
 }
 
 module.exports = SharedNotesWidget;
+`;
+
+const HANDLER_SOURCE = `// shared-notes-handler.js
+// ══════════════════════════════════════════════════════════════════════════════
+// NOTA TRILIUM:
+//   Tipo : Code
+//   MIME : application/javascript;env=backend
+//   Label: #customRequestHandler=shared-notes-reply
+//
+// Rota: POST /custom/shared-notes-reply
+//
+// Recebe respostas de User B e cria notas filhas na nota original de A.
+// Valida: token efêmero, single-use, expiração, vínculo com nota original.
+// NENHUM token ETAPI é exposto ou necessário nesta rota.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Guard de boot: absorve o erro do getter sem contexto HTTP
+let req, res;
+try {
+    req = api.req;
+    res = api.res;
+} catch(e) { return; }
+if (!req || !res) return;
+
+res.setHeader('Content-Type', 'application/json');
+res.setHeader('Access-Control-Allow-Origin', '*');
+
+function reply(code, data) {
+    res.status(code).send(JSON.stringify(data));
+}
+
+// Só aceita POST
+if (req.method !== 'POST') {
+    return reply(405, { error: 'Método não permitido.' });
+}
+
+// Parse do body
+let body;
+try {
+    body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+} catch(e) {
+    return reply(400, { error: 'JSON inválido.' });
+}
+
+const { inviteToken, from, replies } = body;
+
+// ── 1. Validação básica ────────────────────────────────────────────────────
+if (!inviteToken || !from || !Array.isArray(replies) || replies.length === 0) {
+    return reply(400, { error: 'Payload inválido. Necessário: inviteToken, from, replies[].' });
+}
+
+// ── 2. Localiza a gate note pelo token ────────────────────────────────────
+let gate = null;
+const candidates = api.searchForNotes(\`#inviteGate\`);
+for (const c of candidates) {
+    if (c.getLabelValue('inviteToken') === inviteToken) {
+        gate = c;
+        break;
+    }
+}
+
+if (!gate) {
+    return reply(404, { error: 'Token de convite inválido ou não encontrado.' });
+}
+
+// ── 3. Single-use: já foi utilizado? ──────────────────────────────────────
+if (gate.getLabelValue('inviteUsed') === 'true') {
+    return reply(409, { error: 'Este convite já foi utilizado. Reenvio bloqueado.' });
+}
+
+// ── 4. Verifica expiração (7 dias) ────────────────────────────────────────
+const expiresRaw = gate.getLabelValue('inviteExpires');
+if (expiresRaw) {
+    const expiresAt = parseInt(expiresRaw, 10);
+    if (!isNaN(expiresAt) && Date.now() > expiresAt) {
+        return reply(410, { error: 'Convite expirado.' });
+    }
+}
+
+// ── 5. Valida vínculo com nota original ───────────────────────────────────
+const parentNoteId = gate.getLabelValue('inviteParentNoteId');
+if (!parentNoteId) {
+    return reply(500, { error: 'Gate note sem vínculo com nota original.' });
+}
+
+const originalNote = api.getNote(parentNoteId);
+if (!originalNote) {
+    return reply(404, { error: 'Nota original não encontrada (pode ter sido deletada).' });
+}
+
+// ── 6. Cria as notas filhas de resposta ───────────────────────────────────
+const ts       = new Date().toLocaleString('pt-BR');
+const isoNow   = new Date().toISOString();
+const created  = [];
+const errors   = [];
+
+for (const r of replies) {
+    try {
+        const title = \`↩️ \${from} — \${ts} | \${r.title || 'Sem título'}\`;
+        const content = r.content || '';
+
+        const { note: child } = api.createNewNote({
+            parentNoteId: originalNote.noteId,
+            title:        title,
+            content:      content,
+            type:         'text'
+        });
+
+        child.setLabel('sharedReply', '');
+        child.setLabel('replyFrom',   from);
+        child.setLabel('replyDate',   isoNow);
+
+        created.push(child.noteId);
+    } catch(e) {
+        errors.push((r.title || '?') + ': ' + e.message);
+    }
+}
+
+if (created.length === 0) {
+    return reply(500, { error: 'Nenhuma nota criada. Erros: ' + errors.join('; ') });
+}
+
+// ── 7. Marca gate como usada (invalida reenvio) ───────────────────────────
+gate.setLabel('inviteUsed',        'true');
+gate.setLabel('inviteCompletedAt', isoNow);
+gate.setLabel('inviteCompletedBy', from);
+// Renomeia para feedback visual na árvore de A
+gate.title = \`✅ Respondido por \${from} — \${ts}\`;
+gate.save();
+
+// ── 8. Responde com sucesso ────────────────────────────────────────────────
+reply(200, {
+    ok:       true,
+    received: created.length,
+    errors:   errors,
+    noteIds:  created
+});
+`;
+
+const CONFIG_TEXT = `# 📨 Shared Notes — Configuração
+
+Crie uma nota do tipo Text com a label #sharedNotesConfig
+e adicione estas labels filhas:
+
+  #myName     = Seu Nome (ex: Ricardo)
+  #myEndpoint = https://seutrilium.com  (URL completa, só User A precisa)
+
+## Como usar
+
+User A (quem compartilha):
+1. Abra a nota que deseja compartilhar
+2. No widget Shared Notes, clique em "Gerar convite"
+3. Copie a string gerada e envie para User B
+
+User B (quem recebe):
+1. Cole a string recebida no campo "Aceitar convite"
+2. A nota será criada em 📥 Shared Inbox
+3. Adicione notas filhas com suas respostas
+4. Use a aba "Enviar respostas" para enviá-las de volta
+
+User A recebe as respostas como notas filhas na nota original.
+`;
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  JSX Component — runs setup on first render
+// ══════════════════════════════════════════════════════════════════════════════
+
+function SharedNotesSetup() {
+  const [status, setStatus] = useState('carregando');
+  const [notes, setNotes] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const result = await runAsyncOnBackendWithManualTransactionHandling(
+          async (parentId, widgetSrc, handlerSrc, configText) => {
+            const existing = api.getNoteWithLabel('sharedNotesConfig');
+            if (existing) return { alreadySetup: true };
+
+            const widget = await api.createNewNote({
+              parentNoteId: parentId,
+              title: '📨 Shared Notes Widget',
+              content: widgetSrc,
+              type: 'code',
+              mime: 'application/javascript;env=frontend',
+            });
+            widget.note.setLabel('widget', '');
+            await widget.note.save();
+
+            const handler = await api.createNewNote({
+              parentNoteId: parentId,
+              title: '📨 Shared Notes Handler',
+              content: handlerSrc,
+              type: 'code',
+              mime: 'application/javascript;env=backend',
+            });
+            handler.note.setLabel('customRequestHandler', 'shared-notes-reply');
+            await handler.note.save();
+
+            const config = await api.createNewNote({
+              parentNoteId: parentId,
+              title: '📨 Shared Notes Config',
+              content: configText,
+              type: 'text',
+            });
+            config.note.setLabel('sharedNotesConfig', '');
+            await config.note.save();
+
+            return {
+              alreadySetup: false,
+              notes: [
+                { title: '📨 Shared Notes Widget', type: 'Widget (#widget)' },
+                { title: '📨 Shared Notes Handler', type: 'Handler (#customRequestHandler)' },
+                { title: '📨 Shared Notes Config', type: 'Config (#sharedNotesConfig)' },
+              ],
+            };
+          },
+          [
+            api.currentNote?.noteId || api.startNote?.noteId || 'root',
+            WIDGET_SOURCE,
+            HANDLER_SOURCE,
+            CONFIG_TEXT,
+          ]
+        );
+
+        if (cancelled) return;
+        setNotes(result.notes);
+        setStatus(result.alreadySetup ? 'pronto' : 'criado');
+      } catch (err) {
+        if (cancelled) return;
+        setError(err.message || String(err));
+        setStatus('erro');
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const containerStyle = {
+    padding: 24,
+    fontFamily: 'var(--font-family, sans-serif)',
+    color: 'var(--main-text-color)',
+  };
+
+  const cardStyle = {
+    background: 'var(--accented-background-color)',
+    border: '1px solid var(--main-border-color)',
+    borderRadius: 8,
+    padding: 16,
+    maxWidth: 500,
+  };
+
+  const iconStyle = { fontSize: 28, marginBottom: 8 };
+
+  if (status === 'carregando') {
+    return (
+      <div style={containerStyle}>
+        <div style={cardStyle}>
+          <div style={iconStyle}>⏳</div>
+          <p>Configurando Shared Notes…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'erro') {
+    return (
+      <div style={containerStyle}>
+        <div style={{ ...cardStyle, borderColor: '#f87171' }}>
+          <div style={iconStyle}>⚠️</div>
+          <p style={{ color: '#f87171' }}>Erro: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'pronto') {
+    return (
+      <div style={containerStyle}>
+        <div style={{ ...cardStyle, borderColor: '#4ade80' }}>
+          <div style={iconStyle}>✅</div>
+          <p><strong>Shared Notes</strong> já configurado.</p>
+          <p style={{ fontSize: 14, color: 'var(--muted-text-color)', marginTop: 8 }}>
+            As 3 notas já existem na sua árvore. O widget aparece no painel direito.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // status === 'criado'
+  return (
+    <div style={containerStyle}>
+      <div style={{ ...cardStyle, borderColor: '#4ade80' }}>
+        <div style={iconStyle}>✅</div>
+        <p><strong>Shared Notes</strong> instalado!</p>
+        <p style={{ fontSize: 14, color: 'var(--muted-text-color)', marginTop: 8 }}>
+          3 notas criadas sob a nota atual:
+        </p>
+        <ul style={{ fontSize: 14, marginTop: 8, paddingLeft: 20, lineHeight: 1.8 }}>
+          {notes.map((n, i) => (
+            <li key={i}>
+              <strong>{n.title}</strong>
+              <span style={{ color: 'var(--muted-text-color)', marginLeft: 8 }}>— {n.type}</span>
+            </li>
+          ))}
+        </ul>
+        <p style={{ fontSize: 13, color: 'var(--muted-text-color)', marginTop: 12 }}>
+          O widget aparecerá no painel direito. Configure #myName e #myEndpoint na nota Config.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default SharedNotesSetup;
