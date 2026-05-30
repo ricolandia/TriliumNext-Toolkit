@@ -1,0 +1,21 @@
+{
+  "notes": [
+    {
+      "title": "Mastodon Sender",
+      "type": "text",
+      "content": "Post to Mastodon directly from Trilium. Open this note to use."
+    },
+    {
+      "title": "ms Sender",
+      "type": "code",
+      "mime": "application/javascript;env=frontend",
+      "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Mastodon-Sender/Mastodon_Sender.js"
+    }
+  ],
+  "relations": [
+    { "type": "renderNote", "from": "Mastodon Sender", "to": "ms Sender" }
+  ],
+  "labels": [
+    { "note": "ms Sender", "name": "readOnly", "value": "" }
+  ]
+}
