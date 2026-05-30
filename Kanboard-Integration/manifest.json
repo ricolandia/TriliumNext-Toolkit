@@ -1,0 +1,28 @@
+{
+  "notes": [
+    {
+      "title": "Kanboard Integration",
+      "type": "text",
+      "content": "Integração com Kanboard via API JSON-RPC.\n\nAbra esta nota para usar o painel. A nota \"kanboard_cache\" armazena os dados sincronizados localmente."
+    },
+    {
+      "title": "kanboard_cache",
+      "type": "code",
+      "mime": "application/json",
+      "content": "{\n  \"projects\": [],\n  \"columns\": [],\n  \"tasks\": [],\n  \"lastSync\": null\n}"
+    },
+    {
+      "title": "KB Sync",
+      "type": "code",
+      "mime": "application/javascript;env=frontend",
+      "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Kanboard-Integration/Kanboard_Interface.js"
+    }
+  ],
+  "relations": [
+    { "type": "renderNote", "from": "Kanboard Integration", "to": "KB Sync" }
+  ],
+  "labels": [
+    { "note": "kanboard_cache", "name": "kanboardCache", "value": "" },
+    { "note": "KB Sync", "name": "readOnly", "value": "" }
+  ]
+}

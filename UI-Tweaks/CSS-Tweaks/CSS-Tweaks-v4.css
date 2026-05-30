@@ -1,0 +1,816 @@
+/* ==========================================================================
+   TRILIUM NEXT - CSS-TWEAKS V4
+   Refino do V2 + checkboxes redondos + code block sem borda.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   0. FONT STACK (sistema — zero overhead)
+   ========================================================================== */
+
+:root {
+  --font-ui: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans",
+    "Helvetica Neue", sans-serif;
+  --font-editor: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans",
+    "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Fira Code", "Fira Mono",
+    "Cascadia Code", Consolas, monospace;
+}
+
+body,
+body * {
+  font-family: var(--font-ui);
+}
+
+.ck-content,
+.ck-editor__editable {
+  font-family: var(--font-editor);
+}
+
+code,
+kbd,
+pre,
+samp,
+.attr-pill {
+  font-family: var(--font-mono) !important;
+}
+
+
+/* ==========================================================================
+   1. POLIMENTO GERAL E SCROLLBAR
+   ========================================================================== */
+
+::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--main-border-color) !important;
+    border-radius: 3px !important;
+}
+::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+::selection {
+    background: color-mix(in srgb, var(--main-text-color) 20%, transparent);
+}
+
+.note-book-card .note-book-card-content a {
+    text-decoration: none !important;
+    opacity: 0.85;
+}
+.note-book-card .note-book-card-content a:hover {
+    opacity: 1;
+    text-decoration: underline !important;
+}
+
+
+/* ==========================================================================
+   2. BARRA LATERAL (LAUNCHER & FANCYTREE)
+   ========================================================================== */
+
+.launcher-pane .launcher-button .bx,
+.launcher-pane .launcher-button svg,
+.launcher-pane button .bx,
+.launcher-pane button svg {
+    font-size: 0.8rem !important;
+    width: 14px !important;
+    height: 14px !important;
+}
+
+.launcher-pane .launcher-button,
+.launcher-pane button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+}
+
+.fancytree-node .fancytree-icon,
+.fancytree-node .bx,
+.fancytree-node svg {
+    font-size: 1rem !important;
+    width: 14px !important;
+    height: 14px !important;
+    opacity: 0.8;
+}
+
+/* ── Tree: indent guides ── */
+
+.fancytree-container {
+    position: relative;
+}
+
+.fancytree-children {
+    position: relative;
+}
+
+.fancytree-children > .fancytree-node {
+    position: relative;
+}
+
+.fancytree-children > .fancytree-node::before {
+    content: "";
+    position: absolute;
+    left: -18px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: color-mix(in srgb, var(--main-border-color) 30%, transparent);
+    pointer-events: none;
+}
+
+.fancytree-children > .fancytree-node:last-child::before {
+    height: 50%;
+}
+
+.fancytree-children > .fancytree-node::after {
+    content: "";
+    position: absolute;
+    left: -18px;
+    top: 50%;
+    width: 12px;
+    height: 1px;
+    background: color-mix(in srgb, var(--main-border-color) 30%, transparent);
+    pointer-events: none;
+}
+
+/* ── Tree: node states ── */
+
+.fancytree-active > .fancytree-node {
+    border-left: 2px solid var(--main-text-color) !important;
+    padding-left: 4px !important;
+    background: var(--accented-background-color) !important;
+    border-radius: 6px !important;
+}
+
+.fancytree-active .fancytree-title {
+    font-weight: 500 !important;
+}
+
+.fancytree-active > .fancytree-node .fancytree-title {
+    background: transparent !important;
+    color: inherit !important;
+    border-radius: 0;
+    padding: 0;
+}
+
+.fancytree-node:hover {
+    background: var(--accented-background-color) !important;
+    border-radius: 6px !important;
+}
+
+.fancytree-node {
+    padding: 5px 5px !important;
+    border-radius: 6px !important;
+    transition: background 0.15s, border-color 0.15s !important;
+}
+
+.fancytree-title {
+    font-weight: 400 !important;
+    opacity: 0.9;
+}
+
+.fancytree-title:hover {
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+}
+
+.fancytree-active > .fancytree-node.fancytree-expanded .fancytree-title {
+    font-weight: 500;
+}
+
+
+/* ==========================================================================
+   3. EDITOR DE TEXTO
+   ========================================================================== */
+
+.ck-content p {
+    line-height: 1.65 !important;
+    margin-bottom: 0.8em !important;
+}
+
+.ck-content li {
+    line-height: 1.6 !important;
+    margin-bottom: 0.6em !important;
+}
+
+.ck-content h1 {
+    font-weight: 700 !important;
+    font-size: 1.8em !important;
+    margin-top: 1.8em !important;
+    margin-bottom: 0.6em !important;
+}
+
+.ck-content h2 {
+    font-weight: 600 !important;
+    font-size: 1.5em !important;
+    margin-top: 1.5em !important;
+    margin-bottom: 0.5em !important;
+}
+
+.ck-content h3 {
+    font-weight: 600 !important;
+    font-size: 1.25em !important;
+    margin-top: 1.3em !important;
+    margin-bottom: 0.4em !important;
+}
+
+.ck-content h4 {
+    font-weight: 600 !important;
+    font-size: 1.1em !important;
+    margin-top: 1.2em !important;
+    margin-bottom: 0.3em !important;
+}
+
+.ck-content h5,
+.ck-content h6 {
+    font-weight: 600 !important;
+    font-size: 1em !important;
+    margin-top: 1em !important;
+    margin-bottom: 0.2em !important;
+    opacity: 0.85;
+}
+
+.ck-toolbar {
+    opacity: 0.5;
+    transition: opacity 0.2s !important;
+}
+.ck-toolbar:hover,
+.ck.ck-editor:focus-within .ck-toolbar {
+    opacity: 1;
+}
+
+/* Blockquote */
+.ck-content blockquote {
+    border-left: 3px solid var(--link-color, #8b5cf6) !important;
+    margin: 1.2em 0 !important;
+    padding: 0.5em 1em !important;
+    font-style: italic !important;
+    opacity: 0.85;
+    background: color-mix(in srgb, var(--accented-background-color) 30%, transparent) !important;
+    border-radius: 0 4px 4px 0 !important;
+}
+
+/* Código inline */
+.ck-content code {
+    background: color-mix(in srgb, var(--main-border-color) 25%, transparent) !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 0.88em !important;
+}
+
+/* Bloco de código — sem borda */
+.ck-content pre {
+    background: color-mix(in srgb, var(--main-background-color) 80%, #000) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 1em !important;
+    margin: 1em 0 !important;
+    overflow-x: auto !important;
+}
+
+.ck-content pre code {
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    font-size: 0.88em !important;
+    line-height: 1.5 !important;
+}
+
+/* Horizontal rule */
+.ck-content hr {
+    border: none !important;
+    border-top: 1px solid color-mix(in srgb, var(--main-border-color) 40%, transparent) !important;
+    margin: 1.8em 0 !important;
+    opacity: 0.4 !important;
+}
+
+/* Task list / checkbox quadrado */
+.ck-content input[type="checkbox"] {
+    accent-color: var(--link-color, #8b5cf6) !important;
+    width: 1em !important;
+    height: 1em !important;
+    margin-right: 0.4em !important;
+    transform: translateY(2px) !important;
+    cursor: pointer !important;
+}
+
+
+/* ==========================================================================
+   4. CARD VIEW
+   ========================================================================== */
+
+.note-book-content {
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)) !important;
+    gap: 12px !important;
+}
+
+.note-book-card .note-book-title,
+.note-book-card h5,
+.note-book-card .card-title {
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+}
+
+.note-book-card .note-book-card-content,
+.note-book-card a,
+.note-book-card .tree-link {
+    font-size: 1.05rem !important;
+    line-height: 1.7 !important;
+}
+
+.note-book-card {
+    padding: 16px 18px !important;
+}
+
+[class*="note-book"] [class*="card"] {
+    border: 1px solid var(--main-border-color) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+
+
+/* ==========================================================================
+   5. KANBAN
+   ========================================================================== */
+
+.board-view-container {
+    padding: 20px 16px;
+    gap: 18px;
+    align-items: flex-start;
+}
+
+.board-column {
+    background: color-mix(in srgb, var(--main-background-color, #1a1a1a) 50%, transparent) !important;
+    border: 1px solid color-mix(in srgb, var(--main-border-color, #444) 50%, transparent) !important;
+    border-radius: 10px;
+    min-width: 280px;
+    max-width: 300px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.board-column > h3,
+.board-column h3[draggable] {
+    font-size: 15px !important;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.5;
+    padding: 18px 18px 16px;
+    margin: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--main-border-color, #444) 25%, transparent);
+    cursor: grab;
+}
+
+.board-column-content {
+    padding: 16px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.board-note {
+    background: var(--main-background-color, #1e1e1e) !important;
+    border: 1px solid color-mix(in srgb, var(--main-border-color, #444) 40%, transparent) !important;
+    border-radius: 7px !important;
+    padding: 18px 20px !important;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.1s;
+}
+
+.board-note:hover {
+    border-color: color-mix(in srgb, var(--main-border-color, #444) 80%, transparent) !important;
+    transform: translateY(-1px);
+}
+
+.board-note a,
+.board-note .reference-link {
+    color: var(--link-color, #8b5cf6) !important;
+    font-size: 17px;
+    font-weight: 500;
+    text-decoration: none !important;
+    line-height: 1.4;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.board-note .ck-content,
+.board-note [class*="attribute"],
+.board-note .note-attributes {
+    font-size: 14px;
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--muted-text-color, #888) 80%, transparent);
+}
+
+.board-note strong,
+.board-note b {
+    font-weight: 500;
+    font-size: 15px;
+    color: color-mix(in srgb, var(--muted-text-color, #888) 70%, transparent);
+    letter-spacing: 0.01em;
+}
+
+.board-new-item,
+.board-column .board-new-item {
+    font-size: 15px;
+    opacity: 0.3;
+    padding: 10px 10px;
+    border-radius: 5px;
+    margin: 2px 0 2px;
+    transition: opacity 0.15s, background 0.15s;
+    cursor: pointer;
+}
+
+.board-new-item:hover {
+    opacity: 0.75;
+    background: color-mix(in srgb, var(--accented-background-color, #8b5cf6) 8%, transparent);
+}
+
+.board-add-column {
+    font-size: 13px;
+    opacity: 0.3;
+    padding: 12px 18px;
+    border: 1px dashed color-mix(in srgb, var(--main-border-color, #444) 35%, transparent);
+    border-radius: 10px;
+    min-width: 150px;
+    transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.board-add-column:hover {
+    opacity: 0.75;
+    border-color: color-mix(in srgb, var(--main-border-color, #444) 70%, transparent) !important;
+    background: color-mix(in srgb, var(--accented-background-color, #8b5cf6) 5%, transparent);
+}
+
+.board-column:nth-child(1) { background: color-mix(in srgb, #cbd5e1 6%, var(--main-background-color)) !important; }
+.board-column:nth-child(2) { background: color-mix(in srgb, #d6d3d1 6%, var(--main-background-color)) !important; }
+.board-column:nth-child(3) { background: color-mix(in srgb, #a1a1aa 7%, var(--main-background-color)) !important; }
+.board-column:nth-child(4) { background: color-mix(in srgb, #e5e7eb 5%, var(--main-background-color)) !important; }
+.board-column:nth-child(5) { background: color-mix(in srgb, #9ca3af 8%, var(--main-background-color)) !important; }
+
+.board-column::before {
+    content: "";
+    display: block;
+    height: 3px;
+    background: transparent;
+    opacity: 0.8;
+    border-radius: 10px 10px 0 0;
+}
+
+.board-column:nth-child(1)::before { background: #3a6ea5; }
+.board-column:nth-child(2)::before { background: #f59e0b; }
+.board-column:nth-child(3)::before { background: #2dd4bf; }
+.board-column:nth-child(4)::before { background: #ef4444; }
+.board-column:nth-child(5)::before { background: #8b5cf6; }
+
+
+/* ==========================================================================
+   6. TABLE VIEW
+   ========================================================================== */
+
+.table-view-container {
+    --cell-vert-padding-size: 60px;
+    --cell-horiz-padding-size: 14px;
+}
+
+.tabulator-header .tabulator-col-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+    opacity: 0.6;
+}
+
+.tabulator-row .tabulator-cell {
+    border-right: 1px solid color-mix(in srgb, var(--main-border-color, #555) 30%, transparent) !important;
+    font-size: 15px;
+}
+
+.tabulator-header .tabulator-col {
+    border-right: 1px solid color-mix(in srgb, var(--main-border-color, #555) 30%, transparent) !important;
+}
+
+.tabulator-row {
+    border-bottom: 1px solid color-mix(in srgb, var(--main-border-color, #555) 35%, transparent) !important;
+    background: transparent !important;
+}
+
+.tabulator-row.tabulator-row-odd,
+.tabulator-row.tabulator-row-even {
+    background: transparent !important;
+}
+
+.tabulator-row:hover,
+.tabulator-row.tabulator-row-odd:hover,
+.tabulator-row.tabulator-row-even:hover {
+    background: color-mix(in srgb, var(--accented-background-color, #8b5cf6) 7%, transparent) !important;
+}
+
+.tabulator-cell .reference-link,
+.tabulator-cell a {
+    color: var(--link-color, #8b5cf6) !important;
+    text-decoration: none !important;
+    font-weight: 500;
+}
+
+.tabulator-cell .reference-link:hover,
+.tabulator-cell a:hover {
+    text-decoration: underline !important;
+    text-underline-offset: 3px !important;
+}
+
+.tabulator-cell.tabulator-frozen.tabulator-frozen-left {
+    font-size: 15px;
+    opacity: 0.4;
+    border-right: 1px solid color-mix(in srgb, var(--main-border-color, #555) 50%, transparent) !important;
+}
+
+.tabulator-col-resize-handle {
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.tabulator-col:hover .tabulator-col-resize-handle {
+    opacity: 1;
+}
+
+.tabulator-row .tabulator-cell:nth-child(1)  { color: #94a3b8 !important; }
+.tabulator-row .tabulator-cell:nth-child(2),
+.tabulator-row .tabulator-cell:nth-child(2) * { color: #a78bfa !important; }
+.tabulator-row .tabulator-cell:nth-child(3)  { color: #e2e8f0 !important; }
+.tabulator-row .tabulator-cell:nth-child(4),
+.tabulator-row .tabulator-cell:nth-child(4) * { color: #60a5fa !important; }
+.tabulator-row .tabulator-cell:nth-child(5),
+.tabulator-row .tabulator-cell:nth-child(5) * { color: #fbbf24 !important; }
+.tabulator-row .tabulator-cell:nth-child(6),
+.tabulator-row .tabulator-cell:nth-child(6) * { color: #f472b6 !important; }
+.tabulator-row .tabulator-cell:nth-child(7),
+.tabulator-row .tabulator-cell:nth-child(7) * { color: #34d399 !important; }
+.tabulator-row .tabulator-cell:nth-child(8),
+.tabulator-row .tabulator-cell:nth-child(8) * { color: #fb923c !important; }
+.tabulator-row .tabulator-cell:nth-child(9),
+.tabulator-row .tabulator-cell:nth-child(9) * { color: #a3e635 !important; }
+.tabulator-row .tabulator-cell:nth-child(10),
+.tabulator-row .tabulator-cell:nth-child(10) * { color: #38bdf8 !important; }
+.tabulator-row .tabulator-cell:nth-child(11),
+.tabulator-row .tabulator-cell:nth-child(11) * { color: #60a5fa !important; }
+.tabulator-row .tabulator-cell:nth-child(12),
+.tabulator-row .tabulator-cell:nth-child(12) * { color: #fbbf24 !important; }
+.tabulator-row .tabulator-cell:nth-child(13),
+.tabulator-row .tabulator-cell:nth-child(13) * { color: #fb923c !important; }
+.tabulator-row .tabulator-cell:nth-child(14),
+.tabulator-row .tabulator-cell:nth-child(14) * { color: #34d399 !important; }
+.tabulator-row .tabulator-cell:nth-child(15),
+.tabulator-row .tabulator-cell:nth-child(15) * { color: #fcbf24 !important; }
+
+
+/* ==========================================================================
+   7. ATRIBUTOS — LAYOUT EM TABELA
+   ========================================================================== */
+
+.attr-display {
+  display: table !important;
+  border-collapse: separate;
+  border-spacing: 0 3px;
+  width: 100%;
+  padding: 4px 0;
+}
+
+.attr-display .attr-row {
+  display: table-row !important;
+}
+
+.attr-display .attr-name {
+  display: table-cell !important;
+  padding: 4px 16px 4px 0;
+  white-space: nowrap;
+  vertical-align: middle;
+  text-align: left;
+  color: var(--muted-text-color);
+  font-size: 0.85em;
+  width: 1%;
+}
+
+.attr-display .attr-name::after {
+  content: "";
+}
+
+.attr-display .attr-value {
+  display: table-cell !important;
+  padding: 4px 0;
+  vertical-align: middle;
+  text-align: left;
+  font-weight: 600;
+}
+
+
+/* ==========================================================================
+   8. CKEDITOR TABLES
+   ========================================================================== */
+
+.ck-content .table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  display: block;
+}
+
+.ck-content table {
+  white-space: nowrap;
+  min-width: 600px;
+}
+
+.ck-content table td,
+.ck-content table th {
+  white-space: normal;
+  min-width: 80px;
+  padding: 6px 8px;
+}
+
+
+/* ==========================================================================
+   9. ATRIBUTE PILLS
+   ========================================================================== */
+
+.note-list-attributes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-right: 6px;
+}
+
+.rendered-note-attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  align-items: center;
+}
+
+.attr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 1.2em;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+.attr-pill-label {
+  background: rgba(77, 210, 140, 0.10);
+  color: #7ed9a0;
+  border: 1px solid rgba(77, 210, 140, 0.22);
+}
+
+.attr-pill-relation {
+  background: rgba(110, 130, 230, 0.12);
+  color: #a8b8f5;
+  border: 1px solid rgba(110, 130, 230, 0.25);
+}
+
+.attr-pill-relation a.reference-link {
+  color: inherit !important;
+  text-decoration: none;
+}
+.attr-pill-relation a.reference-link:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+
+/* ==========================================================================
+   10. MOBILE
+   ========================================================================== */
+
+@media (max-width: 768px) {
+
+    .title-row .note-title,
+    input.note-title {
+        font-size: 1.2rem !important;
+    }
+
+    .ck-content h1 { font-size: 1.4rem !important; }
+    .ck-content h2 { font-size: 1.2rem !important; }
+    .ck-content h3 { font-size: 1.05rem !important; }
+
+    .ck-content p,
+    .ck-content li {
+        font-size: 0.92rem !important;
+        line-height: 1.55 !important;
+        margin-bottom: 0.6em !important;
+    }
+
+    .ck-content h1,
+    .ck-content h2,
+    .ck-content h3,
+    .ck-content h4 {
+        margin-top: 1em !important;
+        margin-bottom: 0.5em !important;
+    }
+
+    .ck-toolbar {
+        opacity: 1 !important;
+    }
+
+    .note-book-content {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+
+    .note-book-card {
+        padding: 12px 14px !important;
+    }
+
+    .note-book-card .note-book-title,
+    .note-book-card h5,
+    .note-book-card .card-title {
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 6px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .note-book-card .note-book-card-content,
+    .note-book-card a,
+    .note-book-card .tree-link {
+        font-size: 0.82rem !important;
+        line-height: 1.5 !important;
+    }
+
+    .note-book-card .note-book-card-content h1,
+    .note-book-card .note-book-card-content h2,
+    .note-book-card .note-book-card-content h3,
+    .note-book-card .ck-content h1,
+    .note-book-card .ck-content h2,
+    .note-book-card .ck-content h3 {
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        margin: 0.4em 0 !important;
+        color: inherit !important;
+    }
+
+    .note-book-card pre,
+    .note-book-card code,
+    .note-book-card .code-block,
+    .note-book-card [class*="code"] {
+        display: none !important;
+    }
+
+    .tabulator-header .tabulator-col-title {
+        font-size: 0.75rem !important;
+    }
+
+    .tabulator-row .tabulator-cell {
+        font-size: 0.82rem !important;
+    }
+
+    .board-note a,
+    .board-note .reference-link {
+        font-size: 0.92rem !important;
+        line-height: 1.4 !important;
+    }
+
+    .board-column > h3,
+    .board-column h3[draggable] {
+        font-size: 0.75rem !important;
+    }
+
+    .launcher-pane .launcher-button .bx,
+    .launcher-pane .launcher-button svg,
+    .launcher-pane button .bx,
+    .launcher-pane button svg {
+        font-size: 0.7rem !important;
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    .fancytree-title {
+        font-size: 0.85rem !important;
+    }
+
+    .ck-content table {
+        font-size: 0.82em;
+    }
+    .ck-content .table {
+        overflow-x: auto;
+        display: block;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .attr-display .attr-name {
+        padding-right: 10px;
+        font-size: 0.82em;
+    }
+}
