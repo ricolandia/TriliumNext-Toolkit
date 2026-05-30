@@ -110,3 +110,6 @@ Mastodon-Sender/
 ## License
 
 MIT
+
+## Screencapture
+![screen capture](imagens/mastodon-1-.webp)
