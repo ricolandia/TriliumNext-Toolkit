@@ -138,3 +138,8 @@ Full API docs: [docs.kanboard.org](https://docs.kanboard.org/en/latest/api/)
 ## License
 
 MIT
+
+### Screenshot
+
+![screen capture](imagens/kanboard-2-.webp)
+![screen capture](imagens/kanboard-3-.webp)
