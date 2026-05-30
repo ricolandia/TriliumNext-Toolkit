@@ -19,7 +19,9 @@ All communication with Kanboard is **server-to-server** (Trilium backend → Kan
 
 - **Dashboard** — visual panel showing projects, columns, and tasks from Kanboard
 - **Sync** — fetch all Kanboard data with one click
-- **Filter** — narrow tasks by project
+- **Search** — filter tasks by title or description in real time
+- **Filter** — narrow tasks by project via dropdown
+- **Move tasks between columns** — inline dropdown on each task row instantly moves it to another column (uses Kanboard's `moveTaskPosition` API)
 - **Create tasks** — choose project, column, color, title, and description
 - **Responsive** — adapts to screen width, form stacks below tasks on mobile
 - **Theme-aware** — uses Trilium's CSS variables, blends with any theme
@@ -78,6 +80,14 @@ Click **🔄 Synchronize** in the header. All projects, columns, and tasks are f
 
 Use the **"All projects"** dropdown to filter the task table by project.
 
+### Search tasks
+
+Type in the **search box** above the table to filter tasks by title or description in real time, across all projects.
+
+### Move tasks between columns
+
+Each task row has an inline **column dropdown** in the "Coluna" column. Select a new column and the task is moved instantly via Kanboard's `moveTaskPosition` API. The local cache updates automatically.
+
 ### Create a task
 
 Fill out the **New Task** form (right sidebar):
@@ -112,6 +122,7 @@ Kanboard-Integration/
 | `getAllTasks` | List tasks for a project |
 | `createTask` | Create a new task |
 | `getTask` | Get task details |
+| `moveTaskPosition` | Move a task to a different column |
 
 Full API docs: [docs.kanboard.org](https://docs.kanboard.org/en/latest/api/)
 
