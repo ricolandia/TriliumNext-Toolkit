@@ -1,0 +1,21 @@
+{
+  "notes": [
+    {
+      "title": "FountainRenderer",
+      "type": "text",
+      "content": "Renderiza roteiros em formato Fountain. Abra esta nota para usar."
+    },
+    {
+      "title": "js - Fountain 3",
+      "type": "code",
+      "mime": "application/javascript;env=frontend",
+      "sourceUrl": "js%20-%20Fountain%203.js"
+    }
+  ],
+  "relations": [
+    { "type": "renderNote", "from": "FountainRenderer", "to": "js - Fountain 3" }
+  ],
+  "labels": [
+    { "note": "js - Fountain 3", "name": "readOnly", "value": "" }
+  ]
+}
