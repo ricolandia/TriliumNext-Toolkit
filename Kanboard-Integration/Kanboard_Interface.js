@@ -795,11 +795,9 @@ function renderTasks() {
     // Coluna: dropdown inline com todas as colunas do projeto
     const projCols = cache.columns.filter(c => c.project_id === t.project_id);
     const colSelect = projCols.length
-      ? `<select class="kb-col-select" data-task-id="${t.id}" data-project-id="${t.project_id}">
-          ${projCols.map(c =>
-            `<option value="${c.id}" ${c.id === t.column_id ? 'selected' : ''}>${esc(c.title)}</option>`
-          ).join('')}
-        </select>`
+      ? `<select class="kb-col-select" data-task-id="${t.id}" data-project-id="${t.project_id}">${projCols.map(c =>
+          `<option value="${c.id}" ${c.id === t.column_id ? 'selected' : ''}>${esc(c.title)}</option>`
+        ).join('')}</select>`
       : (cMap[t.column_id] ? esc(cMap[t.column_id].title) : '—');
 
     return `<tr>
@@ -1123,17 +1121,16 @@ async function processPendingOps() {
     $fColor
   );
 
-  const $form = $('<form>').css({ display:'flex', flexDirection:'column', gap:11 })
+  const $form = $('<div>').css({ display:'flex', flexDirection:'column', gap:11 })
     .append(
       mkField('Projeto', $fProj),
       mkField('Coluna',  $fCol),
       mkField('Cor',     $colorWrap),
       mkField('Título',  $fTitle),
       mkField('Descrição', $fDesc),
-      $('<button id="kb-submit-btn" type="submit">').text('+ Criar Tarefa'),
+      $('<button id="kb-submit-btn">').text('+ Criar Tarefa').on('click', handleCreateTask),
       $('<div id="kb-create-status">')
-    )
-    .on('submit', handleCreateTask);
+    );
 
   const $right = $('<div id="kb-right">').append(
     $('<div id="kb-form-header">').html('✏ Nova Tarefa'),
