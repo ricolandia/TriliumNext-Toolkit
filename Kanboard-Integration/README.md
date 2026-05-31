@@ -153,3 +153,4 @@ MIT
 ![screen capture](imagens/kanboard-2-.webp)
 ![screen capture](imagens/kanboard-3-.webp)
 ![screen capture](imagens/kanboard-4-.webp)
+![screen capture](imagens/kanboard-5-.webp)
