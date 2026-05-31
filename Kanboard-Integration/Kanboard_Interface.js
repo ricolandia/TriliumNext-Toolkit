@@ -1012,6 +1012,11 @@ async function createKanboardProject(name) {
       return { success: true, project: existing, columns: cols, existed: true };
     }
     const projectId = await rpc('createProject', { name: projName });
+    // Adiciona o dono como membro para aparecer no dashboard do Kanboard
+    try {
+      const me = await rpc('getMe');
+      if (me && me.id) await rpc('addProjectUser', { project_id: projectId, user_id: me.id, role: 'project-manager' });
+    } catch (_) {}
     const full = await rpc('getProjectById', { project_id: projectId });
     const cols = await rpc('getColumns', { project_id: projectId });
     return { success: true, project: full, columns: cols, existed: false };
@@ -1039,6 +1044,10 @@ async function processPendingOps() {
               results.push({ id: op.id, success: true, existed: true, project: existing, columns: cols });
             } else {
               const pid = await rpc('createProject', { name: op.name });
+              try {
+                const me = await rpc('getMe');
+                if (me && me.id) await rpc('addProjectUser', { project_id: pid, user_id: me.id, role: 'project-manager' });
+              } catch (_) {}
               const full = await rpc('getProjectById', { project_id: pid });
               const cols = await rpc('getColumns', { project_id: pid });
               results.push({ id: op.id, success: true, existed: false, project: full, columns: cols });
