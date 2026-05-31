@@ -127,7 +127,9 @@ async function syncFromKanboard() {
     const makeRpcFn = eval('(' + mkRpcSrc + ')');
     const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
 
-    const projects = await rpc('getAllProjects');
+    const allProjects = await rpc('getAllProjects');
+    // Filtra apenas projetos ativos (não finalizados)
+    const projects = (allProjects || []).filter(p => p.is_active !== 0 && p.is_active !== false);
     // Normaliza IDs para Number na entrada
     for (const p of projects) p.id = Number(p.id);
 
@@ -148,6 +150,11 @@ async function syncFromKanboard() {
         })));
       } catch (_) {}
     }
+
+    // Limpa cache de projetos fechados
+    const activeIds = new Set(projects.map(p => p.id));
+    columns = columns.filter(c => activeIds.has(c.project_id));
+    tasks = tasks.filter(t => activeIds.has(t.project_id));
 
     return {
       success: true,
