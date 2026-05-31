@@ -14,10 +14,11 @@ A single JS Frontend render note. No external dependencies, no ZIP imports.
 ## Features
 
 - **Compose** — write toots in a comfortable textarea with character counter
+- **Multiple accounts** — configure several Mastodon instances and switch between them
 - **Visibility selector** — Public, Unlisted, Followers only, or Direct
 - **Content warning** — optional CW/spoiler field
 - **Post current note** — one-click to grab the active note's title and content
-- **Post history** — last 20 posts stored locally, with links
+- **Post history** — last 20 posts stored locally, with account and links
 - **Theme-aware** — blends with any Trilium theme via CSS variables
 - **Clean UI** — same design language as the Kanboard Sync plugin
 
@@ -59,10 +60,14 @@ Edit the `CONFIG` at the top of **ms Sender**:
 
 ```javascript
 const CONFIG = {
-  instance: 'https://bolha.us',
-  apiToken: 'YOUR_ACCESS_TOKEN',
+  accounts: [
+    { name: 'Bolha',     instance: 'https://bolha.us',  token: 'YOUR_TOKEN' },
+    { name: 'Usal Zone', instance: 'https://usal.zone', token: 'YOUR_TOKEN' },
+  ],
 };
 ```
+
+Add as many accounts as you want. Switch between them via the dropdown in the header.
 
 ### 4. Open the dashboard
 

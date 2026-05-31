@@ -10,8 +10,10 @@
  */
 
 const CONFIG = {
-  instance: 'https://instance',
-  apiToken: 'SEU_TOKEN_DE_ACESSO',
+  accounts: [
+    { name: 'Bolha',     instance: 'https://bolha.us',  token: 'SEU_TOKEN_AQUI' },
+    // { name: 'Usal',   instance: 'https://usal.zone', token: 'OUTRO_TOKEN'   },
+  ],
 };
 
 const LS_KEY = 'ms_history';
@@ -22,6 +24,12 @@ const LS_KEY = 'ms_history';
 
 let posting = false;
 let history = [];
+let currentAccountIdx = 0;
+
+function getAccount() {
+  const idx = currentAccountIdx;
+  return CONFIG.accounts[idx] || CONFIG.accounts[0] || null;
+}
 
 /* ════════════════════════════════════════════════════════
    PERSISTÊNCIA
@@ -38,16 +46,16 @@ function saveHistory() {
    HELPERS DE BACKEND
 ════════════════════════════════════════════════════════ */
 
-async function postToMastodon(statusText, visibility, spoilerText) {
-  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, body) => {
-    const { instance, apiToken } = cfg;
+async function postToMastodon(account, statusText, visibility, spoilerText) {
+  return api.runAsyncOnBackendWithManualTransactionHandling(async (acct, body) => {
+    const { instance, token } = acct;
     let response;
     try {
       response = await fetch(instance.replace(/\/+$/, '') + '/api/v1/statuses', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + apiToken,
+          Authorization: 'Bearer ' + token,
         },
         body: JSON.stringify(body),
       });
@@ -62,7 +70,7 @@ async function postToMastodon(statusText, visibility, spoilerText) {
         return { success: false, error: detail };
       }
       return { success: true, data };
-  }, [CONFIG, { status: statusText, visibility, spoiler_text: spoilerText || '' }]);
+  }, [account, { status: statusText, visibility, spoiler_text: spoilerText || '' }]);
 }
 
 async function getCurrentNote() {
@@ -443,6 +451,7 @@ function refreshHistory() {
       '<div class="ms-history-body">' +
         '<div class="ms-history-text">' + esc(h.text) + '</div>' +
         '<div class="ms-history-meta">' +
+          (h.account ? '<strong>' + esc(h.account) + '</strong> · ' : '') +
           new Date(h.date).toLocaleString() +
           (h.url ? ' · <a href="' + esc(h.url) + '" target="_blank">' + esc(h.url) + '</a>' : '') +
         '</div>' +
@@ -456,14 +465,19 @@ function refreshHistory() {
 ════════════════════════════════════════════════════════ */
 
 function checkConfig() {
-  const bad = CONFIG.apiToken === 'SEU_TOKEN_DE_ACESSO' || CONFIG.instance.includes('SEU');
+  const acc = CONFIG.accounts;
+  const bad = !acc || !acc.length || !acc[0].token || acc[0].token.includes('SEU');
   if (bad) {
     $container.empty().append(
       $('<div id="ms-config-warn">').html(
         '<strong>⚠️ Configuration required</strong><br><br>' +
-        'Edit the constants at the top of the code:<br>' +
-        '• <code>CONFIG.instance</code> — your Mastodon instance URL (e.g. https://bolha.us)<br>' +
-        '• <code>CONFIG.apiToken</code> — your access token<br><br>' +
+        'Edit <code>CONFIG.accounts</code> at the top of the code:<br><br>' +
+        'Add your Mastodon instances and access tokens:<br>' +
+        '<code style="display:block;white-space:pre;margin:8px 0">' +
+        'accounts: [<br>' +
+        '  { name: "Bolha", instance: "https://bolha.us", token: "xxx" },<br>' +
+        '  { name: "Usal",  instance: "https://usal.zone", token: "yyy" },<br>' +
+        ']</code>' +
         '<em>Get a token: Mastodon → Preferences → Development → New Application → generate token with <code>read write</code></em>'
       )
     );
@@ -482,6 +496,9 @@ async function handlePost() {
   if (!text) { toast('Write something first!', 'error'); return; }
   if (text.length > 500) { toast('Toot is too long (' + text.length + '/500)', 'error'); return; }
 
+  const account = getAccount();
+  if (!account) { toast('No account configured', 'error'); return; }
+
   posting = true;
   const $btn = $container.find('#ms-post-btn').prop('disabled', true);
   const $st  = $container.find('#ms-create-status');
@@ -489,10 +506,10 @@ async function handlePost() {
   const cw = $container.find('#ms-cw').val().trim();
   $st.text('⟳ Posting…');
 
-  const r = await postToMastodon(text, visibility, cw);
+  const r = await postToMastodon(account, text, visibility, cw);
   if (r.success) {
     const url = r.data.url || r.data.uri || '';
-    history.unshift({ text: text.slice(0, 100), date: new Date().toISOString(), url });
+    history.unshift({ text: text.slice(0, 100), date: new Date().toISOString(), url, account: account.name });
     saveHistory();
     refreshHistory();
     $container.find('#ms-textarea').val('');
@@ -541,8 +558,18 @@ async function handleCurrentNote() {
   loadHistory();
 
   /* ── Header ── */
+  const $acctSel = $('<select id="ms-account" class="ms-select" style="font-size:14px;max-width:200px">')
+    .html(CONFIG.accounts.map((a, i) =>
+      '<option value="' + i + '">@ ' + esc(a.name) + '</option>'
+    ).join(''))
+    .on('change', function () {
+      currentAccountIdx = parseInt($(this).val());
+      $container.find('#ms-status-text').text('✓ Switched to ' + getAccount().name);
+      setTimeout(() => $container.find('#ms-status-text').text(''), 3000);
+    });
   const $hdr = $('<div id="ms-header">').append(
     $('<div id="ms-title">').html('<span class="ms-dot"></span> Mastodon'),
+    $acctSel,
     $('<span id="ms-status-text">')
   );
 
