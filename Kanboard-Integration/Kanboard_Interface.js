@@ -22,7 +22,8 @@ const CONFIG = {
 // status_id: 1 = tarefas ativas; 0 = tarefas arquivadas
 const ACTIVE_STATUS = 1;
 
-const LS_KEY = 'kb_cache_v2';
+const LS_KEY   = 'kb_cache_v2';
+const QUEUE_KEY = 'kb_pending_ops';
 
 /* ════════════════════════════════════════════════════════
    ESTADO
@@ -44,6 +45,36 @@ function loadFromStorage() {
 
 function saveToStorage(d) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(d)); } catch (_) {}
+}
+
+/* ── Fila de operações offline ──────────────────────────── */
+
+function loadQueue() {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY)) || []; } catch (_) { return []; }
+}
+function saveQueue(q) {
+  try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch (_) {}
+}
+function addToQueue(op) {
+  const q = loadQueue();
+  q.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2, 6), timestamp: new Date().toISOString(), ...op });
+  saveQueue(q);
+  refreshQueueBadge();
+}
+function removeFromQueue(id) {
+  const q = loadQueue().filter(i => i.id !== id);
+  saveQueue(q);
+  refreshQueueBadge();
+}
+
+function refreshQueueBadge() {
+  const q = loadQueue();
+  const $badge = $container.find('#kb-queue-badge');
+  if (q.length) {
+    $badge.text(q.length + ' pendente' + (q.length > 1 ? 's' : '')).show();
+  } else {
+    $badge.hide();
+  }
 }
 
 /* ════════════════════════════════════════════════════════
@@ -593,6 +624,32 @@ $('<style id="kb-styles">').text(`
     transition: color var(--kb-transition);
   }
 
+  /* ── Project form ── */
+  #kb-proj-section {
+    border-top: 1px solid color-mix(in srgb, var(--main-border-color) 40%, transparent);
+    margin-top: 4px;
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  #kb-proj-section .kb-label { margin-bottom: 0; }
+  #kb-proj-status {
+    font-size: 12px; text-align: center;
+    color: var(--muted-text-color); min-height: 14px;
+  }
+  #kb-proj-btn { width: 100%; }
+
+  /* ── Queue badge ── */
+  #kb-queue-badge {
+    display: none;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    background: #f59e0b; color: #fff;
+    cursor: pointer;
+    transition: opacity var(--kb-transition);
+  }
+  #kb-queue-badge:hover { opacity: 0.85; }
+
   /* ── Config warning ── */
   #kb-config-warn {
     margin: 24px;
@@ -863,6 +920,125 @@ async function handleMoveTask(e) {
   $sel.removeClass('kb-saving').prop('disabled', false);
 }
 
+async function handleCreateProject() {
+  const name = $container.find('#kb-new-proj-name').val().trim();
+  if (!name) { toast('Digite um nome para o projeto.', 'error'); return; }
+
+  const $btn = $container.find('#kb-proj-btn').prop('disabled', true);
+  const $st  = $container.find('#kb-proj-status');
+  $st.text('⟳ Criando…');
+
+  const r = await createKanboardProject(name);
+  if (r.success) {
+    $container.find('#kb-new-proj-name').val('');
+    $st.text(r.existed ? '✓ Projeto "' + name + '" já existia' : '✓ Projeto "' + name + '" criado!');
+    toast('Projeto "' + name + '" ' + (r.existed ? 'já existe' : 'criado!'), r.existed ? 'info' : 'success');
+    // Atualiza cache com o projeto
+    if (cache && r.project) {
+      const exists = cache.projects.find(p => p.id === r.project.id);
+      if (!exists) cache.projects.push(r.project);
+      cache.lastSync = new Date().toISOString();
+      saveToStorage(cache);
+      refreshAll();
+      refreshFormCols();
+    }
+  } else {
+    // Offline — adiciona à fila
+    addToQueue({ op: 'createProject', name });
+    $st.text('⏳ Sem conexão — adicionado à fila');
+    toast('Sem conexão. Projeto será criado quando sincronizar.', 'info');
+  }
+
+  $btn.prop('disabled', false);
+  setTimeout(() => $st.text(''), 4000);
+}
+
+async function handleProcessQueue() {
+  const q = loadQueue();
+  if (!q.length) { toast('Nenhuma operação pendente.', 'info'); return; }
+
+  const $badge = $container.find('#kb-queue-badge');
+  $badge.text('⟳ Sincronizando…');
+
+  const r = await processPendingOps();
+  if (r.success) {
+    let ok = 0, fail = 0;
+    for (const res of r.results) {
+      if (res.success) {
+        ok++;
+        removeFromQueue(res.id);
+        // Atualiza cache
+        if (cache && res.project) {
+          const exists = cache.projects.find(p => p.id === res.project.id);
+          if (!exists) cache.projects.push(res.project);
+        }
+      } else {
+        fail++;
+      }
+    }
+    if (cache) { cache.lastSync = new Date().toISOString(); saveToStorage(cache); }
+    refreshAll();
+    refreshFormCols();
+    refreshQueueBadge();
+    toast('Fila: ' + ok + ' ok' + (fail ? ', ' + fail + ' erros' : ''), fail ? 'error' : 'success');
+  } else {
+    toast('Erro ao processar fila: ' + (r.error || ''), 'error');
+    refreshQueueBadge();
+  }
+}
+
+/* ── Criar projeto ──────────────────────────────────────── */
+
+async function createKanboardProject(name) {
+  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, projName, mkRpcSrc) => {
+    const makeRpcFn = eval('(' + mkRpcSrc + ')');
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    const existing = await rpc('getProjectByName', { name: projName });
+    if (existing) {
+      return { success: true, project: existing, existed: true };
+    }
+    const projectId = await rpc('createProject', { name: projName });
+    const full = await rpc('getProjectById', { project_id: projectId });
+    return { success: true, project: full, existed: false };
+  }, [CONFIG, name, makeRpc.toString()]);
+}
+
+/* ── Processar fila de operações pendentes ───────────────── */
+
+async function processPendingOps() {
+  const q = loadQueue();
+  if (!q.length) return { success: true, processed: 0 };
+
+  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, ops, mkRpcSrc) => {
+    const makeRpcFn = eval('(' + mkRpcSrc + ')');
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    const results = [];
+
+    for (const op of ops) {
+      try {
+        switch (op.op) {
+          case 'createProject': {
+            const existing = await rpc('getProjectByName', { name: op.name });
+            if (existing) {
+              results.push({ id: op.id, success: true, existed: true, project: existing });
+            } else {
+              const pid = await rpc('createProject', { name: op.name });
+              const full = await rpc('getProjectById', { project_id: pid });
+              results.push({ id: op.id, success: true, existed: false, project: full });
+            }
+            break;
+          }
+          default:
+            results.push({ id: op.id, success: false, error: 'Unknown operation: ' + op.op });
+        }
+      } catch (e) {
+        results.push({ id: op.id, success: false, error: e.message });
+      }
+    }
+    return { success: true, results };
+  }, [CONFIG, q, makeRpc.toString()]);
+}
+
 /* ════════════════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════════════════ */
@@ -877,6 +1053,7 @@ async function handleMoveTask(e) {
   const $hdr = $('<div id="kb-header">').append(
     $('<span id="kb-title">').html('<span class="kb-dot"></span> Kanboard'),
     $('<span id="kb-status-text">'),
+    $('<span id="kb-queue-badge">').on('click', handleProcessQueue),
     $('<button id="kb-sync-btn">').html('↻ Sincronizar').on('click', handleSync)
   );
 
@@ -941,7 +1118,14 @@ async function handleMoveTask(e) {
 
   const $right = $('<div id="kb-right">').append(
     $('<div id="kb-form-header">').html('✏ Nova Tarefa'),
-    $('<div id="kb-form-body">').append($form)
+    $('<div id="kb-form-body">').append($form),
+    $('<div id="kb-proj-section">').append(
+      $('<div class="kb-label">').text('📁 Novo Projeto'),
+      $('<input id="kb-new-proj-name" class="kb-input" placeholder="Nome do projeto">'),
+      $('<button id="kb-proj-btn" class="kb-btn-primary" style="padding:8px 14px;border:none;border-radius:var(--kb-radius-sm);background:var(--accent-color);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.18s">+ Criar Projeto</button>')
+        .on('click', handleCreateProject),
+      $('<div id="kb-proj-status">')
+    )
   );
 
   /* ── Body ── */
@@ -954,6 +1138,7 @@ async function handleMoveTask(e) {
 
   refreshFormColors();
   refreshAll();
+  refreshQueueBadge();
 
   /* ── Carrega cache ── */
   // 1. localStorage (imediato)

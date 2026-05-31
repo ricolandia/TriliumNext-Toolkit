@@ -22,6 +22,8 @@ All communication with Kanboard is **server-to-server** (Trilium backend → Kan
 - **Search** — filter tasks by title or description in real time
 - **Filter** — narrow tasks by project via dropdown
 - **Move tasks between columns** — inline dropdown on each task row instantly moves it to another column (uses Kanboard's `moveTaskPosition` API)
+- **Create projects** — create new Kanboard projects directly from the dashboard; works offline with a pending sync queue
+- **Offline queue** — project creation and other operations queue locally when the server is unreachable; process them with one click when back online
 - **Create tasks** — choose project, column, color, title, and description
 - **Responsive** — adapts to screen width, form stacks below tasks on mobile
 - **Theme-aware** — uses Trilium's CSS variables, blends with any theme
@@ -118,6 +120,9 @@ Kanboard-Integration/
 | Method | Description |
 |--------|-------------|
 | `getAllProjects` | List all projects |
+| `getProjectByName` | Find project by name (prevents duplicates) |
+| `createProject` | Create a new project |
+| `getProjectById` | Get project details |
 | `getColumns` | List columns for a project |
 | `getAllTasks` | List tasks for a project |
 | `createTask` | Create a new task |
