@@ -121,13 +121,15 @@ Kanboard-Integration/
 |--------|-------------|
 | `getAllProjects` | List all projects |
 | `getProjectByName` | Find project by name (prevents duplicates) |
-| `createProject` | Create a new project |
+| `createProject` | Create a new project (auto-adds user as member) |
 | `getProjectById` | Get project details |
 | `getColumns` | List columns for a project |
 | `getAllTasks` | List tasks for a project |
 | `createTask` | Create a new task |
 | `getTask` | Get task details |
 | `moveTaskPosition` | Move a task to a different column |
+| `getMe` | Get current API user |
+| `addProjectUser` | Add user as project member |
 
 Full API docs: [docs.kanboard.org](https://docs.kanboard.org/en/latest/api/)
 
