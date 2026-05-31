@@ -24,6 +24,8 @@ All communication with Kanboard is **server-to-server** (Trilium backend → Kan
 - **Move tasks between columns** — inline dropdown on each task row instantly moves it to another column (uses Kanboard's `moveTaskPosition` API)
 - **Create projects** — create new Kanboard projects directly from the dashboard; works offline with a pending sync queue
 - **Offline queue** — project creation and other operations queue locally when the server is unreachable; process them with one click when back online
+- **Delete tasks** — remove tasks with a single click (🗑️ icon appears on hover)
+- **Delete projects** — remove entire projects from the dashboard
 - **Create tasks** — choose project, column, color, title, and description
 - **Responsive** — adapts to screen width, form stacks below tasks on mobile
 - **Theme-aware** — uses Trilium's CSS variables, blends with any theme

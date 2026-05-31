@@ -215,6 +215,28 @@ async function moveTaskColumn(taskId, projectId, columnId) {
   }, [CONFIG, taskId, projectId, columnId, makeRpc.toString()]);
 }
 
+/* ── Deletar tarefa ─────────────────────────────────────── */
+
+async function removeKanboardTask(taskId) {
+  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, tId, mkRpcSrc) => {
+    const makeRpcFn = eval('(' + mkRpcSrc + ')');
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    await rpc('removeTask', { task_id: tId });
+    return { success: true };
+  }, [CONFIG, taskId, makeRpc.toString()]);
+}
+
+/* ── Deletar projeto ────────────────────────────────────── */
+
+async function removeKanboardProject(projectId) {
+  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, pId, mkRpcSrc) => {
+    const makeRpcFn = eval('(' + mkRpcSrc + ')');
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    await rpc('removeProject', { project_id: pId });
+    return { success: true };
+  }, [CONFIG, projectId, makeRpc.toString()]);
+}
+
 /* ════════════════════════════════════════════════════════
    UTILITÁRIOS
 ════════════════════════════════════════════════════════ */
@@ -657,6 +679,13 @@ $('<style id="kb-styles">').text(`
   }
   #kb-queue-badge:hover { opacity: 0.85; }
 
+  /* ── Hover delete ── */
+  .kb-del-btn { cursor:pointer; opacity:0.15; transition:opacity 0.15s; font-size:13px; }
+  tr:hover .kb-del-btn { opacity:0.5; }
+  .kb-del-btn:hover { opacity:1 !important; }
+  .kb-del-proj-btn:hover { opacity:0.88; }
+  .kb-del-proj-btn:active { transform:translateY(1px); }
+
   /* ── Config warning ── */
   #kb-config-warn {
     margin: 24px;
@@ -782,7 +811,7 @@ function renderTasks() {
 
   if (!tasks.length) {
     $tb.html(
-      `<tr><td colspan="4">
+      `<tr><td colspan="5">
         <div class="kb-empty">
           <span class="kb-empty-icon">🗂️</span>
           ${cache ? 'Nenhuma tarefa encontrada' : 'Clique em <strong>Sincronizar</strong> para buscar dados'}
@@ -817,11 +846,16 @@ function renderTasks() {
           ${esc(t.color_id || '—')}
         </span>
       </td>
+      <td><span class="kb-del-btn" data-task-id="${t.id}">🗑️</span></td>
     </tr>`;
   }).join(''));
 
   // Delegação: mudança de coluna inline
   $tb.find('.kb-col-select').off('change').on('change', handleMoveTask);
+  // Delegação: deletar tarefa
+  $tb.find('.kb-del-btn').off('click').on('click', function () {
+    handleDeleteTask(Number($(this).data('task-id')));
+  });
 }
 
 function refreshAll() {
@@ -829,7 +863,19 @@ function refreshAll() {
   refreshProjFilter();
   refreshFormProjs();
   refreshFormCols();
+  refreshDelProj();
   renderTasks();
+}
+
+function refreshDelProj() {
+  const $sel = $container.find('#kb-del-proj');
+  if (!$sel.length) return;
+  if (!cache?.projects?.length) {
+    $sel.html('<option value="">Nenhum projeto disponível</option>');
+    return;
+  }
+  $sel.html('<option value="">Selecione…</option>' +
+    cache.projects.map(p => `<option value="${p.id}">${esc(p.name||p.title)}</option>`).join(''));
 }
 
 /* ════════════════════════════════════════════════════════
@@ -923,6 +969,50 @@ async function handleMoveTask(e) {
   }
 
   $sel.removeClass('kb-saving').prop('disabled', false);
+}
+
+async function handleDeleteTask(taskId) {
+  if (!confirm('Deletar esta tarefa permanentemente?')) return;
+  toast('⟳ Deletando…', 'info');
+  const r = await removeKanboardTask(taskId);
+  if (r.success) {
+    if (cache) {
+      cache.tasks = cache.tasks.filter(t => t.id !== taskId);
+      cache.lastSync = new Date().toISOString();
+      saveToStorage(cache);
+      renderTasks();
+      refreshStats();
+    }
+    toast('🗑️ Tarefa deletada', 'success');
+  } else {
+    toast('Erro ao deletar: ' + (r.error || ''), 'error');
+  }
+}
+
+async function handleDeleteProject() {
+  const pid = Number($container.find('#kb-del-proj').val());
+  if (!pid) { toast('Selecione um projeto.', 'error'); return; }
+  const projName = $container.find('#kb-del-proj option:selected').text();
+  if (!confirm('Deletar o projeto "' + projName + '" permanentemente?\nTodas as tarefas serão removidas.')) return;
+
+  const $btn = $container.find('#kb-del-proj-btn').prop('disabled', true);
+  toast('⟳ Deletando projeto…', 'info');
+  const r = await removeKanboardProject(pid);
+  if (r.success) {
+    if (cache) {
+      cache.projects = cache.projects.filter(p => p.id !== pid);
+      cache.tasks = cache.tasks.filter(t => t.project_id !== pid);
+      cache.columns = cache.columns.filter(c => c.project_id !== pid);
+      cache.lastSync = new Date().toISOString();
+      saveToStorage(cache);
+      refreshAll();
+      refreshFormCols();
+    }
+    toast('🗑️ Projeto "' + projName + '" deletado', 'success');
+  } else {
+    toast('Erro ao deletar: ' + (r.error || ''), 'error');
+  }
+  $btn.prop('disabled', false);
 }
 
 async function handleCreateProject() {
@@ -1108,8 +1198,9 @@ async function processPendingOps() {
       $('<tr>').append(
         $('<th>').text('Projeto').css('width','110px'),
         $('<th>').text('Tarefa'),
-        $('<th>').text('Coluna').css('width','165px'),
-        $('<th>').text('Cor').css('width','90px')
+        $('<th>').text('Coluna').css('width','155px'),
+        $('<th>').text('Cor').css('width','85px'),
+        $('<th>').css('width','36px')
       )
     ),
     $('<tbody id="kb-tbody">')
@@ -1152,11 +1243,20 @@ async function processPendingOps() {
     $('<div id="kb-form-header">').html('✏ Nova Tarefa'),
     $('<div id="kb-form-body">').append($form),
     $('<div id="kb-proj-section">').append(
-      $('<div class="kb-label">').text('📁 Novo Projeto'),
+      $('<div class="kb-label">').html('📁 <strong>Novo Projeto</strong>'),
       $('<input id="kb-new-proj-name" class="kb-input" placeholder="Nome do projeto">'),
       $('<button id="kb-proj-btn" style="padding:8px 14px;border:none;border-radius:var(--kb-radius-sm);background:var(--accent-color);color:#fff;font-size:14px;font-weight:600;cursor:pointer;width:100%">+ Criar Projeto</button>')
         .on('click', handleCreateProject),
-      $('<div id="kb-proj-status">')
+      $('<div id="kb-proj-status">'),
+      $('<hr style="border:none;border-top:1px solid color-mix(in srgb, var(--main-border-color) 40%, transparent);margin:8px 0">'),
+      $('<div class="kb-label" style="margin-bottom:4px">').html('🗑️ <strong>Deletar Projeto</strong>'),
+      $('<select id="kb-del-proj" class="kb-input">').append(
+        cache?.projects?.length
+          ? '<option value="">Selecione…</option>' + cache.projects.map(p => `<option value="${p.id}">${esc(p.name||p.title)}</option>`).join('')
+          : '<option value="">Nenhum projeto disponível</option>'
+      ),
+      $('<button id="kb-del-proj-btn" style="padding:8px 14px;border:none;border-radius:var(--kb-radius-sm);background:#ef4444;color:#fff;font-size:14px;font-weight:600;cursor:pointer;width:100%">🗑️ Deletar Projeto</button>')
+        .on('click', handleDeleteProject)
     )
   );
 
