@@ -775,7 +775,7 @@ function renderTasks() {
 
   if (!tasks.length) {
     $tb.html(
-      `<tr><td colspan="5">
+      `<tr><td colspan="4">
         <div class="kb-empty">
           <span class="kb-empty-icon">🗂️</span>
           ${cache ? 'Nenhuma tarefa encontrada' : 'Clique em <strong>Sincronizar</strong> para buscar dados'}
@@ -933,10 +933,18 @@ async function handleCreateProject() {
     $container.find('#kb-new-proj-name').val('');
     $st.text(r.existed ? '✓ Projeto "' + name + '" já existia' : '✓ Projeto "' + name + '" criado!');
     toast('Projeto "' + name + '" ' + (r.existed ? 'já existe' : 'criado!'), r.existed ? 'info' : 'success');
-    // Atualiza cache com o projeto
-    if (cache && r.project) {
-      const exists = cache.projects.find(p => p.id === r.project.id);
-      if (!exists) cache.projects.push(r.project);
+    // Atualiza cache com o projeto e suas colunas
+    if (cache) {
+      if (r.project) {
+        const exists = cache.projects.find(p => p.id === r.project.id);
+        if (!exists) cache.projects.push(r.project);
+      }
+      if (r.columns && r.columns.length) {
+        for (const c of r.columns) {
+          const cExists = cache.columns.find(x => x.id === c.id);
+          if (!cExists) cache.columns.push({ ...c, project_id: c.project_id || r.project.id });
+        }
+      }
       cache.lastSync = new Date().toISOString();
       saveToStorage(cache);
       refreshAll();
@@ -967,10 +975,17 @@ async function handleProcessQueue() {
       if (res.success) {
         ok++;
         removeFromQueue(res.id);
-        // Atualiza cache
-        if (cache && res.project) {
-          const exists = cache.projects.find(p => p.id === res.project.id);
-          if (!exists) cache.projects.push(res.project);
+        if (cache) {
+          if (res.project) {
+            const exists = cache.projects.find(p => p.id === res.project.id);
+            if (!exists) cache.projects.push(res.project);
+          }
+          if (res.columns && res.columns.length) {
+            for (const c of res.columns) {
+              const cExists = cache.columns.find(x => x.id === c.id);
+              if (!cExists) cache.columns.push({ ...c, project_id: c.project_id || res.project.id });
+            }
+          }
         }
       } else {
         fail++;
@@ -995,11 +1010,13 @@ async function createKanboardProject(name) {
     const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
     const existing = await rpc('getProjectByName', { name: projName });
     if (existing) {
-      return { success: true, project: existing, existed: true };
+      const cols = await rpc('getColumns', { project_id: existing.id });
+      return { success: true, project: existing, columns: cols, existed: true };
     }
     const projectId = await rpc('createProject', { name: projName });
     const full = await rpc('getProjectById', { project_id: projectId });
-    return { success: true, project: full, existed: false };
+    const cols = await rpc('getColumns', { project_id: projectId });
+    return { success: true, project: full, columns: cols, existed: false };
   }, [CONFIG, name, makeRpc.toString()]);
 }
 
@@ -1020,11 +1037,13 @@ async function processPendingOps() {
           case 'createProject': {
             const existing = await rpc('getProjectByName', { name: op.name });
             if (existing) {
-              results.push({ id: op.id, success: true, existed: true, project: existing });
+              const cols = await rpc('getColumns', { project_id: existing.id });
+              results.push({ id: op.id, success: true, existed: true, project: existing, columns: cols });
             } else {
               const pid = await rpc('createProject', { name: op.name });
               const full = await rpc('getProjectById', { project_id: pid });
-              results.push({ id: op.id, success: true, existed: false, project: full });
+              const cols = await rpc('getColumns', { project_id: pid });
+              results.push({ id: op.id, success: true, existed: false, project: full, columns: cols });
             }
             break;
           }
@@ -1122,7 +1141,7 @@ async function processPendingOps() {
     $('<div id="kb-proj-section">').append(
       $('<div class="kb-label">').text('📁 Novo Projeto'),
       $('<input id="kb-new-proj-name" class="kb-input" placeholder="Nome do projeto">'),
-      $('<button id="kb-proj-btn" class="kb-btn-primary" style="padding:8px 14px;border:none;border-radius:var(--kb-radius-sm);background:var(--accent-color);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.18s">+ Criar Projeto</button>')
+      $('<button id="kb-proj-btn" style="padding:8px 14px;border:none;border-radius:var(--kb-radius-sm);background:var(--accent-color);color:#fff;font-size:14px;font-weight:600;cursor:pointer;width:100%">+ Criar Projeto</button>')
         .on('click', handleCreateProject),
       $('<div id="kb-proj-status">')
     )
