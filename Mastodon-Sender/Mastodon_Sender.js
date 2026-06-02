@@ -16,7 +16,8 @@ const CONFIG = {
   ],
 };
 
-const LS_KEY = 'ms_history';
+const LS_KEY     = 'ms_history';
+const LS_LAST_ID = 'ms_last_notif_id_';
 
 /* ════════════════════════════════════════════════════════
    ESTADO
@@ -24,6 +25,8 @@ const LS_KEY = 'ms_history';
 
 let posting = false;
 let history = [];
+let notifications = [];
+let notifOpen = false;
 let currentAccountIdx = 0;
 
 function getAccount() {
@@ -40,6 +43,15 @@ function loadHistory() {
 }
 function saveHistory() {
   try { localStorage.setItem(LS_KEY, JSON.stringify(history.slice(0, 20))); } catch (_) {}
+}
+
+/* ── Notificações ────────────────────────────────────────── */
+
+function loadLastNotifId() {
+  try { return localStorage.getItem(LS_LAST_ID + currentAccountIdx) || ''; } catch (_) { return ''; }
+}
+function saveLastNotifId(id) {
+  try { localStorage.setItem(LS_LAST_ID + currentAccountIdx, id); } catch (_) {}
 }
 
 /* ════════════════════════════════════════════════════════
@@ -88,6 +100,25 @@ async function getCurrentNote() {
     }
   });
 }
+
+/* ── Notificações ────────────────────────────────────────── */
+
+async function fetchNotifications(account, sinceId) {
+  return api.runAsyncOnBackendWithManualTransactionHandling(async (acct, since) => {
+    const { instance, token } = acct;
+    let url = instance.replace(/\/+$/, '') + '/api/v1/notifications?limit=15&exclude_types[]=follow&exclude_types[]=favourite&exclude_types[]=poll';
+    if (since) url += '&since_id=' + since;
+    try {
+      const resp = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+      const data = await resp.json();
+      if (!resp.ok) return { success: false, error: data.error || 'HTTP ' + resp.status };
+      return { success: true, data };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }, [account, sinceId || null]);
+}
+
 
 /* ════════════════════════════════════════════════════════
    CSS
@@ -399,6 +430,72 @@ $('<style id="ms-styles">').text(`
     transition: opacity 0.25s, transform 0.25s;
     font-family: var(--ms-font);
   }
+
+  /* ── Notification badge ── */
+  #ms-notif-btn {
+    position:relative; cursor:pointer; font-size:18px;
+    background:none; border:none; padding:2px 4px;
+    font-family:var(--ms-font);
+    transition:opacity var(--ms-transition);
+    display:flex; align-items:center;
+  }
+  #ms-notif-btn:hover { opacity:0.75; }
+  #ms-notif-count {
+    position:absolute; top:-4px; right:-6px;
+    background:#ef4444; color:#fff;
+    font-size:10px; font-weight:700;
+    min-width:16px; height:16px; line-height:17px;
+    text-align:center; border-radius:8px;
+    padding:0 4px; display:none;
+  }
+
+  /* ── Notification panel ── */
+  #ms-notif-panel {
+    border:1px solid color-mix(in srgb, var(--main-border-color) 60%, transparent);
+    border-radius:var(--ms-radius);
+    box-shadow:var(--ms-shadow);
+    background:color-mix(in srgb, var(--main-background-color) 90%, transparent);
+    overflow:hidden; display:none; flex-direction:column;
+    flex:1; min-height:0;
+  }
+  #ms-notif-panel.ms-open { display:flex; }
+  #ms-notif-header {
+    padding:12px 16px;
+    font-size:13px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.6px; color:var(--muted-text-color);
+    border-bottom:1px solid color-mix(in srgb, var(--main-border-color) 40%, transparent);
+    background:color-mix(in srgb, var(--main-border-color) 6%, transparent);
+    display:flex; align-items:center; gap:8px;
+  }
+  #ms-notif-header .ms-close {
+    margin-left:auto; cursor:pointer; font-size:16px; opacity:0.5;
+  }
+  #ms-notif-header .ms-close:hover { opacity:1; }
+  #ms-notif-list {
+    overflow-y:auto; padding:4px 0; flex:1;
+  }
+  #ms-notif-list::-webkit-scrollbar { width:4px; }
+  #ms-notif-list::-webkit-scrollbar-thumb {
+    background:color-mix(in srgb, var(--main-border-color) 80%, transparent);
+    border-radius:10px;
+  }
+  .ms-notif-item {
+    display:flex; gap:10px; padding:10px 16px;
+    border-bottom:1px solid color-mix(in srgb, var(--main-border-color) 10%, transparent);
+    cursor:pointer; transition:background var(--ms-transition);
+  }
+  .ms-notif-item:hover { background:color-mix(in srgb, var(--accent-color) 4%, transparent); }
+  .ms-notif-item:last-child { border-bottom:none; }
+  .ms-notif-icon { font-size:16px; margin-top:2px; flex-shrink:0; }
+  .ms-notif-body { flex:1; min-width:0; }
+  .ms-notif-title { font-size:14px; font-weight:600; color:var(--main-text-color); }
+  .ms-notif-preview { font-size:13px; color:var(--muted-text-color); margin-top:1px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ms-notif-time { font-size:11px; color:var(--muted-text-color); margin-top:2px; }
+  .ms-notif-empty {
+    text-align:center; padding:32px 20px; color:var(--muted-text-color);
+    font-style:italic; font-size:14px;
+  }
 `).appendTo('head');
 
 /* ════════════════════════════════════════════════════════
@@ -546,6 +643,86 @@ async function handleCurrentNote() {
 }
 
 /* ════════════════════════════════════════════════════════
+   NOTIFICAÇÕES
+════════════════════════════════════════════════════════ */
+
+async function refreshNotifications() {
+  const account = getAccount();
+  if (!account) return;
+  const sinceId = loadLastNotifId();
+  const r = await fetchNotifications(account, sinceId);
+  if (!r.success) return;
+
+  const newNotifs = r.data || [];
+  if (newNotifs.length) {
+    // Merge com notificações existentes (evita duplicatas)
+    const existing = new Set(notifications.map(n => n.id));
+    for (const n of newNotifs) if (!existing.has(n.id)) notifications.unshift(n);
+    notifications = notifications.slice(0, 30);
+    saveLastNotifId(notifications[0].id);
+  }
+  renderNotifBadge();
+  if (notifOpen) renderNotifPanel();
+}
+
+function renderNotifBadge() {
+  const $btn = $container.find('#ms-notif-btn');
+  const $count = $container.find('#ms-notif-count');
+  // Conta "não lidas" = desde o último ID salvo
+  const lastId = loadLastNotifId();
+  const unread = lastId ? notifications.filter(n => n.id > lastId).length : notifications.length;
+  $count.text(unread).toggle(unread > 0);
+}
+
+function renderNotifPanel() {
+  const $list = $container.find('#ms-notif-list');
+  if (!notifications.length) {
+    $list.html('<div class="ms-notif-empty">No notifications yet</div>');
+    return;
+  }
+  $list.html(notifications.map(n => {
+    const icon = n.type === 'mention' ? '💬' : n.type === 'reblog' ? '🔁' : n.type === 'follow' ? '👤' : n.type === 'poll' ? '📊' : '🔔';
+    const name = n.account ? '@' + esc(n.account.acct || n.account.username || '?') : '—';
+    let preview = '';
+    if (n.status && n.status.content) preview = n.status.content.replace(/<[^>]+>/g, '').trim().slice(0, 120);
+    const time = new Date(n.created_at).toLocaleString();
+    const url = (n.status && (n.status.url || n.status.uri)) || (n.account && n.account.url) || '';
+    const safeUrl = esc(url).replace(/'/g, '%27');
+    return '<div class="ms-notif-item" onclick="window.open(\'' + safeUrl + '\',\'_blank\')">' +
+      '<span class="ms-notif-icon">' + icon + '</span>' +
+      '<div class="ms-notif-body">' +
+        '<div class="ms-notif-title">' + esc(name) + '</div>' +
+        (preview ? '<div class="ms-notif-preview">' + esc(preview) + '</div>' : '') +
+        '<div class="ms-notif-time">' + esc(time) + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join(''));
+}
+
+function toggleNotifPanel() {
+  notifOpen = !notifOpen;
+  $container.find('#ms-notif-panel').toggleClass('ms-open', notifOpen);
+  if (notifOpen) {
+    renderNotifPanel();
+    // Marca como lido
+    if (notifications.length) saveLastNotifId(notifications[0].id);
+    renderNotifBadge();
+  }
+}
+
+/* ── Auto-refresh ────────────────────────────────────────── */
+
+let notifTimer = null;
+function startNotifPoll() {
+  if (notifTimer) clearInterval(notifTimer);
+  refreshNotifications();
+  notifTimer = setInterval(refreshNotifications, 60000);
+}
+function stopNotifPoll() {
+  if (notifTimer) { clearInterval(notifTimer); notifTimer = null; }
+}
+
+/* ════════════════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════════════════ */
 
@@ -564,12 +741,16 @@ async function handleCurrentNote() {
     ).join(''))
     .on('change', function () {
       currentAccountIdx = parseInt($(this).val());
+      notifications = [];
       $container.find('#ms-status-text').text('✓ Switched to ' + getAccount().name);
       setTimeout(() => $container.find('#ms-status-text').text(''), 3000);
+      refreshNotifications();
     });
+  const $notifBtn = $('<button id="ms-notif-btn">').html('🔔<span id="ms-notif-count"></span>').on('click', toggleNotifPanel);
   const $hdr = $('<div id="ms-header">').append(
     $('<div id="ms-title">').html('<span class="ms-dot"></span> Mastodon'),
     $acctSel,
+    $notifBtn,
     $('<span id="ms-status-text">')
   );
 
@@ -612,10 +793,20 @@ async function handleCurrentNote() {
     $historyList
   );
 
+  /* ── Notification panel ── */
+  const $notifList = $('<div id="ms-notif-list">');
+  const $notifPanel = $('<div id="ms-notif-panel">').append(
+    $('<div id="ms-notif-header">').html('🔔 Notifications<span class="ms-close">✕</span>')
+      .on('click', '.ms-close', toggleNotifPanel),
+    $notifList
+  );
+
   /* ── App ── */
-  const $app = $('<div id="ms-app">').append($hdr, $card, $historyPanel);
+  const $app = $('<div id="ms-app">').append($hdr, $card, $notifPanel, $historyPanel);
   $root.append($app);
 
   updateCounter();
   refreshHistory();
+  refreshNotifications();
+  startNotifPoll();
 })();
