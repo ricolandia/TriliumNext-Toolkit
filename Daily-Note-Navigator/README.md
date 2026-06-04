@@ -4,10 +4,14 @@ A right-pane widget for TriliumNext that adds **previous / next day** navigation
 
 ## Features
 
-- ← → buttons to navigate between daily notes
+- ← → buttons and **arrow keys** to navigate between daily notes
+- « » buttons to jump between months
+- 📅 button to instantly return to today
 - Shows the current date in `DD/MM/YYYY` format
+- Inline notifications when no note exists for a given day
+- Day cache for instant navigation (no repeated backend calls)
 - Automatically hides when the active note is not a day note
-- Lightweight — 120 lines, zero dependencies
+- Lightweight — zero dependencies
 
 ## Installation
 
@@ -28,7 +32,14 @@ A right-pane widget for TriliumNext that adds **previous / next day** navigation
 
 Open any note that has a `#dateNote` label (daily journal notes created via Trilium's calendar/journal feature). The navigation bar appears in the right pane.
 
-Click the arrow buttons to jump to the previous or next day's note.
+| Control | Action |
+|---------|--------|
+| ← / → buttons | Previous / next day |
+| ← / → arrow keys | Previous / next day |
+| « / » buttons | Previous / next month |
+| 📅 button | Return to today |
+
+Days you visit are cached, so navigating back is instant.
 
 ## Labels
 
