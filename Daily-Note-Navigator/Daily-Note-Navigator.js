@@ -1,44 +1,69 @@
+// ════════════════════════════════════════════════════════════════
+//  Daily Note Navigator — TriliumNext Widget
+//  MIME: application/javascript;env=frontend
+//  Label: #widget
+//
+//  Navegação entre notas de diário (dias anterior/seguinte)
+//  Exibido no painel direito quando a nota ativa tem #dateNote
+// ════════════════════════════════════════════════════════════════
+
 const TPL = `
-<style>
-  .dnn-bar {
-    padding: 6px 10px;
+<div>
+  <div style="
+    padding: 6px 10px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted-text-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--main-border-color);
+  ">📅 Day Note Nav</div>
+
+  <div style="
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    padding: 6px 10px;
     border-top: 1px solid var(--main-border-color);
-  }
-  .dnn-btn {
-    flex: 1;
-    background: var(--button-background-color);
-    color: var(--button-text-color);
-    border: 1px solid var(--main-border-color);
-    border-radius: 4px;
-    padding: 4px 0;
-    cursor: pointer;
-    font-size: 18px;
-  }
-  .dnn-btn:hover { filter: brightness(1.1); }
-  .dnn-label {
-    font-size: 11px;
-    color: var(--muted-text-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 120px;
-    text-align: center;
-  }
-</style>
-<div class="dnn-bar">
-  <button class="dnn-btn" id="prev-day-btn" title="Dia anterior">←</button>
-  <span class="dnn-label" id="day-label"></span>
-  <button class="dnn-btn" id="next-day-btn" title="Próximo dia">→</button>
+  ">
+    <button id="prev-day-btn" title="Dia anterior" style="
+      flex: 1;
+      background: var(--button-background-color);
+      color: var(--button-text-color);
+      border: 1px solid var(--main-border-color);
+      border-radius: 4px;
+      padding: 4px 0;
+      cursor: pointer;
+      font-size: 18px;
+    ">←</button>
+
+    <span id="day-label" style="
+      font-size: 11px;
+      color: var(--muted-text-color);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+      text-align: center;
+    "></span>
+
+    <button id="next-day-btn" title="Próximo dia" style="
+      flex: 1;
+      background: var(--button-background-color);
+      color: var(--button-text-color);
+      border: 1px solid var(--main-border-color);
+      border-radius: 4px;
+      padding: 4px 0;
+      cursor: pointer;
+      font-size: 18px;
+    ">→</button>
+  </div>
 </div>`;
 
 class DayNoteNavigatorWidget extends api.NoteContextAwareWidget {
   get position() { return 100; }
   get parentWidget() { return "right-pane"; }
-  get widgetTitle() { return "📅 Day Note Nav"; }
 
   isEnabled() {
     return super.isEnabled() && this._isDayNote();
@@ -64,11 +89,15 @@ class DayNoteNavigatorWidget extends api.NoteContextAwareWidget {
   }
 
   doRenderBody() {
-    const $el = $(TPL);
-    $el.find("#prev-day-btn").on("click", () => this._navigate(-1));
-    $el.find("#next-day-btn").on("click", () => this._navigate(+1));
-    this.$label = $el.find("#day-label");
-    return $el;
+    this.$widget = $(TPL);
+    this.$prevBtn = this.$widget.find("#prev-day-btn");
+    this.$nextBtn = this.$widget.find("#next-day-btn");
+    this.$label   = this.$widget.find("#day-label");
+
+    this.$prevBtn.on("click", () => this._navigate(-1));
+    this.$nextBtn.on("click", () => this._navigate(+1));
+
+    return this.$widget;
   }
 
   async _navigate(offset) {
