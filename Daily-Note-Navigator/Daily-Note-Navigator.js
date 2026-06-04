@@ -63,7 +63,7 @@ class DayNoteNavigatorWidget extends api.NoteContextAwareWidget {
     return `${d}/${m}/${y}`;
   }
 
-  doRender() {
+  doRenderBody() {
     const $el = $(TPL);
     $el.find("#prev-day-btn").on("click", () => this._navigate(-1));
     $el.find("#next-day-btn").on("click", () => this._navigate(+1));
