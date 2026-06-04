@@ -8,62 +8,50 @@
 // ════════════════════════════════════════════════════════════════
 
 const TPL = `
-<div>
-  <div style="
-    padding: 6px 10px 4px;
+<div style="
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+">
+  <button id="prev-day-btn" title="Dia anterior" style="
+    flex: 1;
+    background: var(--button-background-color);
+    color: var(--button-text-color);
+    border: 1px solid var(--main-border-color);
+    border-radius: 4px;
+    padding: 4px 0;
+    cursor: pointer;
+    font-size: 18px;
+  ">←</button>
+
+  <span id="day-label" style="
     font-size: 11px;
-    font-weight: 600;
     color: var(--muted-text-color);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid var(--main-border-color);
-  ">📅 Day Note Nav</div>
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    text-align: center;
+  "></span>
 
-  <div style="
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 6px 10px;
-    border-top: 1px solid var(--main-border-color);
-  ">
-    <button id="prev-day-btn" title="Dia anterior" style="
-      flex: 1;
-      background: var(--button-background-color);
-      color: var(--button-text-color);
-      border: 1px solid var(--main-border-color);
-      border-radius: 4px;
-      padding: 4px 0;
-      cursor: pointer;
-      font-size: 18px;
-    ">←</button>
-
-    <span id="day-label" style="
-      font-size: 11px;
-      color: var(--muted-text-color);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 120px;
-      text-align: center;
-    "></span>
-
-    <button id="next-day-btn" title="Próximo dia" style="
-      flex: 1;
-      background: var(--button-background-color);
-      color: var(--button-text-color);
-      border: 1px solid var(--main-border-color);
-      border-radius: 4px;
-      padding: 4px 0;
-      cursor: pointer;
-      font-size: 18px;
-    ">→</button>
-  </div>
+  <button id="next-day-btn" title="Próximo dia" style="
+    flex: 1;
+    background: var(--button-background-color);
+    color: var(--button-text-color);
+    border: 1px solid var(--main-border-color);
+    border-radius: 4px;
+    padding: 4px 0;
+    cursor: pointer;
+    font-size: 18px;
+  ">→</button>
 </div>`;
 
 class DayNoteNavigatorWidget extends api.NoteContextAwareWidget {
   get position() { return 100; }
   get parentWidget() { return "right-pane"; }
+  get widgetTitle() { return "📅 Day Note Nav"; }
 
   isEnabled() {
     return super.isEnabled() && this._isDayNote();
