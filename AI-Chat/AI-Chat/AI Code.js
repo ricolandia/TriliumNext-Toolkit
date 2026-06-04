@@ -99,12 +99,12 @@ $c.html(`
   .btn-cmd:hover:not(:disabled) { filter: brightness(1.15); }
   .btn-cmd:disabled { opacity: 0.45; cursor: not-allowed; }
 
-  /* ── Mensagens ── */
+  /* ── Toolbar ── */
   .chat-toolbar {
-    display: flex; align-items: center; gap: 6px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
   }
   .chat-toolbar input {
-    flex: 1; padding: 5px 10px; font-size: 13px;
+    flex: 1; min-width: 100px; padding: 5px 10px; font-size: 13px;
     border: 1px solid var(--main-border-color); border-radius: 4px;
     background: var(--accented-background-color);
     color: var(--main-text-color); outline: none;
@@ -117,22 +117,36 @@ $c.html(`
   }
   .chat-toolbar .btn-icon:hover { filter: brightness(1.1); }
 
+  .model-badge {
+    font-size: 11px; opacity: 0.5; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; max-width: 140px;
+  }
+
+  ::placeholder { color: var(--muted-text-color); opacity: 0.5; }
+  :-ms-input-placeholder { color: var(--muted-text-color); opacity: 0.5; }
+
+  /* ── Mensagens ── */
   .chat-messages {
     flex: 1; overflow-y: auto; min-height: 140px;
     border: 1px solid var(--main-border-color);
     border-radius: 6px; padding: 10px;
-    display: flex; flex-direction: column; gap: 8px;
+    display: flex; flex-direction: column; gap: 6px;
   }
-  .msg { display: flex; flex-direction: column; gap: 2px; }
+  .msg { display: flex; flex-direction: column; gap: 1px; }
   .msg-header {
     display: flex; align-items: center; gap: 6px;
-    margin-bottom: 1px;
   }
-  .msg-label { font-size: 13px; font-weight: 700; opacity: 0.55; text-transform: uppercase; letter-spacing: 0.04em; }
+  .msg-label {
+    font-size: 12px; font-weight: 700; opacity: 0.55;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .msg-timestamp {
+    font-size: 11px; opacity: 0.35; margin-left: 2px;
+  }
   .msg-actions { display: none; margin-left: auto; gap: 3px; }
   .msg:hover .msg-actions { display: flex; }
   .msg-actions button {
-    padding: 1px 6px; font-size: 12px; cursor: pointer;
+    padding: 1px 6px; font-size: 11px; cursor: pointer;
     border: none; background: transparent; color: var(--muted-text-color);
     border-radius: 3px; opacity: 0.6;
   }
@@ -151,6 +165,20 @@ $c.html(`
     border-left: 3px solid var(--main-color, #448);
     border-radius: 0 4px 4px 0;
   }
+  .msg + .msg-user .msg-label,
+  .msg + .msg-ai .msg-label { display: none; }
+  .msg + .msg-user .msg-header,
+  .msg + .msg-ai .msg-header { margin-top: 6px; }
+  .msg-user + .msg-user .msg-header { margin-top: 0; }
+  .msg-ai + .msg-ai .msg-header { margin-top: 0; }
+
+  .msg-collapse-toggle {
+    display: inline-block; margin-top: 4px; padding: 2px 8px;
+    font-size: 12px; cursor: pointer; border: none; border-radius: 3px;
+    background: transparent; color: var(--main-color, #448); opacity: 0.7;
+  }
+  .msg-collapse-toggle:hover { opacity: 1; text-decoration: underline; }
+
   .msg-error .msg-body { color: #c0392b; font-style: italic; font-size: 14px; }
   .msg-system .msg-body { font-size: 13px; text-align: center; opacity: 0.45; font-style: italic; }
   .msg-hidden { display: none; }
@@ -171,8 +199,7 @@ $c.html(`
   .msg-body li { margin: 2px 0; }
   .msg-body blockquote {
     margin: 6px 0; padding: 4px 10px;
-    border-left: 3px solid var(--main-border-color);
-    opacity: 0.85;
+    border-left: 3px solid var(--main-border-color); opacity: 0.85;
   }
   .msg-body code {
     padding: 1px 5px; font-size: 0.9em;
@@ -197,10 +224,7 @@ $c.html(`
     border: 1px solid var(--main-border-color);
     padding: 4px 8px; text-align: left;
   }
-  .msg-body th {
-    background: rgba(128,128,128,0.1);
-    font-weight: 600;
-  }
+  .msg-body th { background: rgba(128,128,128,0.1); font-weight: 600; }
   .msg-body hr { margin: 8px 0; border: none; border-top: 1px solid var(--main-border-color); }
   .msg-body a { color: var(--main-color, #448); text-decoration: underline; }
   .msg-body img { max-width: 100%; border-radius: 4px; margin: 4px 0; }
@@ -223,6 +247,13 @@ $c.html(`
   }
   .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
   .btn-send:not(:disabled):hover { filter: brightness(1.1); }
+  .btn-send.stop {
+    background: #c0392b; animation: pulseStop 1s ease-in-out infinite;
+  }
+  @keyframes pulseStop {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
   .btn-secondary {
     padding: 7px 14px; cursor: pointer;
     border-radius: 5px; font-size: 13px; font-weight: 600; white-space: nowrap;
@@ -237,17 +268,38 @@ $c.html(`
     padding: 2px 4px; align-self: flex-end;
   }
   .btn-danger:hover { color: #c0392b; }
-  .typing { display: none; font-size: 13px; color: var(--muted-text-color); font-style: italic; padding: 0 2px; }
+  .typing {
+    display: none; font-size: 13px;
+    color: var(--muted-text-color); font-style: italic;
+    padding: 0 2px; opacity: 0.6;
+  }
   .typing.visible { display: block; }
 
-  /* ── Copiado toast ── */
-  .copy-toast {
+  /* ── Toast ── */
+  .toast {
     position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
-    background: var(--main-color, #448); color: #fff;
     padding: 6px 16px; border-radius: 6px; font-size: 13px;
     z-index: 999; opacity: 0; transition: opacity 0.25s; pointer-events: none;
+    white-space: nowrap;
   }
-  .copy-toast.show { opacity: 1; }
+  .toast.show { opacity: 1; }
+  .toast-info { background: var(--main-color, #448); color: #fff; }
+  .toast-error { background: #c0392b; color: #fff; }
+
+  /* ── Responsivo ── */
+  @media (max-width: 500px) {
+    .chat-wrap { padding: 8px; gap: 6px; }
+    .chat-ctx { flex-wrap: wrap; font-size: 13px; padding: 8px 10px; }
+    .chat-ctx-title { max-width: 120px; }
+    .chat-persona { padding: 8px 10px; }
+    .chat-cmds { padding: 6px 10px; }
+    .chat-cmds .btn-cmd { font-size: 12px; padding: 3px 8px; }
+    .chat-messages { padding: 8px; min-height: 100px; }
+    .chat-footer textarea { font-size: 14px; }
+    .btn-send, .btn-secondary { padding: 6px 10px; font-size: 13px; }
+    .chat-actions { gap: 3px; }
+    .model-badge { max-width: 80px; font-size: 10px; }
+  }
 </style>
 
 <div class="chat-wrap">
@@ -263,11 +315,11 @@ $c.html(`
     <div class="persona-row">
       <span class="chat-label">Especialista:</span>
       <select id="persona-select"></select>
-      <button class="btn-persona-toggle" id="btn-persona-toggle">✎ Editar</button>
+      <button class="btn-persona-toggle" id="btn-persona-toggle">\u270E Editar</button>
     </div>
     <div class="persona-prompt-wrap" id="persona-prompt-wrap">
       <textarea id="system-prompt-input" rows="3" placeholder="Prompt de sistema personalizado..."></textarea>
-      <div class="persona-hint">Substitui o prompt padrão. Altere aqui ou selecione um especialista.</div>
+      <div class="persona-hint">Substitui o prompt padr\u00E3o. Altere aqui ou selecione um especialista.</div>
     </div>
   </div>
 
@@ -281,12 +333,13 @@ $c.html(`
 
   <div class="chat-toolbar">
     <span class="chat-label" style="opacity:0.5;font-size:12px;">0 msgs</span>
+    <span class="model-badge" id="model-badge"></span>
     <input id="search-input" placeholder="Buscar na conversa..." style="display:none;" />
-    <button class="btn-icon" id="btn-toggle-search" title="Buscar">⌕</button>
+    <button class="btn-icon" id="btn-toggle-search" title="Buscar">\u2315</button>
   </div>
 
   <div class="chat-messages" id="messages">
-    <div class="msg msg-system"><div class="msg-body">Carregue uma nota como contexto e faça sua pergunta — ou use os botões acima para gerar notas filhas.</div></div>
+    <div class="msg msg-system"><div class="msg-body">Carregue uma nota como contexto e fa\u00E7a sua pergunta — ou use os bot\u00F5es acima para gerar notas filhas.</div></div>
   </div>
   <span class="typing" id="typing">IA processando...</span>
 
@@ -300,7 +353,7 @@ $c.html(`
   </div>
 </div>
 
-<div class="copy-toast" id="copy-toast">Copiado!</div>
+<div class="toast toast-info" id="toast"></div>
 `);
 
 // ═══════════════════════════════════════════════════════════════════
@@ -309,11 +362,11 @@ $c.html(`
 
 async function loadMarked() {
   if (window.marked) return window.marked;
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/marked@5.1.2/marked.min.js';
     s.onload = () => resolve(window.marked);
-    s.onerror = () => { console.warn('marked CDN falhou, markdown desativado'); resolve(null); };
+    s.onerror = () => { console.warn('marked CDN falhou'); resolve(null); };
     document.head.appendChild(s);
   });
 }
@@ -355,6 +408,8 @@ function renderMarkdown(text) {
 
 let history = [];
 let ctxNoteId = null;
+let _modelLabel = '';
+let _isRestoring = false;
 
 const STORAGE_KEY = 'ai_chat_state';
 
@@ -380,7 +435,9 @@ function loadState() {
       ctxNoteId = data.ctxNoteId || null;
       if (data.personaId) $c.find('#persona-select').val(data.personaId);
       if (data.systemPrompt) $c.find('#system-prompt-input').val(data.systemPrompt);
+      _isRestoring = true;
       restoreMessages();
+      _isRestoring = false;
     }
   } catch {}
 }
@@ -391,10 +448,10 @@ function restoreMessages() {
   history.forEach((m, i) => {
     if (m.role === 'system') return;
     const role = m.role === 'user' ? 'user' : 'ai';
-    appendMsg(role, m.content, i);
+    appendMsg(role, m.content, i, m.ts);
   });
   if (!history.length) {
-    $msgs.html('<div class="msg msg-system"><div class="msg-body">Carregue uma nota como contexto e faça sua pergunta — ou use os botões acima para gerar notas filhas.</div></div>');
+    $msgs.html('<div class="msg msg-system"><div class="msg-body">Carregue uma nota como contexto e fa\u00E7a sua pergunta — ou use os bot\u00F5es acima para gerar notas filhas.</div></div>');
   }
   updateMsgCount();
 }
@@ -404,13 +461,13 @@ function restoreMessages() {
 // ═══════════════════════════════════════════════════════════════════
 
 const PERSONAS = [
-  { id: 'default', label: '\u22A1 Assistente geral', prompt: 'Você é um assistente de conhecimento pessoal integrado ao Trilium Notes. Seja claro e conciso.' },
-  { id: 'researcher', label: '\u25C8 Pesquisador', prompt: 'Você é um pesquisador acadêmico rigoroso. Analise o conteúdo com profundidade, cite evidências, aponte lacunas e sugira fontes complementares. Use linguagem precisa e estruturada. Prefira respostas organizadas com subtópicos quando relevante.' },
-  { id: 'teacher', label: '\u25B7 Professor', prompt: 'Você é um professor didático e paciente. Explique os conceitos de forma clara, usando analogias e exemplos práticos. Adapte a complexidade à pergunta e sempre verifique se o aluno entendeu antes de avançar. Incentive a curiosidade.' },
-  { id: 'critic', label: '\u25CB Crítico', prompt: 'Você é um crítico analítico e construtivo. Identifique pontos fracos, premissas questionáveis, contradições e argumentos que precisam de reforço. Seja direto mas justo. Ao apontar problemas, sugira melhorias concretas.' },
-  { id: 'programmer', label: '\u25B8 Programador', prompt: 'Você é um engenheiro de software sênior. Ao responder, prefira código funcional, explique decisões arquiteturais, aponte trade-offs e siga boas práticas. Use blocos de código com a linguagem especificada. Seja preciso e pragmático.' },
-  { id: 'writer', label: '\u270E Escritor', prompt: 'Você é um escritor e editor experiente. Ajude a estruturar ideias, melhorar clareza, ritmo e coesão textual. Sugira reformulações quando necessário. Valorize a voz original do autor enquanto eleva a qualidade do texto.' },
-  { id: 'socratic', label: '\u25C7 Socrático', prompt: 'Você é um facilitador socrático. Em vez de dar respostas diretas, faça perguntas que estimulem a reflexão e levem o interlocutor a descobrir as respostas por si mesmo. Desafie premissas gentilmente. Só forneça a resposta direta se explicitamente solicitado.' },
+  { id: 'default', label: '\u22A1 Assistente geral', prompt: 'Voc\u00EA \u00E9 um assistente de conhecimento pessoal integrado ao Trilium Notes. Seja claro e conciso.' },
+  { id: 'researcher', label: '\u25C8 Pesquisador', prompt: 'Voc\u00EA \u00E9 um pesquisador acad\u00EAmico rigoroso. Analise o conte\u00FAdo com profundidade, cite evid\u00EAncias, aponte lacunas e sugira fontes complementares. Use linguagem precisa e estruturada. Prefira respostas organizadas com subt\u00F3picos quando relevante.' },
+  { id: 'teacher', label: '\u25B7 Professor', prompt: 'Voc\u00EA \u00E9 um professor did\u00E1tico e paciente. Explique os conceitos de forma clara, usando analogias e exemplos pr\u00E1ticos. Adapte a complexidade \u00E0 pergunta e sempre verifique se o aluno entendeu antes de avan\u00E7ar. Incentive a curiosidade.' },
+  { id: 'critic', label: '\u25CB Cr\u00EDtico', prompt: 'Voc\u00EA \u00E9 um cr\u00EDtico anal\u00EDtico e construtivo. Identifique pontos fracos, premissas question\u00E1veis, contradi\u00E7\u00F5es e argumentos que precisam de refor\u00E7o. Seja direto mas justo. Ao apontar problemas, sugira melhorias concretas.' },
+  { id: 'programmer', label: '\u25B8 Programador', prompt: 'Voc\u00EA \u00E9 um engenheiro de software s\u00EAnior. Ao responder, prefira c\u00F3digo funcional, explique decis\u00F5es arquiteturais, aponte trade-offs e siga boas pr\u00E1ticas. Use blocos de c\u00F3digo com a linguagem especificada. Seja preciso e pragm\u00E1tico.' },
+  { id: 'writer', label: '\u270E Escritor', prompt: 'Voc\u00EA \u00E9 um escritor e editor experiente. Ajude a estruturar ideias, melhorar clareza, ritmo e coes\u00E3o textual. Sugira reformula\u00E7\u00F5es quando necess\u00E1rio. Valorize a voz original do autor enquanto eleva a qualidade do texto.' },
+  { id: 'socratic', label: '\u25C7 Socr\u00E1tico', prompt: 'Voc\u00EA \u00E9 um facilitador socr\u00E1tico. Em vez de dar respostas diretas, fa\u00E7a perguntas que estimulem a reflex\u00E3o e levem o interlocutor a descobrir as respostas por si mesmo. Desafie premissas gentilmente. S\u00F3 forne\u00E7a a resposta direta se explicitamente solicitado.' },
   { id: 'custom', label: '\u2699 Personalizado', prompt: '' }
 ];
 
@@ -448,7 +505,7 @@ $c.find('#system-prompt-input').on('input', function() {
 
 function getSystemPrompt() {
   return $c.find('#system-prompt-input').val().trim() ||
-    'Você é um assistente de conhecimento pessoal integrado ao Trilium Notes. Seja claro e conciso.';
+    'Voc\u00EA \u00E9 um assistente de conhecimento pessoal integrado ao Trilium Notes. Seja claro e conciso.';
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -458,54 +515,27 @@ function getSystemPrompt() {
 const COMMANDS = [
   {
     id: 'resumo', label: 'Resumo',
-    childTitle: (t) => 'Resumo — ' + t,
-    prompt: `Crie um resumo completo desta nota preservando:
-- O tema central e a linha argumentativa
-- Todos os links e URLs mencionados (mantenha-os clicáveis como <a href="...">)
-- A bibliografia e referências completas
-
-Formate a resposta em HTML limpo usando <h2>, <p> e <ul> onde adequado.
-Não inclua comentários introdutórios — comece direto pelo conteúdo.`,
+    childTitle: (t) => 'Resumo \u2014 ' + t,
+    prompt: 'Crie um resumo completo desta nota preservando:\n- O tema central e a linha argumentativa\n- Todos os links e URLs mencionados (mantenha-os clic\u00E1veis como <a href="...">)\n- A bibliografia e refer\u00EAncias completas\n\nFormate a resposta em HTML limpo usando <h2>, <p> e <ul> onde adequado.\nN\u00E3o inclua coment\u00E1rios introdut\u00F3rios \u2014 comece direto pelo conte\u00FAdo.',
     noteType: 'text', mime: null, process: (s) => s
   },
   {
     id: 'mermaid', label: 'Mermaid',
-    childTitle: (t) => 'Fluxo — ' + t,
-    prompt: `Crie um diagrama Mermaid (flowchart LR, mindmap ou sequenceDiagram conforme o mais adequado) representando os conceitos e relações principais desta nota.
-Retorne APENAS o código Mermaid puro, sem blocos de markdown (sem \`\`\`), sem explicações, sem texto adicional.`,
+    childTitle: (t) => 'Fluxo \u2014 ' + t,
+    prompt: 'Crie um diagrama Mermaid (flowchart LR, mindmap ou sequenceDiagram conforme o mais adequado) representando os conceitos e rela\u00E7\u00F5es principais desta nota.\nRetorne APENAS o c\u00F3digo Mermaid puro, sem blocos de markdown (sem \\`\\`\\`), sem explica\u00E7\u00F5es, sem texto adicional.',
     noteType: 'code', mime: 'text/x-mermaid',
     process: (s) => s.replace(/^```(?:mermaid)?\r?\n?/i, '').replace(/\r?\n?```$/i, '').trim()
   },
   {
     id: 'insights', label: 'Insights',
-    childTitle: (t) => 'Insights — ' + t,
-    prompt: `A partir desta nota, gere:
-1. Insights-chave e padrões não óbvios
-2. Conexões com outros campos do conhecimento
-3. Perguntas abertas que o conteúdo levanta
-4. Possíveis pontos cegos ou limitações do argumento
-
-Formate em HTML com <h3> para cada seção e <ul>/<li> para os itens.
-Seja analítico e crítico, não apenas descritivo.`,
+    childTitle: (t) => 'Insights \u2014 ' + t,
+    prompt: 'A partir desta nota, gere:\n1. Insights-chave e padr\u00F5es n\u00E3o \u00F3bvios\n2. Conex\u00F5es com outros campos do conhecimento\n3. Perguntas abertas que o conte\u00FAdo levanta\n4. Poss\u00EDveis pontos cegos ou limita\u00E7\u00F5es do argumento\n\nFormate em HTML com <h3> para cada se\u00E7\u00E3o e <ul>/<li> para os itens.\nSeja anal\u00EDtico e cr\u00EDtico, n\u00E3o apenas descritivo.',
     noteType: 'text', mime: null, process: (s) => s
   },
   {
     id: 'slides', label: 'Slides',
-    childTitle: (t) => 'Slides — ' + t,
-    prompt: `Crie o conteúdo textual para uma apresentação de slides a partir desta nota.
-Para cada slide use exatamente este formato HTML:
-
-<section>
-<h2>Título do Slide</h2>
-<ul>
-  <li>Ponto principal 1</li>
-  <li>Ponto principal 2</li>
-</ul>
-<p><em>Nota do apresentador (opcional)</em></p>
-</section>
-
-Gere entre 6 e 10 slides, incluindo: slide de título, desenvolvimento e slide de conclusão.
-Apenas texto — sem imagens, sem código, sem comentários fora do HTML.`,
+    childTitle: (t) => 'Slides \u2014 ' + t,
+    prompt: 'Crie o conte\u00FAdo textual para uma apresenta\u00E7\u00E3o de slides a partir desta nota.\nPara cada slide use exatamente este formato HTML:\n\n<section>\n<h2>T\u00EDtulo do Slide</h2>\n<ul>\n  <li>Ponto principal 1</li>\n  <li>Ponto principal 2</li>\n</ul>\n<p><em>Nota do apresentador (opcional)</em></p>\n</section>\n\nGere entre 6 e 10 slides, incluindo: slide de t\u00EDtulo, desenvolvimento e slide de conclus\u00E3o.\nApenas texto \u2014 sem imagens, sem c\u00F3digo, sem coment\u00E1rios fora do HTML.',
     noteType: 'text', mime: null, process: (s) => s
   }
 ];
@@ -514,11 +544,28 @@ Apenas texto — sem imagens, sem código, sem comentários fora do HTML.`,
 // FUNÇÕES DE UI
 // ═══════════════════════════════════════════════════════════════════
 
-function appendMsg(role, text, historyIdx) {
+const COLLAPSE_LIMIT = 1000;
+const SCROLL_THRESHOLD = 120;
+
+function isNearBottom($el) {
+  return $el[0].scrollHeight - $el[0].scrollTop - $el[0].clientHeight < SCROLL_THRESHOLD;
+}
+
+function scrollToBottom($el, force) {
+  if (force || isNearBottom($el)) {
+    $el.scrollTop($el[0].scrollHeight);
+  }
+}
+
+function makeTimestamp() {
+  return new Date().toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function appendMsg(role, text, historyIdx, ts) {
   const $msgs = $c.find('#messages');
   const filterText = $c.find('#search-input').val().toLowerCase().trim();
 
-  const labels = { user: 'Você', ai: 'IA', error: 'Erro', system: '' };
+  const labels = { user: 'Voc\u00EA', ai: 'IA', error: 'Erro', system: '' };
   const cls = { user: 'msg-user', ai: 'msg-ai', error: 'msg-error', system: 'msg-system' };
 
   const div = $('<div>').addClass('msg ' + (cls[role] || ''));
@@ -528,12 +575,14 @@ function appendMsg(role, text, historyIdx) {
     const header = $('<div>').addClass('msg-header');
     header.append($('<span>').addClass('msg-label').text(labels[role]));
 
+    const timeStr = ts || makeTimestamp();
+    header.append($('<span>').addClass('msg-timestamp').text(timeStr));
+
     if (role === 'ai') {
       const actions = $('<div>').addClass('msg-actions');
       actions.append($('<button>').addClass('btn-copy-msg').html('\u2398').attr('title', 'Copiar').on('click', function(e) {
         e.stopPropagation();
-        const txt = text;
-        navigator.clipboard.writeText(txt).then(() => showCopyToast()).catch(() => {});
+        navigator.clipboard.writeText(text).then(() => showToast('Copiado!', 'info')).catch(() => {});
       }));
       actions.append($('<button>').addClass('btn-regen-msg').html('\u21BB').attr('title', 'Regenerar').on('click', function(e) {
         e.stopPropagation();
@@ -560,33 +609,51 @@ function appendMsg(role, text, historyIdx) {
   }
   div.append(body);
 
+  if (role === 'ai' && text.length > COLLAPSE_LIMIT) {
+    body.data('full-html', body.html());
+    const short = text.slice(0, COLLAPSE_LIMIT);
+    body.html(renderMarkdown(short) + '...');
+    const toggle = $('<button>').addClass('msg-collapse-toggle').text('Mostrar mais');
+    toggle.on('click', function() {
+      const expanded = $(this).text() === 'Mostrar menos';
+      if (expanded) {
+        body.html(body.data('full-html').slice(0, COLLAPSE_LIMIT) + '...');
+        $(this).text('Mostrar mais');
+      } else {
+        body.html(body.data('full-html'));
+        $(this).text('Mostrar menos');
+      }
+    });
+    div.append(toggle);
+  }
+
   $msgs.append(div);
 
   if (filterText && !text.toLowerCase().includes(filterText) && role !== 'system') {
     div.addClass('msg-hidden');
   }
 
-  $msgs.scrollTop($msgs[0].scrollHeight);
+  scrollToBottom($msgs, _isRestoring);
   updateMsgCount();
 }
 
 function addMsg(role, text) {
   if (role === 'user' || role === 'ai') {
     const historyIdx = history.length;
-    if (role === 'user') history.push({ role: 'user', content: text });
-    else history.push({ role: 'assistant', content: text });
-    appendMsg(role, text, historyIdx);
+    const ts = makeTimestamp();
+    if (role === 'user') history.push({ role: 'user', content: text, ts });
+    else history.push({ role: 'assistant', content: text, ts });
+    appendMsg(role, text, historyIdx, ts);
     saveState();
   } else {
-    const $msgs = $c.find('#messages');
-    const labels = { error: 'Erro', system: '' };
-    const cls = { error: 'msg-error', system: 'msg-system' };
-    const div = $('<div>').addClass('msg ' + (cls[role] || ''));
-    if (labels[role]) {
-      const header = $('<div>').addClass('msg-header');
-      header.append($('<span>').addClass('msg-label').text(labels[role]));
-      div.append(header);
+    if (role === 'error') {
+      showToast(text, 'error');
+      return;
     }
+    const $msgs = $c.find('#messages');
+    const labels = { system: '' };
+    const cls = { system: 'msg-system' };
+    const div = $('<div>').addClass('msg ' + (cls[role] || ''));
     const body = $('<div>').addClass('msg-body').text(text);
     div.append(body);
     $msgs.append(div);
@@ -605,20 +672,28 @@ function setCtx(id, title) {
 }
 
 function setLoading(on) {
-  $c.find('#btn-send').prop('disabled', on).text(on ? '...' : 'Enviar');
+  const $btn = $c.find('#btn-send');
+  if (on) {
+    $btn.addClass('stop').text('Parar');
+    $btn.prop('disabled', false);
+  } else {
+    $btn.removeClass('stop').text('Enviar');
+    $btn.prop('disabled', false);
+  }
   $c.find('#typing').toggleClass('visible', on);
   $c.find('#user-input').prop('disabled', on);
 }
 
-function showCopyToast() {
-  const $t = $c.find('#copy-toast');
-  $t.addClass('show');
-  setTimeout(() => $t.removeClass('show'), 1800);
+function showToast(msg, type) {
+  const $t = $c.find('#toast');
+  $t.text(msg).attr('class', 'toast toast-' + type + ' show');
+  clearTimeout($t.data('timer'));
+  $t.data('timer', setTimeout(() => $t.removeClass('show'), 2500));
 }
 
 function updateMsgCount() {
   const count = history.filter(m => m.role !== 'system').length;
-  $c.find('.chat-toolbar .chat-label').text(count + ' msgs');
+  $c.find('.chat-toolbar .chat-label').first().text(count + ' msgs');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -627,7 +702,7 @@ function updateMsgCount() {
 
 async function loadConfig() {
   const notes = await api.searchForNotes('note.title = "AI Chat - Config"');
-  if (!notes.length) throw new Error('Nota "AI Chat - Config" não encontrada.');
+  if (!notes.length) throw new Error('Nota "AI Chat - Config" n\u00E3o encontrada.');
   let content;
   try {
     content = await notes[0].getProtectedContent();
@@ -638,21 +713,25 @@ async function loadConfig() {
   const modelMatch = content.match(/model:\s*(\S+)/);
   const tempMatch = content.match(/temperature:\s*([\d.]+)/);
   const maxMatch = content.match(/max_tokens:\s*(\d+)/);
-  if (!keyMatch) throw new Error('Campo openrouter_key não encontrado na nota de config.');
+  if (!keyMatch) throw new Error('Campo openrouter_key n\u00E3o encontrado na nota de config.');
+
+  const modelId = modelMatch ? modelMatch[1] : 'openrouter/auto';
+  _modelLabel = modelId;
+  $c.find('#model-badge').text(modelId);
 
   return {
     key: keyMatch[1],
-    model: modelMatch ? modelMatch[1] : 'openrouter/auto',
+    model: modelId,
     temperature: tempMatch ? parseFloat(tempMatch[1]) : 0.7,
     maxTokens: maxMatch ? parseInt(maxMatch[1]) : 4096
   };
 }
 
 async function loadNote(noteId) {
-  if (!noteId) { alert('Informe um ID de nota.'); return; }
+  if (!noteId) { showToast('Informe um ID de nota.', 'error'); return; }
   const note = await api.getNote(noteId);
   if (note) setCtx(note.noteId, note.title);
-  else alert('Nota não encontrada: ' + noteId);
+  else showToast('Nota n\u00E3o encontrada: ' + noteId, 'error');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -662,10 +741,15 @@ async function loadNote(noteId) {
 let abortController = null;
 
 async function send() {
+  if (abortController) {
+    abortController.abort();
+    return;
+  }
+
   const input = $c.find('#user-input');
   const text = input.val().trim();
   if (!text) return;
-  if (text.length > 32000) { alert('Mensagem muito longa (máx 32000 caracteres).'); return; }
+  if (text.length > 32000) { showToast('Mensagem muito longa (m\u00E1x 32000 caracteres).', 'error'); return; }
   input.val('');
   input.css('height', 'auto');
 
@@ -684,7 +768,7 @@ async function send() {
       if (note) {
         const raw = await note.getContent();
         const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 12000);
-        system += '\n\nContexto — nota "' + note.title + '":\n' + plain;
+        system += '\n\nContexto \u2014 nota "' + note.title + '":\n' + plain;
       }
     }
 
@@ -708,10 +792,7 @@ async function send() {
 
     if (!res.ok) {
       let errMsg = 'Erro HTTP ' + res.status;
-      try {
-        const errData = await res.json();
-        errMsg = errData.error?.message || errMsg;
-      } catch {}
+      try { const errData = await res.json(); errMsg = errData.error?.message || errMsg; } catch {}
       throw new Error(errMsg);
     }
 
@@ -722,10 +803,12 @@ async function send() {
 
   } catch (e) {
     if (e.name === 'AbortError') {
-      addMsg('error', 'Requisição cancelada (timeout de 90s).');
+      if (abortController && abortController.signal.aborted) {
+        showToast('Requisi\u00E7\u00E3o cancelada.', 'error');
+      }
       history.pop();
     } else {
-      addMsg('error', e.message);
+      showToast(e.message, 'error');
       history.pop();
     }
   }
@@ -762,7 +845,7 @@ async function regenerate() {
       if (note) {
         const raw = await note.getContent();
         const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 12000);
-        system += '\n\nContexto — nota "' + note.title + '":\n' + plain;
+        system += '\n\nContexto \u2014 nota "' + note.title + '":\n' + plain;
       }
     }
 
@@ -786,10 +869,7 @@ async function regenerate() {
 
     if (!res.ok) {
       let errMsg = 'Erro HTTP ' + res.status;
-      try {
-        const errData = await res.json();
-        errMsg = errData.error?.message || errMsg;
-      } catch {}
+      try { const errData = await res.json(); errMsg = errData.error?.message || errMsg; } catch {}
       throw new Error(errMsg);
     }
 
@@ -800,9 +880,9 @@ async function regenerate() {
 
   } catch (e) {
     if (e.name === 'AbortError') {
-      addMsg('error', 'Requisição cancelada (timeout de 90s).');
+      showToast('Requisi\u00E7\u00E3o cancelada.', 'error');
     } else {
-      addMsg('error', e.message);
+      showToast(e.message, 'error');
     }
     history.push(lastMsg);
   }
@@ -819,6 +899,9 @@ function editMessage(historyIdx) {
   const msg = history[historyIdx];
   if (!msg || msg.role !== 'user') return;
 
+  const remaining = history.length - historyIdx - 1;
+  if (remaining > 0 && !confirm('Editar esta mensagem apagar\u00E1 as ' + remaining + ' mensagens seguintes. Continuar?')) return;
+
   const $input = $c.find('#user-input');
   $input.val(msg.content);
   autoResize.call($input[0]);
@@ -834,13 +917,13 @@ function editMessage(historyIdx) {
 // ═══════════════════════════════════════════════════════════════════
 
 async function saveNote() {
-  if (!history.length) { alert('Nenhuma conversa para salvar.'); return; }
-  if (!ctxNoteId) { alert('Carregue uma nota de contexto antes de salvar.'); return; }
+  if (!history.length) { showToast('Nenhuma conversa para salvar.', 'error'); return; }
+  if (!ctxNoteId) { showToast('Carregue uma nota de contexto antes de salvar.', 'error'); return; }
 
   const personaLabel = $personaSelect.find('option:selected').text();
 
   const html = history.map(function(m) {
-    const who = m.role === 'user' ? '<strong>Você</strong>' : '<strong>IA</strong>';
+    const who = m.role === 'user' ? '<strong>Voc\u00EA</strong>' : '<strong>IA</strong>';
     return '<p>' + who + ': ' + m.content.replace(/\n/g, '<br>') + '</p>';
   }).join('<hr>');
 
@@ -849,9 +932,9 @@ async function saveNote() {
 
   await api.runOnBackend((parentNoteId, title, content) => {
     api.createNewNote({ parentNoteId, title, content, type: 'text' });
-  }, [ctxNoteId, 'Chat IA — ' + now, metaHtml]);
+  }, [ctxNoteId, 'Chat IA \u2014 ' + now, metaHtml]);
 
-  addMsg('system', 'Conversa salva como nota filha.');
+  showToast('Conversa salva como nota filha.', 'info');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -860,7 +943,7 @@ async function saveNote() {
 
 async function runCommand(cmd) {
   if (!ctxNoteId) {
-    alert('Carregue uma nota como contexto primeiro.');
+    showToast('Carregue uma nota como contexto primeiro.', 'error');
     return;
   }
 
@@ -874,22 +957,22 @@ async function runCommand(cmd) {
   try {
     const cfg = await loadConfig();
     const note = await api.getNote(ctxNoteId);
-    if (!note) throw new Error('Nota de contexto não encontrada.');
+    if (!note) throw new Error('Nota de contexto n\u00E3o encontrada.');
 
     const raw = await note.getContent();
     const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 15000);
 
     const pid = $personaSelect.val();
-    let cmdSystem = 'Você é um assistente especializado em processamento de notas de conhecimento. Responda apenas com o conteúdo solicitado, sem comentários adicionais antes ou depois.';
+    let cmdSystem = 'Voc\u00EA \u00E9 um assistente especializado em processamento de notas de conhecimento. Responda apenas com o conte\u00FAdo solicitado, sem coment\u00E1rios adicionais antes ou depois.';
     if (pid !== 'default') {
       const persona = PERSONAS.find(p => p.id === pid);
       const personaPrompt = (pid === 'custom') ? getSystemPrompt() : (persona ? persona.prompt : '');
       if (personaPrompt) {
-        cmdSystem = personaPrompt + '\n\nResponda apenas com o conteúdo solicitado, sem comentários adicionais antes ou depois.';
+        cmdSystem = personaPrompt + '\n\nResponda apenas com o conte\u00FAdo solicitado, sem coment\u00E1rios adicionais antes ou depois.';
       }
     }
 
-    const userMsg = cmd.prompt + '\n\n--- CONTEÚDO DA NOTA "' + note.title + '" ---\n' + plain;
+    const userMsg = cmd.prompt + '\n\n--- CONTE\u00DADO DA NOTA "' + note.title + '" ---\n' + plain;
 
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -903,10 +986,7 @@ async function runCommand(cmd) {
         model: cfg.model,
         temperature: cfg.temperature,
         max_tokens: cfg.maxTokens,
-        messages: [
-          { role: 'system', content: cmdSystem },
-          { role: 'user', content: userMsg }
-        ]
+        messages: [{ role: 'system', content: cmdSystem }, { role: 'user', content: userMsg }]
       }),
       signal: abortController.signal
     });
@@ -929,13 +1009,13 @@ async function runCommand(cmd) {
       api.createNewNote({ parentNoteId, title, content: noteContent, type, mime: mime || undefined });
     }, [ctxNoteId, childTitle, content, cmd.noteType, cmd.mime]);
 
-    addMsg('system', '✓ Nota criada: "' + childTitle + '"');
+    showToast('Nota criada: "' + childTitle + '"', 'info');
 
   } catch (e) {
     if (e.name === 'AbortError') {
-      addMsg('error', 'Comando cancelado (timeout).');
+      showToast('Comando cancelado (timeout).', 'error');
     } else {
-      addMsg('error', e.message);
+      showToast(e.message, 'error');
     }
   }
 
@@ -1011,7 +1091,7 @@ $c.find('#btn-load').on('click', function() {
 $c.find('#btn-active').on('click', async function() {
   const note = api.getActiveContextNote();
   if (note) await loadNote(note.noteId);
-  else alert('Nenhuma nota ativa encontrada.');
+  else showToast('Nenhuma nota ativa encontrada.', 'error');
 });
 
 $c.find('#user-input').on('keydown', function(e) {
@@ -1024,7 +1104,6 @@ $c.find('#user-input').on('keydown', function(e) {
   }
 });
 
-// Atalhos globais
 $(document).on('keydown', function(e) {
   if (e.ctrlKey && e.shiftKey && e.key === 'C') {
     e.preventDefault();
@@ -1052,7 +1131,6 @@ COMMANDS.forEach(function(cmd) {
   await initDeps();
   loadState();
 
-  // Se houver contexto carregado, restaura o título
   if (ctxNoteId) {
     try {
       const note = await api.getNote(ctxNoteId);
