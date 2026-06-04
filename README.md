@@ -26,6 +26,7 @@ This repository serves as a centralized hub for all these projects.
 
 ### Productivity & Workflow
 * **[Weekly Planner & Open Tasks Panel](./Weekly-Planner)** - A drag-and-drop task board integrated with a global open tasks searcher.
+* **[Daily Note Navigator](./Daily-Note-Navigator)** - Right-pane widget to quickly navigate between daily journal notes.
 * **[Minimalist Pomodoro + Time Tracker](./Minimalist-Pomodoro)** - A monochromatic Pomodoro timer widget with per-note time tracking and report generation.
 * **[Kanboard Sync](./Kanboard-Integration)** - Bidirectional Kanboard integration with a visual dashboard and inline task creation.
 * **[Mastodon Sender](./Mastodon-Sender)** - Compose and post toots directly from Trilium, with visibility control and current note support.
