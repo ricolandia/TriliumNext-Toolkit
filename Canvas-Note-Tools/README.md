@@ -4,12 +4,14 @@ A custom Canvas workflow for TriliumNext focused on visual thinking, writing flo
 
 ## Features
 
-* **🎯 Capture Mode:** Toggle the target button to freely navigate your directory tree. Every note you click is automatically inserted as a canvas card.
-* **🔍 Quick Search Popup:** Instantly find and insert notes directly onto your canvas using a floating search window.
-* **✨ Create on the Fly:** Draft and add new notes directly within your canvas.
-* **✏️ Establish Relations:** Define relations directly by double-clicking arrows and typing.
-* **↔️ Synthesize Knowledge:** Generate comprehensive, long-form documents automatically by combining your canvas cards. The arrow-based ordering system ensures perfect narrative flow.
-* **⚡ Local & Fast:** A lightweight, fully local system with a clean floating UI.
+* **🔍 Quick Search:** Find and insert notes directly onto your canvas using a floating search window.
+* **🎯 Capture Mode:** Toggle to navigate your tree — every note clicked is inserted as a card. Persists across reloads via `sessionStorage`.
+* **📝 Create on the Fly:** Draft and add new child notes without leaving the canvas.
+* **🕸️ Smart Relations:** Detects arrow connections between cards. Auto-detects relation types from text written on arrows (`inspira`, `contradiz`, etc.) and updates labels on save.
+* **🗑️ Remove Cards:** List all linked cards and remove individual ones directly from the canvas.
+* **📄 Longform Synthesis:** Generate comprehensive documents by combining canvas cards in arrow-based order (topological sort).
+* **⌨️ Keyboard:** Press `Escape` to dismiss any open panel. Click outside panels to close them.
+* **⚡ Local & Fast:** Lightweight, fully local, clean floating UI with glass-morphism design.
 
 ## Installation
 
@@ -19,7 +21,16 @@ A custom Canvas workflow for TriliumNext focused on visual thinking, writing flo
 4. Reload TriliumNext (`F5`).
 
 ## Usage
-Open any Canvas note. Use the `🔗` button to search, the `🎯` button to capture from the tree, the `📝` button to create a new note, `🕸️` button to edit relacions( popup menu ) and the `📄` button to synthesize your document based on the flow of your Excalidraw arrows.
+Open any Canvas note. Use the floating toolbar:
+
+| Button | Action |
+|---|---|
+| 🔗 | Search and insert notes into the canvas |
+| 🎯 | Toggle capture mode (click notes in the tree) |
+| 📝 | Create a new child note and insert as card |
+| 🕸️ | Detect and edit relations from arrow connections |
+| 🗑️ | List and remove cards from the canvas |
+| 📄 | Generate longform document from card order |
 
 
 ## Original link
