@@ -689,6 +689,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                     <button class="clw-remove-item-btn">Remover</button>
                 `;
                 row.querySelector('button').addEventListener('click', async () => {
+                    if (!confirm('Remover este card do canvas?\nA nota continuará existindo no Trilium.')) return;
                     row.style.opacity = '0.4';
                     row.style.pointerEvents = 'none';
                     await this._doRemoveCard(canvasNoteId, card.noteId);
@@ -1238,7 +1239,25 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                     const lines = text.split('\n').reduce((acc, paragraph) => {
                         return acc + Math.max(1, Math.ceil(paragraph.length / charsPerLine));
                     }, 0);
-                    return Math.ceil(lines * fontSize * lineHeightRatio) + 12;
+                    return Math.ceil(lines * fontSize * lineHeightRatio) + 20;
+                }
+
+                function wrapText(text, maxLen) {
+                    if (!text || text.length <= maxLen) return text || '';
+                    const words = text.split(' ');
+                    const lines = [];
+                    let current = '';
+                    for (const word of words) {
+                        const test = current ? current + ' ' + word : word;
+                        if (test.length > maxLen && current) {
+                            lines.push(current);
+                            current = word;
+                        } else {
+                            current = test;
+                        }
+                    }
+                    if (current) lines.push(current);
+                    return lines.join('\n');
                 }
 
                 if (!excerpt) {
@@ -1247,6 +1266,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                         excerpt = clean(linkedNote.getContent() || '', cfg.excerptSlice);
                     } catch (_) {}
                 }
+
+                if (excerpt) { excerpt = wrapText(excerpt, 40); }
 
                 const canvasNote = api.getNote(canvasNoteId);
                 if (!canvasNote) throw new Error('Nota canvas não encontrada: ' + canvasNoteId);
