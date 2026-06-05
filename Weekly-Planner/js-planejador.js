@@ -479,7 +479,7 @@
             .pl-task  { background:linear-gradient(rgba(0,0,0,.07),rgba(0,0,0,.07)),var(--accented-background-color,#1e1e2e);border-radius:5px;
                         padding:10px 12px;font-size:17px;line-height:1.5;cursor:grab;
                         border:1.5px solid transparent;transition:border-color .1s,opacity .15s;
-                        user-select:none; }
+                        user-select:none;position:relative; }
             .pl-task:hover   { border-color:var(--main-border-color,#45475a); }
             .pl-task.dragging { opacity:.35;cursor:grabbing; }
             .pl-task-note { font-size:14px;color:var(--muted-text-color,#888);margin-top:6px;
@@ -531,6 +531,28 @@
             .doing-bar  { margin-top:6px;height:5px;background:rgba(128,128,128,0.15);border-radius:2px;
                           overflow:hidden; }
             .doing-fill { height:100%;border-radius:2px;background:#f1c40f;transition:width .3s ease; }
+            .pl-done-btn { position:absolute;top:6px;right:8px;font-size:16px;line-height:1;z-index:2;
+                           cursor:pointer;user-select:none;color:var(--muted-text-color);opacity:0;
+                           transition:opacity .12s,color .12s;border-radius:3px;padding:0 2px; }
+            .pl-done-btn:hover { opacity:1 !important;color:var(--active-item-background-color,#a6e3a1) !important; }
+            .pl-task:hover .pl-done-btn { opacity:0.45; }
+            @media (max-width:700px) {
+                .pl-done-btn { opacity:0.5; }
+                .pl-col { max-height:calc(100vh - 150px); }
+                .pl-task { font-size:15px;padding:8px 10px; }
+                .pl-task-note { font-size:12px;margin-top:4px; }
+                .tag-badge { font-size:10px;padding:1px 5px; }
+                .pl-col-label { font-size:13px; }
+                .pl-col-sub { font-size:13px; }
+                .pl-tasks { gap:6px; }
+                .tk-task-text { font-size:15px; }
+                .tk-note-link { font-size:13px; }
+                .tk-total { font-size:14px; }
+                .task-tags { margin-top:4px; }
+                .doing-bar { margin-top:4px;height:4px; }
+                .pl-day-sheet h4 { font-size:16px; }
+                .pl-day-btn,.pl-cancel-btn { font-size:15px; }
+            }
         </style>
 
         <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
@@ -577,7 +599,9 @@
                     <div class="pl-task"
                          draggable="${!mobile}"
                          data-task-id="${esc(t.id)}"
-                         data-note-id="${esc(t.noteId)}">
+                         data-note-id="${esc(t.noteId)}"
+                         data-cb-index="${t.checkboxIndex}">
+                        <span class="pl-done-btn" title="Marcar como concluída">✓</span>
                         <div>${esc(t.text)}</div>
                         ${t.tags && t.tags.length
                             ? `<div class="task-tags">${renderTagBadges(t.tags)}</div>`
@@ -793,6 +817,21 @@
                 });
             });
         }
+
+        /* ── Done button on planner cards ────────────────────── */
+        $pl.find('.pl-done-btn').on('click', async function (e) {
+            e.stopPropagation();
+            const $card = $(this).closest('.pl-task');
+            const taskId = String($card.data('taskId'));
+            const noteId = String($card.data('noteId'));
+            const cbIndex = parseInt($card.data('cbIndex'), 10);
+            if (!taskId || !noteId || isNaN(cbIndex)) return;
+            try {
+                await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
+                renderPlanner();
+                renderTasks();
+            } catch (err) { console.error('markDone error:', err); }
+        });
     }
 
 
