@@ -1,6 +1,6 @@
 # 📊 Knowledge Dashboard — TriliumNext Plugin
 
-A **Render Note** dashboard that audits the health of your knowledge base and lets you run custom queries — inspired by Obsidian's Dataview.
+A **Render Note** dashboard that audits the health of your knowledge base, finds PDFs, and lets you run custom SQL queries.
 
 ---
 
@@ -13,8 +13,10 @@ A **Render Note** dashboard that audits the health of your knowledge base and le
 | 🟣 | **Empty** | Null or blank content, no children (containers excluded) |
 | 🔵 | **Old TODOs** | Has a `#todo`-style label, unmodified for > 30 days |
 | 🟢 | **Abandoned** | No children, unmodified for > 90 days |
-| 🖼️ | **Unused Images** | Image notes not referenced in any text note, with per-image delete |
+| 📄 | **PDFs** | PDF file notes scattered across the knowledge base |
 | 🔎 | **Custom Query** | Filter by type, label, date — or write your own SQL WHERE clause. Save/load presets. |
+
+All debt scans exclude: system notes (`_` prefix), protected/encrypted notes, archived notes (`#archived`), and the dashboard note itself.
 
 ---
 
@@ -22,12 +24,14 @@ A **Render Note** dashboard that audits the health of your knowledge base and le
 
 Build queries visually or with raw SQL:
 
-- **Tipo** — filter by note type (text, code, image, book, canvas, etc.)
+- **Tipo** — filter by note type (text, code, file, book, canvas, etc.)
 - **Label** — notes with a specific label (optionally with value)
 - **De / Até** — date range filter
 - **WHERE (custom)** — write any SQL WHERE clause for the `notes` table
 - **💾 Salvar** — save your query as a preset (stored in localStorage)
 - **📂 Carregar salva…** — load a previously saved query
+
+Results are **clickable** — clicking a title opens the note.
 
 Examples:
 | Goal | Type | Label | Custom WHERE |
@@ -75,7 +79,8 @@ julianday('now') - julianday(n.dateModified) > 90
 
 ## Credits
 
-Inspired by Obsidian's **Dataview** plugin. Built as a companion tool for PKM maintenance and discovery in TriliumNext.
+- **ecodiv/Trilium_scripts** — inspiration for NOT_SYSTEM with ESCAPE, exclusion of protected/archived/infrastructure notes, and config panel ideas.
+- **Obsidian's Dataview** — inspiration for the custom query builder.
 
 Licensed under MIT.
 
