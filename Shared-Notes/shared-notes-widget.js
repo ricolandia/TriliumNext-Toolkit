@@ -61,9 +61,9 @@ const STYLE = `<style>
     border-radius: 4px; cursor: pointer; font-size: .84rem; white-space: nowrap; line-height: 1.4;
 }
 .sn-btn:hover { opacity: .85; }
-.sn-btn.primary { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+.sn-btn.primary { background: #7c3aed; color: #fff; border-color: #7c3aed; transition: background .15s, opacity .15s; }
 .sn-btn.primary:hover { background: #6d28d9; }
-.sn-btn:disabled { opacity: .45; cursor: not-allowed; }
+.sn-btn:disabled { opacity: .45; cursor: not-allowed; transition: none; }
 .sn-status { font-size: .82rem; margin-top: 4px; min-height: 1.2rem; color: var(--muted-text-color); }
 .sn-status.ok   { color: #4ade80; }
 .sn-status.err  { color: #f87171; }
@@ -143,7 +143,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
     get position()     { return 200; }
     static get parentWidget() { return 'right-pane'; }
-    get widgetTitle()  { return '📨 Compartilhar nota'; }
+    get widgetTitle()  { return 'Compartilhar nota'; }
     isEnabled()        { return true; }
 
     doRenderBody() {
@@ -258,7 +258,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
             }, [noteId, inviteToken]);
 
             if (result.error) {
-                this._status('gerar', 'err', '' + result.error);
+                this._status('gerar', 'err', result.error);
                 return;
             }
 
@@ -274,14 +274,18 @@ class SharedNotesWidget extends api.RightPanelWidget {
             };
 
             // Codificação segura para UTF-8 / emojis / acentos
-            const str = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+            const encoder = new TextEncoder();
+            const utf8 = encoder.encode(JSON.stringify(payload));
+            let binary = '';
+            for (let i = 0; i < utf8.length; i++) binary += String.fromCharCode(utf8[i]);
+            const str = btoa(binary);
 
             this.$widget.find('#sn-convite-out').val(str);
             this.$widget.find('#sn-copiar-btn').show();
 
             const kb = (str.length / 1024).toFixed(1);
             const aviso = str.length > 5000
-                ? ` String grande (${kb} KB) — prefira enviar por email.`
+                ? `String grande (${kb} KB) — prefira enviar por email.`
                 : ` (${kb} KB)`;
             this._status('gerar', 'ok', 'Convite gerado!' + aviso);
 
@@ -307,9 +311,13 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
         try {
             // Decodificação segura para UTF-8
+            // Decodificação segura para UTF-8
             let payload;
             try {
-                payload = JSON.parse(decodeURIComponent(escape(atob(str))));
+                const raw = atob(str);
+                const bytes = new Uint8Array(raw.length);
+                for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+                payload = JSON.parse(new TextDecoder().decode(bytes));
             } catch(e) {
                 this._status('aceitar', 'err', 'String inválida ou corrompida.');
                 return;
@@ -357,7 +365,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
             }, [payload]);
 
             if (result.error) {
-                this._status('aceitar', 'err', '' + result.error);
+                this._status('aceitar', 'err', result.error);
                 return;
             }
 
@@ -478,7 +486,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
             }
             if (result.status !== 200) {
                 const msg = result.data?.error || `Erro HTTP ${result.status}`;
-                this._status('enviar', 'err', '' + msg);
+                this._status('enviar', 'err', msg);
                 $btn.prop('disabled', false);
                 return;
             }
