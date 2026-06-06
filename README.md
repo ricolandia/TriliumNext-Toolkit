@@ -19,6 +19,8 @@ This repository serves as a centralized hub for all these projects.
 4. To import correctly, right-click a parent note on Windows/Linux (or Control-click on macOS) and choose **Import**.
 
 > **Tip:** For better organization, you may want to import everything inside a dedicated parent note such as “Tools”, “Plugins”, or “Addons”.
+>
+> **💡 Bulk install all plugins:** Use the [Trilium Plugin Manager](https://github.com/ricolandia/Trilium-plugin-manager) — it automates the download, import, and update of every plugin in this collection with a single command.
 
 ---
 
