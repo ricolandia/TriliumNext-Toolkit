@@ -121,6 +121,12 @@ $c.html(`
     font-size: 11px; opacity: 0.5; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; max-width: 140px;
   }
+  .chk-subnotes {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px; opacity: 0.55; cursor: pointer;
+    white-space: nowrap;
+  }
+  .chk-subnotes input { cursor: pointer; }
 
   ::placeholder { color: var(--muted-text-color); opacity: 0.5; }
   :-ms-input-placeholder { color: var(--muted-text-color); opacity: 0.5; }
@@ -299,6 +305,7 @@ $c.html(`
     .btn-send, .btn-secondary { padding: 6px 10px; font-size: 13px; }
     .chat-actions { gap: 3px; }
     .model-badge { max-width: 80px; font-size: 10px; }
+    .chk-subnotes { font-size: 11px; }
   }
 </style>
 
@@ -334,6 +341,7 @@ $c.html(`
   <div class="chat-toolbar">
     <span class="chat-label" style="opacity:0.5;font-size:12px;">0 msgs</span>
     <span class="model-badge" id="model-badge"></span>
+    <label class="chk-subnotes"><input type="checkbox" id="chk-subnotes" checked /> Subnotas</label>
     <input id="search-input" placeholder="Buscar na conversa..." style="display:none;" />
     <button class="btn-icon" id="btn-toggle-search" title="Buscar">\u2315</button>
   </div>
@@ -419,7 +427,8 @@ function saveState() {
       history: history.slice(-100),
       ctxNoteId,
       personaId: $c.find('#persona-select').val(),
-      systemPrompt: $c.find('#system-prompt-input').val()
+      systemPrompt: $c.find('#system-prompt-input').val(),
+      includeSubnotes: $c.find('#chk-subnotes').is(':checked')
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {}
@@ -435,6 +444,7 @@ function loadState() {
       ctxNoteId = data.ctxNoteId || null;
       if (data.personaId) $c.find('#persona-select').val(data.personaId);
       if (data.systemPrompt) $c.find('#system-prompt-input').val(data.systemPrompt);
+      if (data.includeSubnotes !== undefined) $c.find('#chk-subnotes').prop('checked', data.includeSubnotes);
       _isRestoring = true;
       restoreMessages();
       _isRestoring = false;
@@ -546,6 +556,8 @@ const COMMANDS = [
 
 const COLLAPSE_LIMIT = 1000;
 const SCROLL_THRESHOLD = 120;
+const TREE_DEPTH = 2;
+const TREE_MAX_CHARS = 20000;
 
 function isNearBottom($el) {
   return $el[0].scrollHeight - $el[0].scrollTop - $el[0].clientHeight < SCROLL_THRESHOLD;
@@ -697,6 +709,49 @@ function updateMsgCount() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// RAG (ÁRVORE DE NOTAS)
+// ═══════════════════════════════════════════════════════════════════
+
+async function getNoteTree(noteId, depth) {
+  if (depth <= 0) return [];
+  const note = await api.getNote(noteId);
+  if (!note) return [];
+  const raw = await note.getContent();
+  const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const results = [{ title: note.title, content: plain || '' }];
+  try {
+    const children = await note.getChildNotes();
+    for (const child of children) {
+      const sub = await getNoteTree(child.noteId, depth - 1);
+      results.push(...sub);
+    }
+  } catch {}
+  return results;
+}
+
+async function buildContextText(noteId) {
+  const includeSub = $c.find('#chk-subnotes').is(':checked');
+  const note = await api.getNote(noteId);
+  if (!note) return '';
+
+  if (!includeSub) {
+    const raw = await note.getContent();
+    const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 12000);
+    return 'Contexto \u2014 nota "' + note.title + '":\n' + plain;
+  }
+
+  const tree = await getNoteTree(noteId, TREE_DEPTH);
+  let combined = '';
+  for (const item of tree) {
+    if (!item.content) continue;
+    const block = '\n\n--- ' + item.title + ' ---\n' + item.content;
+    if ((combined.length + block.length) > TREE_MAX_CHARS && combined) break;
+    combined += block;
+  }
+  return 'Contexto \u2014 nota "' + note.title + '"\n' + combined;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════════════
 
@@ -764,12 +819,8 @@ async function send() {
 
     let system = getSystemPrompt();
     if (ctxNoteId) {
-      const note = await api.getNote(ctxNoteId);
-      if (note) {
-        const raw = await note.getContent();
-        const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 12000);
-        system += '\n\nContexto \u2014 nota "' + note.title + '":\n' + plain;
-      }
+      const ctx = await buildContextText(ctxNoteId);
+      if (ctx) system += '\n\n' + ctx;
     }
 
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -841,12 +892,8 @@ async function regenerate() {
 
     let system = getSystemPrompt();
     if (ctxNoteId) {
-      const note = await api.getNote(ctxNoteId);
-      if (note) {
-        const raw = await note.getContent();
-        const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 12000);
-        system += '\n\nContexto \u2014 nota "' + note.title + '":\n' + plain;
-      }
+      const ctx = await buildContextText(ctxNoteId);
+      if (ctx) system += '\n\n' + ctx;
     }
 
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -959,8 +1006,8 @@ async function runCommand(cmd) {
     const note = await api.getNote(ctxNoteId);
     if (!note) throw new Error('Nota de contexto n\u00E3o encontrada.');
 
-    const raw = await note.getContent();
-    const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 15000);
+    const ctxText = await buildContextText(ctxNoteId);
+    const plain = ctxText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 15000);
 
     const pid = $personaSelect.val();
     let cmdSystem = 'Voc\u00EA \u00E9 um assistente especializado em processamento de notas de conhecimento. Responda apenas com o conte\u00FAdo solicitado, sem coment\u00E1rios adicionais antes ou depois.';
