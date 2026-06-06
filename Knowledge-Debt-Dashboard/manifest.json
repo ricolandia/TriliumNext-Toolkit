@@ -1,15 +1,15 @@
 {
   "notes": [
     {
-      "title": "Knowledge Debt",
+      "title": "Knowledge Dashboard",
       "type": "text",
-      "content": "Gerencia divida tecnica de conhecimento. Abra esta nota para usar."
+      "content": "Dashboard de saúde + consultas do PKM. Abra esta nota para usar."
     },
     {
       "title": "js knowledge",
       "type": "code",
       "mime": "application/javascript;env=frontend",
-      "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Knowledge-Debt-Dashboard/js%20knowledge.js"
+      "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Knowledge-Debt-Dashboard/Knowledge%20debt/js%20knowledge.js"
     }
   ],
   "relations": [

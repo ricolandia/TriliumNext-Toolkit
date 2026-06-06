@@ -1,26 +1,46 @@
-# 🩺 Knowledge Debt — TriliumNext Plugin
+# 📊 Knowledge Dashboard — TriliumNext Plugin
 
-A **Render Note** dashboard that audits the health of your knowledge base, surfacing notes that have been forgotten, never developed, or left structurally isolated.
+A **Render Note** dashboard that audits the health of your knowledge base and lets you run custom queries — inspired by Obsidian's Dataview.
 
 ---
 
-## What it detects
+## Features
 
-| Category | Criteria |
-|---|---|
-| 🔴 **Orphans** | No other note links to them (no backlinks) |
-| 🟠 **Stubs** | Text content between 1–250 characters, no children |
-| 🟣 **Empty** | Null or blank content, no children (containers excluded) |
-| 🔵 **Old TODOs** | Has a `#todo`-style label, unmodified for > 30 days |
-| 🟢 **Abandoned** | No children, unmodified for > 90 days |
+| # | Tab | What it does |
+|---|-----|-------------|
+| 🔴 | **Orphans** | No other note links to them (no backlinks) |
+| 🟠 | **Stubs** | Text content between 1–250 characters, no children |
+| 🟣 | **Empty** | Null or blank content, no children (containers excluded) |
+| 🔵 | **Old TODOs** | Has a `#todo`-style label, unmodified for > 30 days |
+| 🟢 | **Abandoned** | No children, unmodified for > 90 days |
+| 🖼️ | **Unused Images** | Image notes not referenced in any text note, with per-image delete |
+| 🔎 | **Custom Query** | Filter by type, label, date — or write your own SQL WHERE clause. Save/load presets. |
 
-Collection notes and any note acting as a container (i.e. notes with children) are automatically excluded from **Stubs** and **Empty** to avoid false positives.
+---
+
+## Custom Query (Dataview-like)
+
+Build queries visually or with raw SQL:
+
+- **Tipo** — filter by note type (text, code, image, book, canvas, etc.)
+- **Label** — notes with a specific label (optionally with value)
+- **De / Até** — date range filter
+- **WHERE (custom)** — write any SQL WHERE clause for the `notes` table
+- **💾 Salvar** — save your query as a preset (stored in localStorage)
+- **📂 Carregar salva…** — load a previously saved query
+
+Examples:
+| Goal | Type | Label | Custom WHERE |
+|------|------|-------|-------------|
+| Notes created this week | text | — | `dateCreated >= date('now', '-7 days')` |
+| Canvas with label "projeto" | canvas | projeto | — |
+| Large code notes (>10KB) | code | — | `LENGTH(b.content) > 10000` |
 
 ---
 
 ## Installation
 
-1. Create a new **JS Frontend** note and paste the contents of `knowledge-debt.js`
+1. Create a new **JS Frontend** note and paste the contents of `js knowledge.js`
 2. Create a second note (any type) — this will be your dashboard page
 3. On the dashboard note, add the relation attribute:
    ```
@@ -55,7 +75,7 @@ julianday('now') - julianday(n.dateModified) > 90
 
 ## Credits
 
-Inspired by the `attribute-gc` plugin pattern. Built as a companion tool for PKM maintenance workflows in TriliumNext.
+Inspired by Obsidian's **Dataview** plugin. Built as a companion tool for PKM maintenance and discovery in TriliumNext.
 
 Licensed under MIT.
 
