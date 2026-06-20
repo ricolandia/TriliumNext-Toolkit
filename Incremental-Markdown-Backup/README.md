@@ -13,7 +13,7 @@ No plugins or Node.js required—just a single Python script, the Trilium ETAPI,
 * **Incremental Backups:** Skips notes whose `dateModified` hasn't changed since the last backup timestamp.
 * **Folder Hierarchy:** Automatically organizes your `.md` files into folders that mirror your Trilium note tree.
 * **Smart Filenames:** Saves files as `Note Title [note_id].md` to completely prevent name collisions (e.g., when two notes share the same title in the same folder).
-* **Multi-Type Support:** Backs up `text`, `code`, and `mermaid` notes out of the box.
+* **Multi-Type Support:** Backs up `text`, `code`, `mermaid`, `file`, and `image` notes out of the box.
 * **YAML Frontmatter:** Each `.md` file includes a frontmatter block with `trilium_id`, `created`, and `modified` timestamps, making it easy to diff versions or re-import later.
 * **Resilient:** Features an automated retry queue. If a note fails to download (e.g., network error), it gets logged in the state file and is automatically reprocessed on the next run.
 * **Fast:** Utilizes an in-memory metadata cache to drastically reduce redundant API calls when building hierarchical folder paths.
@@ -165,7 +165,8 @@ The `>> ...log 2>&1` portion captures all script output into a log file so you c
 ## ⚠️ Notes and Limitations
 
 * **Text-focused:** Backs up `text`, `code`, and `mermaid` notes. Canvas notes, renderNotes, relation maps, and other non-text elements are skipped.
-* **Attachments:** This is a text-only backup; image attachments and files are not downloaded. If you need attachments, use the native Trilium export feature.
+* **Files:** `file` and `image`-type notes are backed up as binary files with the same naming convention. Configurable via `BACKUP_FILES = True/False` in the script.
+* **Attachments:** Embedded attachments (files linked inside text notes) are not downloaded. Only standalone `file`/`image` notes are supported.
 * **HTML → Markdown conversion:** Trilium stores text notes internally as HTML. The script performs a basic conversion (handling headings, paragraphs, and line breaks).
 * **Append-only:** The script currently does not delete local `.md` files if the corresponding note is deleted inside Trilium.
 
