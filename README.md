@@ -69,3 +69,9 @@ However, you can easily translate them to English or your preferred language by 
 
 ---
 *I will continue updating this collection as new tools and experiments are developed.*
+
+## ☕ Support this project
+
+**🇧🇷 Pix:** `ricardograca@ricolandia.com`  
+**💳 PayPal:** [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=ricolandia%40gmail.com&currency_code=BRL)  
+**🧡 GitHub Sponsors:** [github.com/sponsors/ricolandia](https://github.com/sponsors/ricolandia)
