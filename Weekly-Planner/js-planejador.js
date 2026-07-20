@@ -682,7 +682,7 @@
         const css = `
         .gantt-wrap { display:flex;flex-direction:column;height:100%;overflow:hidden; }
         .gantt-scroll { overflow-x:auto;overflow-y:auto;flex:1;padding:0 12px 20px; }
-        .gantt-grid { display:grid;grid-template-columns:200px repeat(7,minmax(80px,1fr));min-width:700px; }
+        .gantt-grid { display:grid;grid-template-columns:200px repeat(7,minmax(80px,1fr));min-width:700px;grid-auto-flow:row; }
         .gantt-hdr { position:sticky;top:0;z-index:3;background:var(--main-background-color,#1e1e2e);
                      padding:8px 6px;font-size:12px;font-weight:700;text-transform:uppercase;
                      letter-spacing:.06em;color:var(--muted-text-color,#888);
@@ -695,7 +695,7 @@
         .gantt-note-count { display:inline-flex;align-items:center;justify-content:center;
                             font-size:12px;background:var(--accented-background-color);
                             padding:0 5px;border-radius:8px;font-weight:600;color:var(--muted-text-color); }
-        .gantt-label { padding:4px 6px;font-size:13px;overflow:hidden;
+        .gantt-label { grid-column:1;padding:4px 6px;font-size:13px;overflow:hidden;
                        border-bottom:1px solid var(--main-border-color,#313244);
                        display:flex;flex-direction:column; }
         .gantt-cell { position:relative;border-bottom:1px solid var(--main-border-color,#313244);
@@ -790,10 +790,10 @@
         const todayCol = weekCols.findIndex(c => c.isToday);
         for (const [i] of weekCols.entries()) {
             if (i >= 5) {
-                html += `<div class="gantt-weekend-bg" style="grid-column:${i + 2};grid-row:2 / -1"></div>`;
+                html += `<div class="gantt-weekend-bg" style="grid-column:${i + 2};grid-row:2 / 999"></div>`;
             }
             if (i === todayCol) {
-                html += `<div class="gantt-today-line" style="grid-column:${i + 2};grid-row:2 / -1"></div>`;
+                html += `<div class="gantt-today-line" style="grid-column:${i + 2};grid-row:2 / 999"></div>`;
             }
         }
 
