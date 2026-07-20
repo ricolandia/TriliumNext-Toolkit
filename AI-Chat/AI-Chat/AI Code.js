@@ -557,7 +557,7 @@ const COMMANDS = [
 const COLLAPSE_LIMIT = 1000;
 const SCROLL_THRESHOLD = 120;
 const TREE_DEPTH = 2;
-const TREE_MAX_CHARS = 20000;
+const MAX_CTX_CHARS = 15000;
 
 function isNearBottom($el) {
   return $el[0].scrollHeight - $el[0].scrollTop - $el[0].clientHeight < SCROLL_THRESHOLD;
@@ -712,21 +712,27 @@ function updateMsgCount() {
 // RAG (ÁRVORE DE NOTAS)
 // ═══════════════════════════════════════════════════════════════════
 
-async function getNoteTree(noteId, depth) {
-  if (depth <= 0) return [];
-  const note = await api.getNote(noteId);
-  if (!note) return [];
-  const raw = await note.getContent();
-  const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const results = [{ title: note.title, content: plain || '' }];
-  try {
-    const children = await note.getChildNotes();
-    for (const child of children) {
-      const sub = await getNoteTree(child.noteId, depth - 1);
-      results.push(...sub);
+async function getNoteTreeBackend(noteId, maxDepth) {
+  return await api.runOnBackend((nid, depth) => {
+    function walk(id, d) {
+      if (d <= 0) return [];
+      const note = api.getNote(id);
+      if (!note) return [];
+      const raw = note.getContent() || '';
+      const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      const results = [{ title: note.title, content: plain || '' }];
+      try {
+        const children = note.getChildNotes();
+        for (const child of children) {
+          results.push(...walk(child.noteId, d - 1));
+        }
+      } catch (e) {
+        results.push({ title: '(erro ao ler filhas)', content: '' });
+      }
+      return results;
     }
-  } catch {}
-  return results;
+    return walk(nid, depth);
+  }, [noteId, maxDepth]);
 }
 
 async function buildContextText(noteId) {
@@ -736,19 +742,25 @@ async function buildContextText(noteId) {
 
   if (!includeSub) {
     const raw = await note.getContent();
-    const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 12000);
+    const plain = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, MAX_CTX_CHARS);
     return 'Contexto \u2014 nota "' + note.title + '":\n' + plain;
   }
 
-  const tree = await getNoteTree(noteId, TREE_DEPTH);
+  const tree = await getNoteTreeBackend(noteId, TREE_DEPTH);
+
   let combined = '';
+  let skipped = 0;
   for (const item of tree) {
-    if (!item.content) continue;
+    if (!item.content) { skipped++; continue; }
     const block = '\n\n--- ' + item.title + ' ---\n' + item.content;
-    if ((combined.length + block.length) > TREE_MAX_CHARS && combined) break;
+    if ((combined.length + block.length) > MAX_CTX_CHARS && combined) { skipped++; break; }
     combined += block;
   }
-  return 'Contexto \u2014 nota "' + note.title + '"\n' + combined;
+
+  const totalItems = tree.length;
+  const included = totalItems - skipped;
+  const feedback = ' [' + included + '/' + totalItems + ' notas' + (skipped ? ', ' + skipped + ' puladas' : '') + ']';
+  return 'Contexto \u2014 nota "' + note.title + '"' + feedback + ':\n' + combined;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1006,8 +1018,7 @@ async function runCommand(cmd) {
     const note = await api.getNote(ctxNoteId);
     if (!note) throw new Error('Nota de contexto n\u00E3o encontrada.');
 
-    const ctxText = await buildContextText(ctxNoteId);
-    const plain = ctxText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 15000);
+    const plain = await buildContextText(ctxNoteId);
 
     const pid = $personaSelect.val();
     let cmdSystem = 'Voc\u00EA \u00E9 um assistente especializado em processamento de notas de conhecimento. Responda apenas com o conte\u00FAdo solicitado, sem coment\u00E1rios adicionais antes ou depois.';
