@@ -780,6 +780,7 @@ async function loadConfig() {
   const modelMatch = content.match(/model:\s*(\S+)/);
   const tempMatch = content.match(/temperature:\s*([\d.]+)/);
   const maxMatch = content.match(/max_tokens:\s*(\d+)/);
+  const baseMatch = content.match(/api_base:\s*(\S+)/);
   if (!keyMatch) throw new Error('Campo openrouter_key n\u00E3o encontrado na nota de config.');
 
   const modelId = modelMatch ? modelMatch[1] : 'openrouter/auto';
@@ -790,7 +791,8 @@ async function loadConfig() {
     key: keyMatch[1],
     model: modelId,
     temperature: tempMatch ? parseFloat(tempMatch[1]) : 0.7,
-    maxTokens: maxMatch ? parseInt(maxMatch[1]) : 4096
+    maxTokens: maxMatch ? parseInt(maxMatch[1]) : 4096,
+    apiBase: baseMatch ? baseMatch[1].replace(/\/+$/, '') : 'https://openrouter.ai/api/v1'
   };
 }
 
@@ -835,7 +837,7 @@ async function send() {
       if (ctx) system += '\n\n' + ctx;
     }
 
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch(cfg.apiBase + '/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + cfg.key,
@@ -908,7 +910,7 @@ async function regenerate() {
       if (ctx) system += '\n\n' + ctx;
     }
 
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch(cfg.apiBase + '/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + cfg.key,
@@ -1032,7 +1034,7 @@ async function runCommand(cmd) {
 
     const userMsg = cmd.prompt + '\n\n--- CONTE\u00DADO DA NOTA "' + note.title + '" ---\n' + plain;
 
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch(cfg.apiBase + '/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + cfg.key,

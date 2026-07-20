@@ -20,9 +20,38 @@ An experimental, command-driven AI chat interface built directly into Trilium No
 
 1. Import the plugin code as a `JS Frontend` note.
 2. You must create a configuration note named `AI Chat - Config`.
-3. Inside the config note, add your API keys in the text:
-   `openrouter_key: YOUR_API_KEY_HERE`
-   `model: anthropic/claude-3.5-sonnet` (or your preferred model).
+3. Inside the config note, add your settings as plain text, one per line:
+
+```text
+openrouter_key: YOUR_API_KEY_HERE
+model: anthropic/claude-3.5-sonnet
+```
+
+### Supported providers (optional `api_base`)
+
+By default the plugin uses OpenRouter. To use another provider, add `api_base:` pointing to any OpenAI-compatible API:
+
+```text
+# DeepSeek
+api_base: https://api.deepseek.com/v1
+model: deepseek-chat
+
+# Groq (fast, free)
+api_base: https://api.groq.com/openai/v1
+model: llama3-70b-8192
+
+# Together AI
+api_base: https://api.together.xyz/v1
+model: meta-llama/Llama-3.3-70B-Instruct-Turbo
+
+# OpenAI
+api_base: https://api.openai.com/v1
+model: gpt-4o-mini
+
+# OpenRouter (default — no api_base needed)
+# model: openrouter/auto
+# openrouter_key: sk-or-v1-...
+```
    
    
 ### Images  
