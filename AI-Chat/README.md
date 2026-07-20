@@ -24,7 +24,7 @@ An experimental, command-driven AI chat interface built directly into Trilium No
 
 ```text
 openrouter_key: YOUR_API_KEY_HERE
-model: anthropic/claude-3.5-sonnet
+model: deepseek/deepseek-v4-flash
 ```
 
 ### Supported providers (optional `api_base`)
