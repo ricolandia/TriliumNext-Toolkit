@@ -5,7 +5,7 @@ An experimental, command-driven AI chat interface built directly into Trilium No
 ## Features
 
 * **Context-Aware:** Load any active note as the context for the AI prompt.
-* **Simple RAG (Subnotes Tree):** Optionally include child and grandchild notes as context, toggled via checkbox. Recursive tree with configurable depth and char limit.
+* **Simple RAG (Subnotes Tree):** Optionally include child and grandchild notes as context, toggled via checkbox. Tree traversal runs on the **backend** (reliable across all note types). Shows feedback on how many subnotes were included/skipped.
 * **Quick Commands:**
   * `Resumo`: Generates a complete summary of the note (and subnotes if toggled), preserving links and bibliography.
   * `Mermaid`: Generates a Mermaid.js diagram (flowchart/mindmap) based on note relations.
@@ -30,6 +30,12 @@ An experimental, command-driven AI chat interface built directly into Trilium No
 ![screen capture](imagens/chat-1-.webp)
 ![screen capture](imagens/chat-2-.webp)
    
+### Under the hood (recent)
+- **Backend tree traversal** — `getNoteTree` moved to `api.runOnBackend()`; `getChildNotes()` now works reliably for all note types, including render notes and code notes
+- **Unified char limit** — Both chat send and quick commands use `MAX_CTX_CHARS = 15000`; no more double-truncation
+- **Subnote feedback** — Context now shows `[3/5 notas, 2 puladas]` so you know exactly how many child notes were included
+- **Error visibility** — If a child note fails to load, it's logged and shown as `(erro ao ler filhas)` instead of silently disappearing
+
 ## Improvements
 
 ### UI / Layout
@@ -49,7 +55,7 @@ An experimental, command-driven AI chat interface built directly into Trilium No
 - **Responsive** — Media query at 500px adjusts padding, font sizes, and layout for narrow panels
 
 ### Functionality
-- **Simple RAG (Subnotes Tree)** — Checkbox "Subnotas" to recursively include child and grandchild notes as context. Tree depth and char limit configured via constants. Persisted in localStorage.
+- **Simple RAG (Subnotes Tree)** — Checkbox "Subnotas" to recursively include child and grandchild notes as context. Tree depth and char limit configured via constants. Runs on the **backend** for reliability. Persisted in localStorage.
 - **Stop Button** — During a request, the Send button turns into a red pulsing "Parar" button — click to abort via `AbortController`
 - **Smart auto-scroll** — Only scrolls to bottom when the user is near the bottom (<120px); does not steal scroll position while reading history
 - **Regenerate last response** — Click `↻` on any AI message to re-roll
