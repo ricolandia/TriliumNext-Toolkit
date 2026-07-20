@@ -1,5 +1,34 @@
 openrouter_key: your key
 model: deepseek/deepseek-v4-flash
+
 # Opcionais:
 # temperature: 0.7
 # max_tokens: 4096
+
+# Provedores alternativos (OpenAI-compatible):
+# Basta descomentar api_base e a key correspondente.
+#
+# DeepSeek:
+# api_base: https://api.deepseek.com/v1
+# openrouter_key: sk-your-deepseek-key
+# model: deepseek-chat
+#
+# Groq (gratuito, rapido):
+# api_base: https://api.groq.com/openai/v1
+# openrouter_key: gsk-your-groq-key
+# model: llama3-70b-8192
+#
+# Together AI:
+# api_base: https://api.together.xyz/v1
+# openrouter_key: your-together-key
+# model: meta-llama/Llama-3.3-70B-Instruct-Turbo
+#
+# OpenAI:
+# api_base: https://api.openai.com/v1
+# openrouter_key: sk-your-openai-key
+# model: gpt-4o-mini
+#
+# OpenRouter (padrao — sem api_base):
+# api_base: https://openrouter.ai/api/v1
+# openrouter_key: sk-or-v1-...
+# model: openrouter/auto
