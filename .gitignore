@@ -30,6 +30,10 @@ node_modules/
 # Personal context / notes
 **/CONTEXTO.md
 CONTEXTO.txt
+SESSION.md
+
+# OpenCode config
+opencode.jsonc
 
 # Backup / older versions (source is the latest)
 **/Canvas tools v5.js
