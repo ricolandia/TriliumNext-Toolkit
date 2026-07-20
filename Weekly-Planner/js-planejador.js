@@ -94,6 +94,7 @@
     let weekOffset  = 0;
     let allTasks    = [];    // { id, text, tags, checkboxIndex, noteId, noteTitle }
     let plannerData = {};    // { taskId: 'YYYY-MM-DD' }
+    let viewMode    = 'kanban'; // 'kanban' | 'gantt'
 
 
     /* ═══════════════════════════════════════════════════════════
@@ -446,6 +447,7 @@
     ═══════════════════════════════════════════════════════════ */
 
     function renderPlanner() {
+        if (viewMode === 'gantt') { renderGantt(); return; }
 
         const weekCols      = getWeekCols(weekOffset);
         const label         = weekLabel(weekCols);
@@ -573,6 +575,7 @@
                 </span>
                 <button class="pl-icon-btn" id="pl-clear"  title="Limpar esta semana">↺</button>
                 <button class="pl-icon-btn" id="pl-reload" title="Recarregar tarefas">⟳</button>
+                <button class="pl-icon-btn" id="pl-mode-toggle" title="Alternar visualização" style="font-weight:700;">Gantt</button>
             </div>
 
             <!-- BOARD -->
@@ -624,7 +627,358 @@
 
 
     /* ═══════════════════════════════════════════════════════════
-       8. EVENTOS DO PLANEJADOR
+        7b. RENDER — GANTT (substitui o planner quando viewMode='gantt')
+    ═══════════════════════════════════════════════════════════ */
+
+    function renderGantt() {
+
+        const weekCols      = getWeekCols(weekOffset);
+        const label         = weekLabel(weekCols);
+        const mobile        = isMobile();
+        const isCurrentWeek = weekOffset === 0;
+        const total         = allTasks.length;
+        const weekKeys      = new Set(weekCols.map(c => c.key));
+        const planned       = allTasks.filter(t => weekKeys.has(plannerData[t.id])).length;
+
+        // Collect tasks visible in the current week + backlog
+        const groups = new Map(); // noteId → { noteTitle, noteId, items[] }
+        const backlogTasks = [];
+
+        for (const t of allTasks) {
+            const startIso = plannerData[t.id];
+            if (!startIso) { backlogTasks.push(t); continue; }
+
+            const startIdx = weekCols.findIndex(c => c.key === startIso);
+            if (startIdx === -1) continue;
+
+            const uptoTag  = t.tags.find(tag => tag.type === 'deadline');
+            const endIso   = uptoTag ? uptoTag.value : startIso;
+            const endIdx   = weekCols.findIndex(c => c.key === endIso);
+
+            const progTag  = t.tags.find(tag => tag.type === 'progress');
+            const doneTag  = t.tags.find(tag => tag.type === 'status' && tag.value === 'done');
+
+            const item = {
+                id:            t.id,
+                text:          t.text,
+                tags:          t.tags,
+                noteId:        t.noteId,
+                noteTitle:     t.noteTitle,
+                checkboxIndex: t.checkboxIndex,
+                startIdx,
+                endIdx:        endIdx === -1 ? 6 : endIdx,
+                progress:      progTag ? progTag.value : (doneTag ? 100 : 0),
+                isOverdue:     uptoTag && endIso < todayBase.toISOString().slice(0, 10),
+                isDone:        !!doneTag,
+            };
+
+            if (!groups.has(t.noteId)) {
+                groups.set(t.noteId, { noteTitle: t.noteTitle, noteId: t.noteId, items: [] });
+            }
+            groups.get(t.noteId).items.push(item);
+        }
+
+        /* ── CSS ─────────────────────────────────────────── */
+        const css = `
+        .gantt-wrap { display:flex;flex-direction:column;height:100%;overflow:hidden; }
+        .gantt-scroll { overflow-x:auto;overflow-y:auto;flex:1;padding:0 12px 20px; }
+        .gantt-grid { display:grid;grid-template-columns:200px repeat(7,minmax(80px,1fr));min-width:700px; }
+        .gantt-hdr { position:sticky;top:0;z-index:3;background:var(--main-background-color,#1e1e2e);
+                     padding:8px 6px;font-size:12px;font-weight:700;text-transform:uppercase;
+                     letter-spacing:.06em;color:var(--muted-text-color,#888);
+                     border-bottom:1px solid var(--main-border-color,#313244); }
+        .gantt-hdr.today { color:var(--main-active-border-color,#89b4fa); }
+        .gantt-hdr-date { font-size:11px;font-weight:400;text-transform:none;letter-spacing:0; }
+        .gantt-note { grid-column:1/-1;padding:10px 6px 4px;font-size:15px;font-weight:700;
+                      text-transform:uppercase;letter-spacing:.06em;color:var(--muted-text-color,#888);
+                      border-bottom:none;display:flex;align-items:center;gap:6px; }
+        .gantt-note-count { display:inline-flex;align-items:center;justify-content:center;
+                            font-size:12px;background:var(--accented-background-color);
+                            padding:0 5px;border-radius:8px;font-weight:600;color:var(--muted-text-color); }
+        .gantt-label { padding:4px 6px;font-size:13px;overflow:hidden;
+                       border-bottom:1px solid var(--main-border-color,#313244);
+                       display:flex;flex-direction:column; }
+        .gantt-cell { position:relative;border-bottom:1px solid var(--main-border-color,#313244);
+                      min-height:34px; }
+        .gantt-bar { position:absolute;top:3px;bottom:3px;left:3px;right:3px;border-radius:5px;
+                     overflow:hidden;cursor:pointer;display:flex;align-items:center;padding:0 6px;
+                     transition:opacity .12s; }
+        .gantt-bar:hover { opacity:.85; }
+        .gantt-bar-done { background:rgba(46,204,113,0.22);border:1px solid rgba(46,204,113,0.35); }
+        .gantt-bar-overdue { background:rgba(243,139,168,0.22);border:1px solid rgba(243,139,168,0.35); }
+        .gantt-bar-progress { background:rgba(241,196,15,0.18);border:1px solid rgba(241,196,15,0.3); }
+        .gantt-bar-todo { background:rgba(137,180,250,0.13);border:1px solid rgba(137,180,250,0.22); }
+        .gantt-fill { position:absolute;top:0;left:0;bottom:0;border-radius:4px;pointer-events:none;
+                      transition:width .3s ease; }
+        .gantt-bar-done .gantt-fill { background:rgba(46,204,113,0.25); }
+        .gantt-bar-progress .gantt-fill { background:rgba(241,196,15,0.2); }
+        .gantt-bar-label { position:relative;z-index:1;font-size:12px;overflow:hidden;
+                           text-overflow:ellipsis;white-space:nowrap;color:var(--main-text-color); }
+        .gantt-bar-done .gantt-bar-label { text-decoration:line-through;opacity:.55; }
+        .gantt-backlog { padding:12px 16px;border-top:1px solid var(--main-border-color,#313244); }
+        .gantt-backlog summary { cursor:pointer;font-weight:600;font-size:14px;color:var(--muted-text-color);
+                                 padding:4px 0;user-select:none; }
+        .gantt-backlog summary:hover { color:var(--main-text-color); }
+        .gantt-blog-item { padding:3px 8px;font-size:14px;display:flex;align-items:center;gap:8px; }
+        .gantt-blog-check { flex-shrink:0;width:14px;height:14px;border:1.5px solid var(--main-border-color,#45475a);
+                            border-radius:3px;cursor:pointer;display:flex;align-items:center;
+                            justify-content:center;font-size:11px;color:transparent;user-select:none; }
+        .gantt-blog-check:hover { border-color:var(--main-text-color); }
+        .gantt-blog-text { cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+        .gantt-blog-text:hover { text-decoration:underline; }
+        .gantt-blog-note { font-size:12px;color:var(--muted-text-color,#888);flex-shrink:0; }
+        .gantt-blog-tags { display:flex;gap:3px;flex-shrink:0; }
+        .gantt-empty { padding:40px 24px;text-align:center;color:var(--muted-text-color);font-size:17px; }
+        .gantt-empty-sub { font-size:14px;margin-top:6px;opacity:.7; }
+        .gantt-label-tags { display:flex;flex-wrap:wrap;gap:3px;margin-top:2px; }
+        .gantt-label-doing { margin-top:2px;height:4px;background:rgba(128,128,128,0.15);border-radius:2px;overflow:hidden; }
+        .gantt-label-doing-fill { height:100%;border-radius:2px;background:#f1c40f;transition:width .3s ease; }
+        .tag-badge  { display:inline-flex;align-items:center;font-size:11px;padding:2px 6px;
+                      border-radius:3px;font-weight:600;letter-spacing:.02em;border:1px solid;
+                      line-height:1.4;user-select:none; }
+        .tag-todo   { background:rgba(230,126,34,0.15);color:#e67e22;border-color:rgba(230,126,34,0.3); }
+        .tag-doing  { background:rgba(241,196,15,0.15);color:#f1c40f;border-color:rgba(241,196,15,0.3); }
+        .tag-done   { background:rgba(46,204,113,0.15);color:#2ecc71;border-color:rgba(46,204,113,0.3); }
+        .tag-upto   { background:rgba(52,152,219,0.15);color:#3498db;border-color:rgba(52,152,219,0.3); }
+        .gantt-today-line { border-left:2px dashed rgba(137,180,250,0.5);pointer-events:none; }
+        .gantt-weekend-bg { background:rgba(128,128,128,0.04);pointer-events:none; }
+        .gantt-hdr-weekend { background:rgba(128,128,128,0.06); }
+        @media (max-width:700px) {
+            .gantt-grid { grid-template-columns:140px repeat(7,minmax(55px,1fr));min-width:500px; }
+            .gantt-label { font-size:12px;padding:3px 4px; }
+            .gantt-bar-label { font-size:11px; }
+            .gantt-hdr { font-size:11px;padding:6px 4px; }
+            .gantt-hdr-date { font-size:10px; }
+            .gantt-note { font-size:13px; }
+        }`;
+
+        let html = `<style>${css}</style>
+        <div class="gantt-wrap">
+
+            <!-- CABEÇALHO GANTT -->
+            <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
+                        flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
+                        flex-wrap:wrap;">
+                <span style="font-size:19px;font-weight:700;">Gantt</span>
+                <button class="pl-nav-btn" id="gantt-prev" title="Semana anterior">‹</button>
+                <span style="font-size:16px;color:var(--muted-text-color);white-space:nowrap;">
+                    ${esc(label)}
+                </span>
+                <button class="pl-nav-btn" id="gantt-next" title="Próxima semana">›</button>
+                ${!isCurrentWeek ? `<button class="pl-today-btn" id="gantt-now">hoje</button>` : ''}
+                <span style="font-size:14px;color:var(--muted-text-color);margin-left:auto;">
+                    ${planned}/${total}
+                </span>
+                <button class="pl-icon-btn" id="gantt-clear" title="Limpar esta semana">↺</button>
+                <button class="pl-icon-btn" id="gantt-reload" title="Recarregar tarefas">⟳</button>
+                <button class="pl-icon-btn" id="gantt-mode" title="Alternar visualização" style="font-weight:700;">Quadro</button>
+            </div>
+
+            <div class="gantt-scroll">
+                <div class="gantt-grid">`;
+
+        // HEADER ROW
+        html += `<div class="gantt-hdr" style="grid-column:1"></div>`;
+        for (const [i, col] of weekCols.entries()) {
+            const weekend = i >= 5 ? ' gantt-hdr-weekend' : '';
+            html += `<div class="gantt-hdr${col.isToday ? ' today' : ''}${weekend}" style="grid-column:span 1">
+                ${esc(col.label)}<br><span class="gantt-hdr-date">${esc(col.dateStr)}</span>
+            </div>`;
+        }
+
+        // TODAY VERTICAL LINE + WEEKEND BACKGROUND
+        const todayCol = weekCols.findIndex(c => c.isToday);
+        for (const [i] of weekCols.entries()) {
+            if (i >= 5) {
+                html += `<div class="gantt-weekend-bg" style="grid-column:${i + 2};grid-row:2 / -1"></div>`;
+            }
+            if (i === todayCol) {
+                html += `<div class="gantt-today-line" style="grid-column:${i + 2};grid-row:2 / -1"></div>`;
+            }
+        }
+
+        // TASK ROWS
+        let row = 2;
+
+        if (groups.size === 0) {
+            html += `<div class="gantt-empty" style="grid-column:1/-1;grid-row:2">
+                <div>Nenhuma tarefa agendada nesta semana</div>
+                <div class="gantt-empty-sub">Arraste tarefas do backlog para os dias no modo Quadro</div>
+            </div>`;
+        }
+
+        for (const [, group] of groups) {
+            html += `<div class="gantt-note" style="grid-row:${row}">
+                ${esc(group.noteTitle)}
+                <span class="gantt-note-count">${group.items.length}</span>
+            </div>`;
+            row++;
+
+            for (const item of group.items) {
+                const colStart = item.startIdx + 2;
+                const colEnd   = item.endIdx + 3;
+
+                let barClass = 'gantt-bar';
+                if (item.isDone)               barClass += ' gantt-bar-done';
+                else if (item.isOverdue)       barClass += ' gantt-bar-overdue';
+                else if (item.progress > 0)    barClass += ' gantt-bar-progress';
+                else                           barClass += ' gantt-bar-todo';
+
+                const tagsHtml = renderTagBadges(item.tags);
+                const doingHtml = renderDoingBar(item.tags);
+                const progTag = item.tags.find(t => t.type === 'progress');
+                const uptoTag = item.tags.find(t => t.type === 'deadline');
+                const tipParts = [item.text, `Nota: ${item.noteTitle}`];
+                if (progTag) tipParts.push(`◐ ${progTag.value}%`);
+                if (uptoTag) tipParts.push(`⇢ ${uptoTag.value}`);
+                const tooltip = tipParts.join(' · ');
+
+                html += `<div class="gantt-label" style="grid-row:${row}">
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <span class="gantt-task-label"
+                              data-note-id="${esc(item.noteId)}"
+                              style="cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(item.text)}</span>
+                        <span class="gantt-done-btn"
+                              data-task-id="${esc(item.id)}"
+                              data-note-id="${esc(item.noteId)}"
+                              data-cb-index="${item.checkboxIndex}"
+                              style="flex-shrink:0;cursor:pointer;font-size:14px;opacity:.4;
+                                     color:var(--muted-text-color);user-select:none;">✓</span>
+                    </div>
+                    ${tagsHtml ? `<div class="gantt-label-tags">${tagsHtml}</div>` : ''}
+                    ${doingHtml ? doingHtml.replace('doing-bar', 'gantt-label-doing').replace('doing-fill', 'gantt-label-doing-fill') : ''}
+                </div>`;
+
+                html += `<div class="gantt-cell" style="grid-column:${colStart}/${colEnd};grid-row:${row}">
+                    <div class="${barClass}"
+                         data-task-id="${esc(item.id)}"
+                         data-note-id="${esc(item.noteId)}"
+                         data-cb-index="${item.checkboxIndex}"
+                         title="${esc(tooltip)}">
+                        <div class="gantt-fill" style="width:${item.progress}%"></div>
+                        <span class="gantt-bar-label">${esc(item.text)}</span>
+                    </div>
+                </div>`;
+                row++;
+            }
+        }
+
+        html += `</div></div>`; // close grid + scroll
+
+        // BACKLOG
+        if (backlogTasks.length) {
+            html += `<div class="gantt-backlog">
+                <details>
+                    <summary>Backlog (${backlogTasks.length} tarefa${backlogTasks.length !== 1 ? 's' : ''} sem data)</summary>
+                    <div style="margin-top:6px;">
+                    ${backlogTasks.map(t => {
+                        const tagsHtml = renderTagBadges(t.tags);
+                        return `<div class="gantt-blog-item">
+                            <span class="gantt-blog-check"
+                                  data-task-id="${esc(t.id)}"
+                                  data-note-id="${esc(t.noteId)}"
+                                  data-cb-index="${t.checkboxIndex}">✓</span>
+                            <span class="gantt-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
+                            <span class="gantt-blog-note">${esc(t.noteTitle)}</span>
+                            ${tagsHtml ? `<span class="gantt-blog-tags">${tagsHtml}</span>` : ''}
+                        </div>`;
+                    }).join('')}
+                    </div>
+                </details>
+            </div>`;
+        }
+
+        html += `</div>`; // close gantt-wrap
+
+        $pl.html(html);
+        bindGanttEvents(weekCols);
+    }
+
+
+    /* ═══════════════════════════════════════════════════════════
+        7c. EVENTOS DO GANTT
+    ═══════════════════════════════════════════════════════════ */
+
+    function bindGanttEvents(weekCols) {
+
+        $pl.find('#gantt-prev').on('click',  () => { weekOffset--; renderPlanner(); });
+        $pl.find('#gantt-next').on('click',  () => { weekOffset++; renderPlanner(); });
+        $pl.find('#gantt-now').on('click',   () => { weekOffset = 0; renderPlanner(); });
+
+        $pl.find('#gantt-reload').on('click', async function () {
+            $(this).text('…');
+            try { await fetchTasks(); } catch (_) {}
+            renderPlanner();
+            renderTasks();
+        });
+
+        $pl.find('#gantt-clear').on('click', () => {
+            if (!confirm(`Limpar planejamento de ${weekLabel(weekCols)}?`)) return;
+            const weekKeys = new Set(weekCols.map(c => c.key));
+            for (const t of allTasks) {
+                if (weekKeys.has(plannerData[t.id])) delete plannerData[t.id];
+            }
+            save();
+            renderPlanner();
+            renderTasks();
+        });
+
+        $pl.find('#gantt-mode').on('click', async () => {
+            viewMode = 'kanban';
+            plannerData._viewMode = 'kanban';
+            await save();
+            renderPlanner();
+        });
+
+        // Bar click → open source note
+        $pl.find('.gantt-bar').on('click', function () {
+            api.activateNote($(this).data('noteId'));
+        });
+
+        // Task label click → open source note
+        $pl.find('.gantt-task-label').on('click', function () {
+            api.activateNote($(this).data('noteId'));
+        });
+
+        // Backlog text click → open source note
+        $pl.find('.gantt-blog-text').on('click', function () {
+            api.activateNote($(this).data('noteId'));
+        });
+
+        // Done button on Gantt bars
+        $pl.find('.gantt-done-btn').on('click', async function (e) {
+            e.stopPropagation();
+            const $btn = $(this);
+            const taskId  = String($btn.data('taskId'));
+            const noteId  = String($btn.data('noteId'));
+            const cbIndex = parseInt($btn.data('cbIndex'), 10);
+            if (!taskId || !noteId || isNaN(cbIndex)) return;
+            try {
+                await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
+                renderPlanner();
+                renderTasks();
+            } catch (err) { console.error('gantt markDone error:', err); }
+        });
+
+        // Done on backlog items
+        $pl.find('.gantt-blog-check').on('click', async function (e) {
+            e.stopPropagation();
+            const $btn = $(this);
+            const taskId  = String($btn.data('taskId'));
+            const noteId  = String($btn.data('noteId'));
+            const cbIndex = parseInt($btn.data('cbIndex'), 10);
+            if (!taskId || !noteId || isNaN(cbIndex)) return;
+            try {
+                await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
+                renderPlanner();
+                renderTasks();
+            } catch (err) { console.error('gantt blog markDone error:', err); }
+        });
+    }
+
+
+    /* ═══════════════════════════════════════════════════════════
+        8. EVENTOS DO PLANEJADOR
     ═══════════════════════════════════════════════════════════ */
 
     function bindPlannerEvents(weekCols, allCols) {
@@ -638,6 +992,13 @@
             try { await fetchTasks(); } catch (_) {}
             renderPlanner();
             renderTasks();
+        });
+
+        $pl.find('#pl-mode-toggle').on('click', async () => {
+            viewMode = 'gantt';
+            plannerData._viewMode = 'gantt';
+            await save();
+            renderPlanner();
         });
 
         $pl.find('#pl-clear').on('click', () => {
@@ -1031,6 +1392,9 @@
 
     try {
         plannerData = await loadPlannerData();
+        if (plannerData._viewMode === 'gantt' || plannerData._viewMode === 'kanban') {
+            viewMode = plannerData._viewMode;
+        }
         await fetchTasks();
         migrateIds(); // converte IDs antigos na primeira carga; inofensivo se já migrado
     } catch (err) {

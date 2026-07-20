@@ -1,1 +1,38 @@
-Kanboard-Integration/CONTEXTO.md
+# ── OS ──
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+*.bak
+
+# ── IDE / Editor ──
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# ── Environment ──
+.env
+.env.local
+
+# ── Node ──
+node_modules/
+
+# ── Project-specific ──
+# Personal context / notes
+**/CONTEXTO.md
+CONTEXTO.txt
+
+# Backup / older versions (source is the latest)
+**/Canvas tools v5.js
+
+# Generated zips (redundant — source .js is tracked)
+**/*.zip

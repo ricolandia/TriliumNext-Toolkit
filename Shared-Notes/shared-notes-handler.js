@@ -40,7 +40,7 @@ try {
     return reply(400, { error: 'JSON inválido.' });
 }
 
-const { inviteToken, from, replies } = body;
+const { inviteToken, from, replies, replyEndpoint } = body;
 
 // ── 1. Validação básica ────────────────────────────────────────────────────
 if (!inviteToken || !from || !Array.isArray(replies) || replies.length === 0) {
@@ -61,12 +61,7 @@ if (!gate) {
     return reply(404, { error: 'Token de convite inválido ou não encontrado.' });
 }
 
-// ── 3. Single-use: já foi utilizado? ──────────────────────────────────────
-if (gate.getLabelValue('inviteUsed') === 'true') {
-    return reply(409, { error: 'Este convite já foi utilizado. Reenvio bloqueado.' });
-}
-
-// ── 4. Verifica expiração (7 dias) ────────────────────────────────────────
+// ── 3. Verifica expiração (7 dias) ────────────────────────────────────────
 const expiresRaw = gate.getLabelValue('inviteExpires');
 if (expiresRaw) {
     const expiresAt = parseInt(expiresRaw, 10);
@@ -118,12 +113,13 @@ if (created.length === 0) {
     return reply(500, { error: 'Nenhuma nota criada. Erros: ' + errors.join('; ') });
 }
 
-// ── 7. Marca gate como usada (invalida reenvio) ───────────────────────────
-gate.setLabel('inviteUsed',        'true');
-gate.setLabel('inviteCompletedAt', isoNow);
-gate.setLabel('inviteCompletedBy', from);
-// Renomeia para feedback visual na árvore de A
-gate.title = `✅ Respondido por ${from} — ${ts}`;
+// ── 7. Armazena endpoint de B na nota original (para A responder) ────────
+if (replyEndpoint) {
+    originalNote.setLabel('replyEndpoint', replyEndpoint);
+}
+
+// Renomeia gate para feedback visual
+gate.title = `💬 Respostas de ${from} — ${ts}`;
 gate.save();
 
 // ── 8. Responde com sucesso ────────────────────────────────────────────────

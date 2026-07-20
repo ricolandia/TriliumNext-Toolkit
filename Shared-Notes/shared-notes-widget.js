@@ -12,7 +12,7 @@
 // SEGURANÇA:
 //   - Token efêmero (UUID) por convite — NÃO é o token ETAPI
 //   - ETAPI nunca aparece na string de convite
-//   - Envio de respostas via api.runOnBackend + require('https') (sem CORS)
+//   - Envio de respostas via api.runAsyncOnBackendWithManualTransactionHandling + require('https') (sem CORS)
 //   - Single-use validado no backend de A
 //   - Expiração de 7 dias verificada no handler
 // ══════════════════════════════════════════════════════════════════════════════
@@ -88,7 +88,7 @@ const HTML = `${STYLE}
   <div class="sn-tabs">
     <button class="sn-tab active" data-tab="gerar">${ICONS.share} Gerar convite</button>
     <button class="sn-tab"        data-tab="aceitar">${ICONS.inbox} Aceitar convite</button>
-    <button class="sn-tab hidden" data-tab="enviar" id="sn-tab-enviar">${ICONS.reply} Enviar respostas</button>
+    <button class="sn-tab hidden" data-tab="enviar" id="sn-tab-enviar">${ICONS.reply} Responder</button>
   </div>
 
   <!-- PAINEL 1: Gerar convite -->
@@ -117,16 +117,12 @@ const HTML = `${STYLE}
     <p class="sn-status" id="sn-aceitar-status"></p>
   </div>
 
-  <!-- PAINEL 3: Enviar respostas (só em notas sharedInbox) -->
+  <!-- PAINEL 3: Responder (notas com replyEndpoint) -->
   <div class="sn-panel" data-panel="enviar">
-    <div id="sn-ja-enviado" style="display:none">
-      <span class="sn-badge">Respostas já enviadas</span>
-      <p class="sn-status warn" style="margin-top:6px">Convite utilizado. Reenvio permanentemente bloqueado.</p>
-    </div>
     <div id="sn-enviar-form">
-      <p class="sn-info warn" style="color:#facc15">
+      <p class="sn-info" style="color:var(--muted-text-color)">
         Crie notas filhas desta nota como suas respostas.<br>
-        O envio é <strong>único e irreversível</strong>.
+        O envio é <strong>cumulativo</strong> — apenas notas não enviadas serão transmitidas.
       </p>
       <div class="sn-row">
         <span class="sn-status" id="sn-replies-count" style="margin:0"></span>
@@ -158,25 +154,27 @@ class SharedNotesWidget extends api.RightPanelWidget {
         if (!note) return;
         this._sharedNote = note;
 
-        const isShared    = note.hasLabel('sharedFrom');
-        const alreadySent = note.getLabelValue('inviteSent') === 'true';
+        const hasReplyEp = note.hasLabel('replyEndpoint');
 
-        // Mostra aba de envio só em notas do Shared Inbox
-        this.$widget.find('#sn-tab-enviar').toggleClass('hidden', !isShared);
+        // Aba "Responder" aparece quando há endpoint de reply (B ou A podem responder)
+        this.$widget.find('#sn-tab-enviar').toggleClass('hidden', !hasReplyEp);
 
-        if (isShared) {
-            this.$widget.find('#sn-ja-enviado').toggle(alreadySent);
-            this.$widget.find('#sn-enviar-form').toggle(!alreadySent);
-
-            if (!alreadySent) {
-                const count = await api.runOnBackend(
-                    (nid) => (api.getNote(nid)?.getChildNotes().length ?? 0),
-                    [note.noteId]
-                );
-                this.$widget.find('#sn-replies-count').text(
-                    count === 0 ? 'Nenhuma nota filha ainda.' : `${count} nota(s) filha(s) prontas para envio.`
-                );
-            }
+        if (hasReplyEp) {
+            const count = await api.runOnBackend(
+                (nid) => {
+                    const n = api.getNote(nid);
+                    if (!n) return 0;
+                    return n.getChildNotes().filter(
+                        c => c.getLabelValue('snSent') !== 'true'
+                    ).length;
+                },
+                [note.noteId]
+            );
+            this.$widget.find('#sn-replies-count').text(
+                count === 0
+                    ? 'Todas as notas filhas já foram enviadas.'
+                    : `${count} nota(s) filha(s) não enviada(s).`
+            );
         }
 
         // Limpa status ao trocar de nota
@@ -232,6 +230,11 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 const noteTitle   = note.title;
                 const noteContent = note.getContent();
 
+                // Versionamento de snapshot
+                const prevVer = parseInt(note.getLabelValue('snVersion') || '0', 10);
+                const snapVer = prevVer + 1;
+                note.setLabel('snVersion', String(snapVer));
+
                 // Expiração: 7 dias
                 const expiresAt = (Date.now() + 7 * 24 * 60 * 60 * 1000).toString();
 
@@ -249,11 +252,12 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 gate.setLabel('inviteExpires',         expiresAt);
 
                 return {
-                    ok:          true,
+                    ok:             true,
                     myName,
                     myEndpoint,
                     noteTitle,
-                    noteContent
+                    noteContent,
+                    snapshotVersion: snapVer
                 };
             }, [noteId, inviteToken]);
 
@@ -264,13 +268,14 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
             // Monta payload — SEM token ETAPI
             const payload = {
-                v:           2,
-                from:        result.myName,
-                noteId:      noteId,
-                noteTitle:   result.noteTitle,
-                noteContent: result.noteContent,
-            endpoint:    result.myEndpoint.replace(/\/+$/, '') + '/custom/shared-notes-reply',
-                inviteToken: inviteToken
+                v:               2,
+                from:            result.myName,
+                noteId:          noteId,
+                noteTitle:       result.noteTitle,
+                noteContent:     result.noteContent,
+                endpoint:        result.myEndpoint.replace(/\/+$/, '') + '/custom/shared-notes-reply',
+                inviteToken:     inviteToken,
+                snapshotVersion: result.snapshotVersion
             };
 
             // Codificação segura para UTF-8 / emojis / acentos
@@ -331,9 +336,48 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 return;
             }
 
-            // Cria nota no Shared Inbox via backend
+            // Verifica se já temos esta nota (mesmo sharedNoteId) — versão anterior
+            const existing = await api.runOnBackend((p) => {
+                const inbox = api.searchForNote('#sharedInbox');
+                if (!inbox) return null;
+                for (const c of inbox.getChildNotes()) {
+                    if (c.getLabelValue('sharedNoteId') === p.noteId) {
+                        return {
+                            noteId: c.noteId,
+                            version: parseInt(c.getLabelValue('snVersion') || '1', 10)
+                        };
+                    }
+                }
+                return null;
+            }, [payload]);
+
+            if (existing) {
+                // Atualiza nota existente (mesmo sharedNoteId)
+                const newVer = payload.snapshotVersion || existing.version + 1;
+                const upResult = await api.runOnBackend((nid, content, title, from, ver) => {
+                    const note = api.getNote(nid);
+                    if (!note) return { error: 'Nota não encontrada' };
+                    note.setContent(content);
+                    note.title = '📨 ' + from + ' — ' + title;
+                    if (ver > 1) note.title += ' [v' + ver + ']';
+                    note.setLabel('snVersion', String(ver));
+                    return { ok: true, noteId: nid };
+                }, [existing.noteId, payload.noteContent, payload.noteTitle, payload.from, newVer]);
+
+                if (upResult.error) {
+                    this._status('aceitar', 'err', upResult.error);
+                    return;
+                }
+
+                this.$widget.find('#sn-convite-in').val('');
+                this._status('aceitar', 'ok',
+                    `Nota atualizada para versão ${newVer}!`
+                );
+                return;
+            }
+
+            // Primeiro recebimento — cria nota nova
             const result = await api.runOnBackend((p) => {
-                // Busca ou cria #sharedInbox
                 let inbox = api.searchForNote('#sharedInbox');
                 if (!inbox) {
                     const { note: created } = api.createNewNote({
@@ -346,7 +390,6 @@ class SharedNotesWidget extends api.RightPanelWidget {
                     inbox = created;
                 }
 
-                // Cria nota com conteúdo recebido
                 const { note: shared } = api.createNewNote({
                     parentNoteId: inbox.noteId,
                     title:        '📨 ' + p.from + ' — ' + p.noteTitle,
@@ -354,14 +397,13 @@ class SharedNotesWidget extends api.RightPanelWidget {
                     type:         'text'
                 });
 
-                // Labels de controle (sem armazenar token ETAPI)
                 shared.setLabel('sharedFrom',     p.from);
                 shared.setLabel('sharedNoteId',   p.noteId);
                 shared.setLabel('replyEndpoint',  p.endpoint);
                 shared.setLabel('inviteToken',    p.inviteToken);
-                shared.setLabel('inviteSent',     'false');
+                shared.setLabel('snVersion',      String(p.snapshotVersion || 1));
 
-                return { ok: true, noteId: shared.noteId };
+                return { ok: true, noteId: shared.noteId, version: p.snapshotVersion || 1 };
             }, [payload]);
 
             if (result.error) {
@@ -371,7 +413,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
             this.$widget.find('#sn-convite-in').val('');
             this._status('aceitar', 'ok',
-                `Nota criada em 📥 Shared Inbox! Abra-a na árvore, adicione notas filhas como respostas e use a aba "↩️ Enviar respostas".`
+                `Nota criada em 📥 Shared Inbox (v${result.version})! Abra-a na árvore, adicione notas filhas como respostas e use a aba "↩️ Responder".`
             );
 
         } catch(e) {
@@ -399,87 +441,101 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
             if (!endpoint || !token) {
                 this._status('enviar', 'err', 'Metadados de envio ausentes. Esta nota é um convite válido?');
+                $btn.prop('disabled', false);
                 return;
             }
 
-            // Nome de quem responde
-            const myName = await api.runOnBackend(() => {
+            // Nome + endpoint de quem responde
+            const config = await api.runOnBackend(() => {
                 const cfg = api.searchForNote('#sharedNotesConfig');
-                return cfg?.getLabelValue('myName') || 'Anônimo';
+                return {
+                    name:     cfg?.getLabelValue('myName')     || 'Anônimo',
+                    endpoint: cfg?.getLabelValue('myEndpoint') || ''
+                };
             }, []);
 
-            // Coleta notas filhas
+            // Coleta apenas notas filhas NÃO enviadas
             const children = await api.runOnBackend((nid) => {
                 const note = api.getNote(nid);
                 if (!note) return [];
-                return note.getChildNotes().map(c => ({
-                    title:   c.title,
-                    content: c.getContent(),
-                    type:    c.type
-                }));
+                return note.getChildNotes()
+                    .filter(c => c.getLabelValue('snSent') !== 'true')
+                    .map(c => ({
+                        title:   c.title,
+                        content: c.getContent(),
+                        type:    c.type
+                    }));
             }, [noteId]);
 
             if (!children.length) {
-                this._status('enviar', 'warn', 'Nenhuma nota filha para enviar. Crie suas respostas como notas filhas desta nota.');
+                this._status('enviar', 'warn', 'Nenhuma nota filha nova para enviar. Crie respostas como notas filhas desta nota.');
                 $btn.prop('disabled', false);
                 return;
             }
 
             this._status('enviar', '', `Enviando ${children.length} resposta(s) via backend…`);
 
+            // Monta payload com replyEndpoint de B incluso
+            const myEndpoint = config.endpoint
+                ? config.endpoint.replace(/\/+$/, '') + '/custom/shared-notes-reply'
+                : '';
+
             // Envio servidor→servidor via require('https') — sem CORS
-            const result = await api.runOnBackend((ep, tok, repls, from) => {
-                const https = require('https');
-                const http  = require('http');
-                const url   = new URL(ep);
-                const mod   = url.protocol === 'https:' ? https : http;
-                const body  = JSON.stringify({ inviteToken: tok, from, replies: repls });
+            const result = await api.runAsyncOnBackendWithManualTransactionHandling(
+                async (ep, tok, repls, from, replyEp) => {
+                    const https = require('https');
+                    const http  = require('http');
+                    const url   = new URL(ep);
+                    const mod   = url.protocol === 'https:' ? https : http;
+                    const body  = JSON.stringify({
+                        inviteToken: tok,
+                        from,
+                        replies: repls,
+                        replyEndpoint: replyEp
+                    });
 
-                const REQ_TIMEOUT = 30000; // 30s
+                    const REQ_TIMEOUT = 30000;
 
-                return new Promise((resolve) => {
-                    const req = mod.request({
-                        hostname: url.hostname,
-                        port:     url.port || (url.protocol === 'https:' ? 443 : 80),
-                        path:     url.pathname,
-                        method:   'POST',
-                        headers:  {
-                            'Content-Type':   'application/json',
-                            'Content-Length': Buffer.byteLength(body)
-                        },
-                        timeout: REQ_TIMEOUT
-                    }, (res) => {
-                        let raw = '';
-                        res.on('data', d => raw += d);
-                        res.on('end', () => {
-                            try {
-                                resolve({ status: res.statusCode, data: JSON.parse(raw) });
-                            } catch(e) {
-                                resolve({ status: res.statusCode, data: { raw } });
-                            }
+                    return new Promise((resolve) => {
+                        const req = mod.request({
+                            hostname: url.hostname,
+                            port:     url.port || (url.protocol === 'https:' ? 443 : 80),
+                            path:     url.pathname,
+                            method:   'POST',
+                            headers:  {
+                                'Content-Type':   'application/json',
+                                'Content-Length': Buffer.byteLength(body)
+                            },
+                            timeout: REQ_TIMEOUT
+                        }, (res) => {
+                            let raw = '';
+                            res.on('data', d => raw += d);
+                            res.on('end', () => {
+                                try {
+                                    resolve({ status: res.statusCode, data: JSON.parse(raw) });
+                                } catch(e) {
+                                    resolve({ status: res.statusCode, data: { raw } });
+                                }
+                            });
                         });
+                        req.on('error', (e) => resolve({ status: 0, error: e.message }));
+                        req.on('timeout', () => {
+                            req.destroy();
+                            resolve({ status: 0, error: 'Timeout: servidor não respondeu em 30s.' });
+                        });
+                        req.write(body);
+                        req.end();
                     });
-                    req.on('error', (e) => resolve({ status: 0, error: e.message }));
-                    req.on('timeout', () => {
-                        req.destroy();
-                        resolve({ status: 0, error: 'Timeout: servidor não respondeu em 30s.' });
-                    });
-                    req.write(body);
-                    req.end();
-                });
-            }, [endpoint, token, children, myName]);
+                },
+                [endpoint, token, children, config.name, myEndpoint]
+            );
 
-            // Trata resposta do servidor de A
             if (result.error) {
                 this._status('enviar', 'err', 'Erro de conexão: ' + result.error);
                 $btn.prop('disabled', false);
                 return;
             }
 
-            if (result.status === 409) {
-                this._status('enviar', 'err', 'Convite já utilizado. Reenvio bloqueado pelo servidor.');
-                return;
-            }
             if (result.status === 410) {
                 this._status('enviar', 'err', 'Convite expirado (mais de 7 dias).');
                 return;
@@ -491,10 +547,16 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 return;
             }
 
-            // Marca localmente como enviado — bloqueia reenvio no lado de B
+            // Marca child notes como enviadas (permite novo envio de futuras)
             try {
                 await api.runOnBackend((nid) => {
-                    api.getNote(nid)?.setLabel('inviteSent', 'true');
+                    const note = api.getNote(nid);
+                    if (!note) return;
+                    note.getChildNotes().forEach(c => {
+                        if (c.getLabelValue('snSent') !== 'true') {
+                            c.setLabel('snSent', 'true');
+                        }
+                    });
                 }, [noteId]);
             } catch(e) {
                 this._status('enviar', 'warn', 'Respostas enviadas, mas falha ao marcar localmente: ' + e.message);
@@ -503,12 +565,22 @@ class SharedNotesWidget extends api.RightPanelWidget {
             const received = result.data?.received ?? children.length;
             this._status('enviar', 'ok', `${received} resposta(s) enviada(s) com sucesso!`);
 
-            // Atualiza UI
-            this.$widget.find('#sn-enviar-form').hide();
-            this.$widget.find('#sn-ja-enviado').show();
+            // Atualiza contagem de não-enviadas
+            const remaining = await api.runOnBackend((nid) => {
+                const n = api.getNote(nid);
+                if (!n) return 0;
+                return n.getChildNotes().filter(c => c.getLabelValue('snSent') !== 'true').length;
+            }, [noteId]);
+
+            this.$widget.find('#sn-replies-count').text(
+                remaining === 0
+                    ? 'Todas as notas filhas já foram enviadas.'
+                    : `${remaining} nota(s) filha(s) não enviada(s).`
+            );
 
         } catch(e) {
             this._status('enviar', 'err', 'Erro inesperado: ' + e.message);
+        } finally {
             $btn.prop('disabled', false);
         }
     }
