@@ -143,9 +143,9 @@
             return '';
         });
 
-        // #upto=MM-DD-YYYY
-        cleanText = cleanText.replace(/#upto=(\d{2}-\d{2}-\d{4})/gi, (m, d) => {
-            tags.push({ type: 'deadline', value: d, label: `#upto=${d}` });
+        // #upto=MM-DD-YYYY → armazena como YYYY-MM-DD
+        cleanText = cleanText.replace(/#upto=(\d{2})-(\d{2})-(\d{4})/gi, (match, mo, d, y) => {
+            tags.push({ type: 'deadline', value: `${y}-${mo}-${d}`, label: `#upto=${mo}-${d}-${y}` });
             return '';
         });
 
@@ -396,7 +396,7 @@
                     return `<span class="tag-badge tag-doing">◐ ${tag.value}%</span>`;
                 case 'deadline': {
                     const parts = tag.value.split('-');
-                    return `<span class="tag-badge tag-upto">⇢ ${parts[1]}/${parts[0]}</span>`;
+                    return `<span class="tag-badge tag-upto">⇢ ${parts[1]}/${parts[2]}</span>`;
                 }
                 default:
                     return '';
