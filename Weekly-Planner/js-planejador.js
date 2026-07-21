@@ -161,6 +161,18 @@
             return '';
         });
 
+        // #every=Nd (recorrência)
+        cleanText = cleanText.replace(/#every=(\d+)\s*d\b/gi, (m, n) => {
+            tags.push({ type: 'recur', value: parseInt(n, 10), label: `#every=${n}d` });
+            return '';
+        });
+
+        // #total=N
+        cleanText = cleanText.replace(/#total=(\d+)/gi, (m, n) => {
+            tags.push({ type: 'total', value: parseInt(n, 10), label: `#total=${n}` });
+            return '';
+        });
+
         cleanText = cleanText.replace(/\s+/g, ' ').trim();
         return { cleanText, tags };
     }
@@ -172,7 +184,129 @@
 
     async function fetchTasks() {
 
-        const groups = await api.runOnBackend(() => {
+        const data = await api.runOnBackend(() => {
+
+            function expandRecurringInContent(content, noteId) {
+                const all = [];
+                const inputRe = /<input\s[^>]*type=["']checkbox["'][^>]*>/gi;
+                let match;
+                let idx = 0;
+                while ((match = inputRe.exec(content)) !== null) {
+                    const isChecked = /checked/i.test(match[0]);
+                    const ss = content.indexOf('<span', match.index);
+                    const se = content.indexOf('</span>', ss);
+                    let text = '';
+                    if (ss !== -1 && se !== -1) {
+                        text = content.substring(content.indexOf('>', ss) + 1, se)
+                            .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+                    }
+                    all.push({ cbIndex: idx, isChecked, text });
+                    idx++;
+                }
+                let changed = false;
+                let html = content;
+                const pending = [];
+                for (let i = all.length - 1; i >= 0; i--) {
+                    const cb = all[i];
+                    if (cb.isChecked || !cb.text) continue;
+                    const everyMatch = cb.text.match(/#every=(\d+)\s*d\b/i);
+                    const totalMatch = cb.text.match(/#total=(\d+)/i);
+                    if (!everyMatch || !totalMatch) continue;
+                    const every = parseInt(everyMatch[1], 10);
+                    const total = parseInt(totalMatch[1], 10);
+                    if (total <= 1) continue;
+                    const uptoMatch = cb.text.match(/#upto=(\d{2})-(\d{2})-(\d{4})/);
+                    let baseDate;
+                    if (uptoMatch) {
+                        baseDate = new Date(`${uptoMatch[3]}-${uptoMatch[1]}-${uptoMatch[2]}T12:00:00`);
+                    } else {
+                        baseDate = new Date();
+                        baseDate.setHours(12, 0, 0, 0);
+                    }
+                    const inpRe = /<input\s[^>]*type=["']checkbox["'][^>]*>/gi;
+                    let c = 0;
+                    let inpPos;
+                    while ((inpPos = inpRe.exec(html)) !== null) {
+                        if (c === cb.cbIndex) break;
+                        c++;
+                    }
+                    if (!inpPos) continue;
+                    const before = html.substring(0, inpPos.index);
+                    const liOpen = before.lastIndexOf('<li');
+                    if (liOpen === -1) continue;
+
+                    function findLiClose(h, openPos) {
+                        let depth = 1;
+                        let p = h.indexOf('>', openPos) + 1;
+                        while (depth > 0 && p < h.length) {
+                            const nLi = h.indexOf('<li', p);
+                            const nCl = h.indexOf('</li>', p);
+                            if (nCl === -1) return -1;
+                            if (nLi !== -1 && nLi < nCl) {
+                                const ch = h.charAt(nLi + 3);
+                                if (ch === ' ' || ch === '>' || ch === '\t' || ch === '\n' || ch === '\r') depth++;
+                                p = nLi + 4;
+                            } else {
+                                depth--;
+                                p = nCl + 5;
+                            }
+                        }
+                        return depth === 0 ? p - 5 : -1;
+                    }
+
+                    const liClose = findLiClose(html, liOpen);
+                    if (liClose === -1) continue;
+
+                    const liHtml = html.substring(liOpen, liClose);
+                    let clones = '';
+
+                    for (let k = 1; k < total; k++) {
+                        const d = new Date(baseDate);
+                        d.setDate(d.getDate() + every * k);
+                        const nmm = String(d.getMonth() + 1).padStart(2, '0');
+                        const ndd = String(d.getDate()).padStart(2, '0');
+                        const nyyyy = d.getFullYear();
+
+                        let clone = liHtml
+                            .replace(/#every=\d+\s*d/gi, '')
+                            .replace(/#total=\d+/gi, '')
+                            .replace(/#doing=\d{1,3}%?/gi, '')
+                            .replace(/#doing\b/gi, '')
+                            .replace(/#done\b/gi, '')
+                            .replace(/#upto=\d{2}-\d{2}-\d{4}/g, `#upto=${nmm}-${ndd}-${nyyyy}`)
+                            .replace(/(<input[^>]*?)\s+checked\b/gi, '$1');
+
+                        clones += '\n' + clone;
+                        pending.push({ origIdx: cb.cbIndex, cloneNum: k, date: `${nyyyy}-${nmm}-${ndd}` });
+                    }
+                    if (clones) {
+                        // Remove #every e #total do original (evita re-expansão)
+                        const stripped = liHtml.replace(/#every=\d+\s*d/gi, '').replace(/#total=\d+/gi, '');
+                        html = html.substring(0, liOpen) + stripped + clones + html.substring(liClose);
+                        changed = true;
+                    }
+                }
+
+                // Recalcula cbIndex final dos clones considerando todas as inserções
+                const generated = [];
+                if (changed && pending.length) {
+                    pending.sort((a, b) => a.origIdx - b.origIdx || a.cloneNum - b.cloneNum);
+                    const clonesPerGroup = {};
+                    for (const p of pending) clonesPerGroup[p.origIdx] = (clonesPerGroup[p.origIdx] || 0) + 1;
+                    const offsets = {};
+                    let cumulative = 0;
+                    for (const group of Object.keys(clonesPerGroup).map(Number).sort((a, b) => a - b)) {
+                        offsets[group] = cumulative;
+                        cumulative += clonesPerGroup[group];
+                    }
+                    for (const p of pending) {
+                        const finalIdx = p.origIdx + (offsets[p.origIdx] || 0) + p.cloneNum;
+                        generated.push({ noteId, cbIndex: finalIdx, date: p.date });
+                    }
+                }
+
+                return { html: changed ? html : content, generated };
+            }
 
             const rows = api.sql.getRows(`
                 SELECT noteId, title
@@ -182,23 +316,32 @@
             `);
 
             const result = [];
+            const genMap = new Map();
 
             for (const row of rows) {
                 const note = api.getNote(row.noteId);
                 if (!note) continue;
-                const content = note.getContent();
+                let content = note.getContent();
                 if (!content || !content.includes('checkbox')) continue;
 
+                // ── Expande tasks recorrentes ANTES da extração ─────────────
+                const expResult = expandRecurringInContent(content, row.noteId);
+                if (expResult.html !== content) {
+                    content = expResult.html;
+                    note.setContent(content);
+                    for (const g of expResult.generated) {
+                        genMap.set(g.noteId + '::' + g.cbIndex, g.date);
+                    }
+                }
+
+                // ── Extrai checkboxes não marcados ──────────────────────────
                 const tasks = [];
                 const re = /<input\s[^>]*type=["']checkbox["'][^>]*>/gi;
                 let m;
-                let cbIndex = 0; // conta TODOS os checkboxes da nota (incl. marcados)
+                let cbIndex = 0;
 
                 while ((m = re.exec(content)) !== null) {
-
-                    const isChecked = /checked/i.test(m[0]);
-
-                    if (!isChecked) {
+                    if (!/checked/i.test(m[0])) {
                         const ss = content.indexOf('<span', m.index);
                         const se = content.indexOf('</span>', ss);
                         if (ss !== -1 && se !== -1) {
@@ -218,8 +361,7 @@
                             if (text) tasks.push({ text, cbIndex });
                         }
                     }
-
-                    cbIndex++; // incrementa sempre, mesmo para marcados
+                    cbIndex++;
                 }
 
                 if (tasks.length) {
@@ -231,12 +373,12 @@
                 }
             }
 
-            return result;
+            return { groups: result, generated: Object.fromEntries(genMap) };
         });
 
         allTasks = [];
 
-        for (const g of groups) {
+        for (const g of data.groups) {
             for (const task of g.tasks) {
                             // FIX: ID usa cbIndex em vez de texto — elimina colisões
                 const id = `${g.noteId}::${task.cbIndex}`;
@@ -250,6 +392,18 @@
                     noteTitle:      g.title,
                 });
             }
+        }
+
+        // Auto-insere no plannerData tasks geradas por recorrência (datas específicas)
+        for (const [id, date] of Object.entries(data.generated)) {
+            plannerData[id] = date;
+        }
+
+        // Poda entradas órfãs do plannerData (tasks que não existem mais)
+        const validIds = new Set(allTasks.map(t => t.id));
+        for (const key of Object.keys(plannerData)) {
+            if (key.startsWith('_')) continue;
+            if (!validIds.has(key)) delete plannerData[key];
         }
     }
 
