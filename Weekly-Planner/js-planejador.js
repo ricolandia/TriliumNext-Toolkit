@@ -95,6 +95,8 @@
     let allTasks    = [];    // { id, text, tags, checkboxIndex, noteId, noteTitle }
     let plannerData = {};    // { taskId: 'YYYY-MM-DD' }
     let viewMode    = 'kanban'; // 'kanban' | 'gantt'
+    let cbStats     = {};    // { noteId: { checked, total } }
+    let collapsedNotes = new Set(); // noteIds colapsados na lista de tarefas
 
 
     /* ═══════════════════════════════════════════════════════════
@@ -317,6 +319,7 @@
 
             const result = [];
             const genMap = new Map();
+            const cbStats = {};
 
             for (const row of rows) {
                 const note = api.getNote(row.noteId);
@@ -334,14 +337,17 @@
                     }
                 }
 
-                // ── Extrai checkboxes não marcados ──────────────────────────
+                // ── Extrai checkboxes não marcados + estatísticas ──────────
                 const tasks = [];
                 const re = /<input\s[^>]*type=["']checkbox["'][^>]*>/gi;
                 let m;
                 let cbIndex = 0;
+                let checkedCbs = 0;
 
                 while ((m = re.exec(content)) !== null) {
-                    if (!/checked/i.test(m[0])) {
+                    if (/checked/i.test(m[0])) {
+                        checkedCbs++;
+                    } else {
                         const ss = content.indexOf('<span', m.index);
                         const se = content.indexOf('</span>', ss);
                         if (ss !== -1 && se !== -1) {
@@ -369,11 +375,14 @@
                         noteId: row.noteId,
                         title:  row.title || '(sem título)',
                         tasks,
+                        checkedCbs,
+                        totalCbs: cbIndex,
                     });
+                    cbStats[row.noteId] = { checked: checkedCbs, total: cbIndex };
                 }
             }
 
-            return { groups: result, generated: Object.fromEntries(genMap) };
+            return { groups: result, generated: Object.fromEntries(genMap), cbStats };
         });
 
         allTasks = [];
@@ -405,6 +414,9 @@
             if (key.startsWith('_')) continue;
             if (!validIds.has(key)) delete plannerData[key];
         }
+
+        // Estatísticas de checkboxes por nota
+        cbStats = data.cbStats;
     }
 
 
@@ -1386,8 +1398,14 @@
                 </p>`;
         } else {
             for (const [, group] of grouped) {
+                const stats = cbStats[group.noteId];
+                const done = stats ? stats.checked : 0;
+                const totalCbs = stats ? stats.total : group.tasks.length;
+                const badgeText = done > 0 ? `${done}/${totalCbs}` : `${group.tasks.length}`;
+                const collapsed = collapsedNotes.has(group.noteId);
+
                 html += `
-                <div class="tk-group" style="margin-bottom:18px;">
+                <div class="tk-group${collapsed ? ' tk-collapsed' : ''}" style="margin-bottom:18px;">
 
                     <div class="tk-note-link"
                          data-note-id="${esc(group.noteId)}"
@@ -1396,14 +1414,16 @@
                                  font-size:15px;font-weight:700;text-transform:uppercase;
                                  letter-spacing:.06em;color:var(--muted-text-color,#888);
                                  transition:color .15s;">
+                        <span class="tk-col-icon" style="font-size:12px;opacity:.5;width:12px;text-align:center;">${collapsed ? '▸' : '▾'}</span>
                         ${esc(group.noteTitle)}
-                        <span style="font-size:15px;background:var(--accented-background-color);
-                                     padding:0 5px;border-radius:8px;">
-                            ${group.tasks.length}
+                        <span style="font-size:14px;background:var(--accented-background-color);
+                                     padding:0 5px;border-radius:8px;color:${done > 0 ? 'var(--main-text-color)' : 'inherit'};">
+                            ${badgeText}
                         </span>
                     </div>
 
-                    <div style="border-left:2px solid var(--main-border-color,#313244);
+                    <div class="tk-tasks"${collapsed ? ' style="display:none;"' : ''}
+                         style="border-left:2px solid var(--main-border-color,#313244);
                                 padding-left:10px;">
                         ${group.tasks.map(t => {
 
@@ -1476,8 +1496,19 @@
             $(this).css('color', 'var(--muted-text-color)');
         });
 
-        $tk.on('click', '.tk-note-link', function () {
-            api.activateNote($(this).data('noteId'));
+        $tk.on('click', '.tk-note-link', function (e) {
+            const noteId = $(this).data('noteId');
+            if ($(e.target).hasClass('tk-col-icon')) {
+                if (collapsedNotes.has(noteId)) {
+                    collapsedNotes.delete(noteId);
+                } else {
+                    collapsedNotes.add(noteId);
+                }
+                renderTasks();
+                return;
+            }
+            // Clique no texto → abre a nota
+            api.activateNote(noteId);
         });
 
         $tk.on('mouseenter', '.tk-task-text', function () {

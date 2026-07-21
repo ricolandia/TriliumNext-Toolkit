@@ -92,7 +92,8 @@ const HTML = `${STYLE}
   </div>
 
   <!-- PAINEL 1: Gerar convite -->
-  <div class="sn-panel active" data-panel="gerar">
+    <div class="sn-panel active" data-panel="gerar">
+    <div id="sn-reply-notif" style="display:none;margin-bottom:6px;padding:6px 10px;background:rgba(46,204,113,0.15);color:#4ade80;border-radius:4px;font-size:13px;"></div>
     <p class="sn-info">
       Serializa a nota atual em uma string segura.<br>
       O token incluído é efêmero e vinculado apenas a esta nota — <strong>não é seu token ETAPI</strong>.
@@ -175,6 +176,19 @@ class SharedNotesWidget extends api.RightPanelWidget {
                     ? 'Todas as notas filhas já foram enviadas.'
                     : `${count} nota(s) filha(s) não enviada(s).`
             );
+        }
+
+        // Mostra notificação de replies recebidas (nota original após B responder)
+        const replyCount = await api.runOnBackend((nid) => {
+            const n = api.getNote(nid);
+            if (!n) return 0;
+            return n.getChildNotes().filter(c => c.getLabelValue('sharedReply') !== null).length;
+        }, [note.noteId]);
+        const $notif = this.$widget.find('#sn-reply-notif');
+        if (replyCount > 0) {
+            $notif.text(`${replyCount} resposta(s) recebida(s)`).show();
+        } else {
+            $notif.hide();
         }
 
         // Limpa status ao trocar de nota
