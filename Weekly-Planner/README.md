@@ -9,6 +9,8 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 * **Global Synchronization:** The Open Tasks panel scans every note across the entire database to locate all pending tasks.
 * **Contextual Badges:** Tasks allocated in the planner display a discreet badge (e.g., Wed 14/5) in the tasks panel.
 * **Mark as Done:** Check off individual tasks directly from the panel, or click to enter the source note. Marking as done removes the task from the backlog.
+* **Gantt View:** Toggle between Kanban board and Gantt chart. Bars span from the planned day to `#upto` deadline, color-coded by status.
+* **Recurring Tasks:** Create tasks that repeat automatically with `#every=Nd` + `#total=N`. Clones are generated in the note and auto-placed on their due dates.
 
 
 ## Installation
@@ -43,11 +45,29 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 | `#doing=N%` | Yellow | ◐ N% + bar |
 | `#done`  | Green   | ● done  |
 | `#upto`  | Blue    | ⇢ DD/MM |
+| `#every=Nd` | Magenta | ↻ Nd (recurring) |
+| `#total=N` | — | Total occurrences |
+
+### Recurring Tasks
+
+Tags: `#every=Nd` + `#total=N` + `#upto=MM-DD-YYYY`
+
+```text
+Revisar senhas #every=7d #total=4 #upto=07-21-2026
+```
+
+- Generates **N-1 clones** of the `<li>` element, each with `#upto` spaced N days apart
+- Clones are inserted into the note's HTML and auto-assigned to their due dates
+- Mark any clone as done independently; the original keeps the `#every` tag as source
+- Edit the note to see all occurrences side by side
+- Changing `#every` or `#total` after expansion requires manual cleanup
 
 ### Code
 
-- `parseTaskTags(text)` → `{ cleanText, tags[] }`
+- `parseTaskTags(text)` → `{ cleanText, tags[] }` — parses `#todo`, `#doing`, `#done`, `#upto`, `#every`, `#total`
 - `renderTagBadges(tags)`, `renderDoingBar(tags)` helpers
+- `renderGantt()` — Gantt chart view with day columns, progress bars, and weekend/today highlights
+- `expandRecurringInContent(content)` — clones `<li>` elements with `#every+Nd` + `#total+N`
 - Cross-theme CSS with CSS variables + fallbacks + overlay
 
 ## Original link
