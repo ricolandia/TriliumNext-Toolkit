@@ -78,5 +78,8 @@ Revisar senhas #every=7d #total=4 #upto=07-21-2026
 ![screen capture](imagens/weekly-1-.webp)
 ![screen capture](imagens/weekly-2-.webp)
 ![screen capture](imagens/weekly-3-.webp)
+![screen capture](imagens/Task_A1_.webp)
+![screen capture](imagens/Task_A2_.webp)
+![screen capture](imagens/Task_A3_.webp)
 
 
