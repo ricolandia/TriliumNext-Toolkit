@@ -44,3 +44,5 @@ Open any Canvas note. Use the floating toolbar:
 ![screen capture](imagens/canvas-3-.webp)
 ![screen capture](imagens/canvas-4-.webp)
 ![screen capture](imagens/canvas-5-.webp)
+![screen capture](imagens/canvas-6-.webp)
+![screen capture](imagens/canvas-7-.webp)
