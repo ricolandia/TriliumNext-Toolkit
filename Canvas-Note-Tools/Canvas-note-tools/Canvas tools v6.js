@@ -135,6 +135,9 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             openRelationsPanel:   ()                   => this._openRelationsPanel(),
             confirmSaveRelations: ()                   => this._confirmSaveRelations(),
             removeCard:           ()                   => this._openRemovePanel(),
+            editCard:             ()                   => this._openEditPanel(),
+            syncCards:            ()                   => this._syncCards(),
+            saveEditor:           ()                   => this._saveEditor(),
         };
         // Restaura modo captura se estava ativo antes de um hot-reload
         setTimeout(() => this._restoreCaptureState(), 200);
@@ -202,6 +205,35 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 <div id="clw-remove-empty" class="clw-status">Nenhum card vinculado encontrado.</div>
             </div>
 
+            <!-- Painel de edição de card -->
+            <div id="clw-edit-panel" class="clw-panel clw-panel--edit" style="width:300px">
+                <div class="clw-panel-header">
+                    <span class="clw-panel-icon">✏️</span>
+                    <span class="clw-panel-title">Editar nota do card</span>
+                    <button id="clw-edit-close" class="clw-panel-close">✕</button>
+                </div>
+                <div id="clw-edit-results" class="clw-scroll" style="max-height:220px"></div>
+                <div id="clw-edit-empty" class="clw-status">Nenhum card vinculado encontrado.</div>
+            </div>
+
+            <!-- Editor flutuante -->
+            <div id="clw-editor-float" class="clw-editor-overlay">
+                <div class="clw-editor-box">
+                    <div class="clw-editor-header">
+                        <span class="clw-panel-icon">✏️</span>
+                        <span class="clw-editor-title">Editar nota</span>
+                        <button id="clw-editor-close" class="clw-panel-close">✕</button>
+                    </div>
+                    <input id="clw-editor-note-title" class="clw-input" type="text"
+                        placeholder="Título da nota…" autocomplete="off" spellcheck="false" />
+                    <div id="clw-editor-content" class="clw-editor-content"
+                        contenteditable="true" spellcheck="false"></div>
+                    <div class="clw-editor-actions">
+                        <button id="clw-editor-save" class="clw-btn-primary">Salvar</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Banner captura -->
             <div id="clw-capture-banner" class="clw-banner">
                 <span class="clw-banner-icon">🎯</span>
@@ -214,6 +246,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 <button id="clw-btn-capture"  class="clw-round-btn" title="Modo Captura">🎯</button>
                 <button id="clw-btn-newnote"  class="clw-round-btn" title="Criar nova nota filha">📝</button>
                 <button id="clw-btn-saverel"  class="clw-round-btn" title="Relações por setas">🕸️</button>
+                <button id="clw-btn-edit"     class="clw-round-btn" title="Editar nota do card">✏️</button>
+                <button id="clw-btn-sync"     class="clw-round-btn" title="Atualizar cards das notas">⟳</button>
                 <button id="clw-btn-longform" class="clw-round-btn" title="Gerar Longform">📄</button>
                 <button id="clw-btn-remove"   class="clw-round-btn clw-round-btn--danger" title="Remover card do Canvas">🗑️</button>
             </div>
@@ -497,6 +531,63 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     font-size:12px; color:var(--muted-text-color,#6c7086);
     text-align:center; padding:16px 0;
 }
+
+/* ── Painel edit ── */
+.clw-panel--edit {
+    box-shadow:
+        0 0 0 1px rgba(203,166,247,0.08),
+        0 4px 24px rgba(0,0,0,0.45),
+        0 1px 4px  rgba(0,0,0,0.3);
+}
+.clw-edit-item {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 10px; border-radius:7px; cursor:default;
+    border:1px solid transparent; animation:clwFadeIn 0.15s ease both;
+}
+.clw-edit-item:nth-child(even) { background:rgba(203,166,247,0.03); }
+.clw-edit-item-title {
+    font-size:12px; color:var(--main-text-color,#cdd6f4);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    flex:1; margin-right:8px;
+}
+.clw-edit-item-btn {
+    flex-shrink:0; padding:4px 10px; border-radius:6px;
+    background:rgba(203,166,247,0.15); border:1px solid rgba(203,166,247,0.3);
+    color:#cba6f7; font-size:11px; font-weight:600; cursor:pointer;
+    transition:background 0.15s, border-color 0.15s;
+    white-space:nowrap;
+}
+.clw-edit-item-btn:hover { background:rgba(203,166,247,0.3); border-color:#cba6f7; }
+
+/* ── Editor flutuante ── */
+.clw-editor-overlay {
+    position:fixed; inset:0; z-index:10000; display:none;
+    background:rgba(0,0,0,0.45); backdrop-filter:blur(2px);
+    align-items:center; justify-content:center;
+}
+.clw-editor-box {
+    width:560px; max-width:92vw; max-height:86vh;
+    display:flex; flex-direction:column; gap:10px;
+    background:var(--accented-background-color,#1e1e2e);
+    border:1px solid var(--main-border-color,#45475a);
+    border-radius:14px; padding:16px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.55);
+    animation:clwSlideIn 0.18s cubic-bezier(0.16,1,0.3,1);
+}
+.clw-editor-header { display:flex; align-items:center; gap:8px; }
+.clw-editor-title { font-size:13px; font-weight:600; color:var(--main-text-color,#cdd6f4); }
+.clw-editor-content {
+    min-height:240px; max-height:60vh; overflow-y:auto;
+    padding:10px 12px; border:1px solid var(--main-border-color,#45475a);
+    border-radius:8px; background:var(--main-background-color,#181825);
+    color:var(--main-text-color,#cdd6f4); font-size:14px; line-height:1.6;
+    outline:none; font-family:var(--detail-font-family,'Segoe UI',system-ui,sans-serif);
+}
+.clw-editor-content:focus {
+    border-color:#cba6f7; box-shadow:0 0 0 3px rgba(203,166,247,0.15);
+}
+.clw-editor-content img { max-width:100%; }
+.clw-editor-actions { display:flex; justify-content:flex-end; gap:8px; }
         `;
         document.head.appendChild(style);
 
@@ -514,6 +605,11 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         this._el('clw-relmap-save').addEventListener('click', () => window._clw.confirmSaveRelations());
         this._el('clw-btn-remove').addEventListener('click', () => window._clw.removeCard());
         this._el('clw-remove-close').addEventListener('click', () => this._hide('clw-remove-panel'));
+        this._el('clw-btn-edit').addEventListener('click', () => window._clw.editCard());
+        this._el('clw-edit-close').addEventListener('click', () => this._hide('clw-edit-panel'));
+        this._el('clw-btn-sync').addEventListener('click', () => window._clw.syncCards());
+        this._el('clw-editor-save').addEventListener('click', () => window._clw.saveEditor());
+        this._el('clw-editor-close').addEventListener('click', () => window._clw.saveEditor());
 
         // Fecha painéis com Escape
         document.addEventListener('keydown', (e) => {
@@ -522,6 +618,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             this._hide('clw-newnote-float');
             this._hide('clw-relmap-panel');
             this._hide('clw-remove-panel');
+            this._hide('clw-edit-panel');
         });
 
         let searchTimer;
@@ -538,6 +635,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 this._hide('clw-panel');
                 this._hide('clw-newnote-float');
                 this._hide('clw-remove-panel');
+                this._hide('clw-edit-panel');
             }
         });
     }
@@ -748,6 +846,265 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         } catch (err) {
             console.error('[CanvasLinker] doRemoveCard error:', err);
             api.showError('Erro ao remover card: ' + err.message);
+        }
+    }
+
+    /* ── PAINEL DE EDIÇÃO ────────────────────────────── */
+    async _openEditPanel() {
+        const canvasNoteId = this.noteId;
+        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+
+        const $results = this._el('clw-edit-results');
+        const $empty   = this._el('clw-edit-empty');
+        const $panel   = this._el('clw-edit-panel');
+
+        $results.innerHTML      = '';
+        $empty.style.display    = 'none';
+        $panel.style.display    = 'block';
+
+        this._hide('clw-panel');
+        this._hide('clw-newnote-float');
+        this._hide('clw-relmap-panel');
+        this._hide('clw-remove-panel');
+
+        try {
+            const cards = await api.runOnBackend((canvasNoteId) => {
+                const note = api.getNote(canvasNoteId);
+                if (!note) throw new Error('Nota canvas não encontrada.');
+                let data;
+                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { data = {}; }
+                return (data.elements || [])
+                    .filter(e => !e.isDeleted && e.type === 'rectangle' && e.link?.startsWith('#root/'))
+                    .map(e => {
+                        const noteId = e.link.replace('#root/', '');
+                        const linked = api.getNote(noteId);
+                        return { noteId, title: linked?.title || noteId };
+                    });
+            }, [canvasNoteId]);
+
+            if (!cards || cards.length === 0) {
+                $empty.style.display = 'block';
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            cards.forEach((card, i) => {
+                const row = document.createElement('div');
+                row.className = 'clw-edit-item';
+                row.style.animationDelay = `${i * 25}ms`;
+                row.innerHTML = `
+                    <span class="clw-edit-item-title" title="${escapeHtml(card.title)}">${escapeHtml(card.title)}</span>
+                    <button class="clw-edit-item-btn">✏️ Editar</button>
+                `;
+                row.querySelector('button').addEventListener('click', async () => {
+                    await this._openEditor(canvasNoteId, card.noteId, card.title);
+                });
+                fragment.appendChild(row);
+            });
+            $results.appendChild(fragment);
+
+        } catch (err) {
+            console.error('[CanvasLinker] openEditPanel error:', err);
+            api.showError('Erro ao listar cards: ' + err.message);
+            $panel.style.display = 'none';
+        }
+    }
+
+    async _openEditor(canvasNoteId, noteId, currentTitle) {
+        const note = await api.runOnBackend((noteId) => {
+            const n = api.getNote(noteId);
+            if (!n) return null;
+            return { title: n.title, content: n.getContent() || '' };
+        }, [noteId]);
+
+        if (!note) { api.showError('Nota não encontrada.'); return; }
+
+        this._editorCanvasId = canvasNoteId;
+        this._editorNoteId   = noteId;
+
+        const $float   = this._el('clw-editor-float');
+        const $title   = this._el('clw-editor-note-title');
+        const $content = this._el('clw-editor-content');
+
+        $title.value       = note.title;
+        $content.innerHTML = note.content;
+
+        this._hide('clw-edit-panel');
+        this._hide('clw-panel');
+        this._hide('clw-relmap-panel');
+        this._hide('clw-remove-panel');
+
+        $float.style.display = 'flex';
+        setTimeout(() => $title.focus(), 50);
+    }
+
+    async _saveEditor() {
+        const canvasNoteId = this._editorCanvasId;
+        const noteId       = this._editorNoteId;
+        if (!canvasNoteId || !noteId) return;
+
+        const newTitle   = this._el('clw-editor-note-title').value.trim() || 'Sem título';
+        const newContent = this._el('clw-editor-content').innerHTML;
+
+        const $save = this._el('clw-editor-save');
+        $save.disabled = true;
+
+        try {
+            await api.runOnBackend((noteId, title, content) => {
+                const n = api.getNote(noteId);
+                if (!n) return;
+                n.title = title;
+                n.setContent(content);
+            }, [noteId, newTitle, newContent]);
+
+            await this._updateCardText(canvasNoteId, noteId);
+
+            this._el('clw-editor-float').style.display = 'none';
+            api.showMessage('✏️ Nota salva e card atualizado.');
+        } catch (err) {
+            console.error('[CanvasLinker] saveEditor error:', err);
+            api.showError('Erro ao salvar: ' + err.message);
+        } finally {
+            $save.disabled = false;
+        }
+    }
+
+    /**
+     * Atualiza os elementos de texto do card (título + excerpt) e a altura
+     * do rect a partir do conteúdo atual da nota vinculada.
+     * Retorna 1 se o card foi encontrado, 0 caso contrário.
+     */
+    async _updateCardText(canvasNoteId, noteId) {
+        const cleanConfig = getCleanPatterns();
+        return await api.runOnBackend((canvasNoteId, noteId, cfg, cleanPatterns) => {
+            const patterns = cleanPatterns.map(([src, flags, repl]) => [new RegExp(src, flags), repl]);
+
+            function clean(raw, max) {
+                if (!raw) return '';
+                let t = raw;
+                for (const [re, r] of patterns) t = t.replace(re, r);
+                t = t.trim();
+                return max ? t.slice(0, max) : t;
+            }
+
+            function estimateTextHeight(text, fontSize, lineHeightRatio, availableWidth) {
+                if (!text) return 0;
+                const avgCharWidth = fontSize * 0.60;
+                const charsPerLine = Math.max(1, Math.floor(availableWidth / avgCharWidth));
+                const lines = text.split('\n').reduce((acc, paragraph) => {
+                    return acc + Math.max(1, Math.ceil(paragraph.length / charsPerLine));
+                }, 0);
+                return Math.ceil(lines * fontSize * lineHeightRatio) + 20;
+            }
+
+            function wrapText(text, maxLen) {
+                if (!text || text.length <= maxLen) return text || '';
+                const words = text.split(' ');
+                const lines = [];
+                let current = '';
+                for (const word of words) {
+                    const test = current ? current + ' ' + word : word;
+                    if (test.length > maxLen && current) {
+                        lines.push(current);
+                        current = word;
+                    } else {
+                        current = test;
+                    }
+                }
+                if (current) lines.push(current);
+                return lines.join('\n');
+            }
+
+            const canvasNote = api.getNote(canvasNoteId);
+            if (!canvasNote) return 0;
+            let data;
+            try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+
+            const link = '#root/' + noteId;
+            const rect = (data.elements || []).find(e => !e.isDeleted && e.type === 'rectangle' && e.link === link);
+            if (!rect) return 0;
+
+            const groupIds = new Set(rect.groupIds || []);
+
+            const linkedNote = api.getNote(noteId);
+            if (!linkedNote) return 0;
+            const newTitle = linkedNote.title || 'Sem título';
+            const excerpt = wrapText(clean(linkedNote.getContent() || '', cfg.excerptSlice), 40);
+
+            const texts = (data.elements || []).filter(e =>
+                !e.isDeleted && e.type === 'text' && e.groupIds?.some(gid => groupIds.has(gid))
+            ).sort((a, b) => a.y - b.y);
+
+            const now  = Date.now();
+            const bump = () => ({ version: (rect.version || 1) + 1, versionNonce: Math.floor(Math.random() * 999999), updated: now });
+
+            let count = 0;
+
+            if (texts.length > 0) {
+                const titleEl = texts[0];
+                titleEl.text = newTitle;
+                titleEl.originalText = newTitle;
+                Object.assign(titleEl, bump());
+                count++;
+            }
+
+            if (texts.length > 1) {
+                const excrEl = texts[1];
+                const excrH = excerpt
+                    ? estimateTextHeight(excerpt, cfg.excerptFontSize, 1.3, cfg.width - cfg.padX * 2)
+                    : 0;
+                excrEl.text = excerpt;
+                excrEl.originalText = excerpt;
+                excrEl.height = excrH;
+                Object.assign(excrEl, bump());
+                count++;
+            }
+
+            const titleH = Math.ceil(cfg.titleFontSize * 1.25) + 4;
+            const excerptH = excerpt
+                ? estimateTextHeight(excerpt, cfg.excerptFontSize, 1.3, cfg.width - cfg.padX * 2)
+                : 0;
+            const totalH = cfg.padY + titleH + (excerpt ? 6 + excerptH : 0) + cfg.padY;
+            rect.height = totalH;
+            Object.assign(rect, bump());
+            count++;
+
+            if (count > 0) canvasNote.setContent(JSON.stringify(data));
+            return 1;
+        }, [canvasNoteId, noteId, CARD_CONFIG, cleanConfig]);
+    }
+
+    async _syncCards() {
+        const canvasNoteId = this.noteId;
+        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+
+        api.showMessage('⟳ Atualizando cards…');
+
+        try {
+            const cards = await api.runOnBackend((canvasNoteId) => {
+                const note = api.getNote(canvasNoteId);
+                if (!note) return [];
+                let data;
+                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { data = {}; }
+                return (data.elements || [])
+                    .filter(e => !e.isDeleted && e.type === 'rectangle' && e.link?.startsWith('#root/'))
+                    .map(e => e.link.replace('#root/', ''));
+            }, [canvasNoteId]);
+
+            if (!cards || cards.length === 0) {
+                api.showMessage('ℹ️ Nenhum card vinculado no canvas.');
+                return;
+            }
+
+            let found = 0;
+            for (const noteId of cards) {
+                found += await this._updateCardText(canvasNoteId, noteId);
+            }
+
+            api.showMessage(`⟳ ${found} card(s) atualizado(s).`);
+        } catch (err) {
+            console.error('[CanvasLinker] syncCards error:', err);
+            api.showError('Erro ao sincronizar cards: ' + err.message);
         }
     }
 
