@@ -1,0 +1,22 @@
+{
+  "notes": [
+    {
+      "title": "Daily Note Map",
+      "type": "render",
+      "content": "<p>Mapa visual das notas editadas no dia, com o diário ao centro.</p>"
+    },
+    {
+      "title": "Daily Note Map.js",
+      "type": "code",
+      "mime": "application/javascript;env=frontend",
+      "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Daily-Note-Map/Daily%20Note%20Map.js"
+    }
+  ],
+  "relations": [
+    { "type": "renderNote", "from": "Daily Note Map", "to": "Daily Note Map.js" }
+  ],
+  "labels": [
+    { "note": "Daily Note Map.js", "name": "originalFileName", "value": "Daily Note Map.js" },
+    { "note": "Daily Note Map.js", "name": "readOnly", "value": "" }
+  ]
+}
