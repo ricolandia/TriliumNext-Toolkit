@@ -98,8 +98,12 @@
             const result = { journal: null, notes: [], relations: [], parents: {}, parentTitles: {} };
 
             try {
-                const journal = api.searchForNote(`#dateNote=${iso}`);
+                const journal = api.getDayNote ? api.getDayNote(iso, false) : null;
                 if (journal) result.journal = { noteId: journal.noteId, title: journal.title };
+                else {
+                    const alt = api.searchForNote(`#dateNote=${iso}`);
+                    if (alt) result.journal = { noteId: alt.noteId, title: alt.title };
+                }
             } catch (_) {}
 
             const rows = api.sql.getRows(`
