@@ -572,6 +572,21 @@
                                color:var(--main-text-color);font-weight:600; }
     `;
 
+    // Padrão de tags/barra de progresso — idêntico ao modelo da guia Semana
+    const TAG_CSS = `
+        .task-tags  { display:flex;flex-wrap:wrap;gap:3px;margin-top:6px; }
+        .tag-badge  { display:inline-flex;align-items:center;font-size:11px;padding:2px 6px;
+                      border-radius:3px;font-weight:600;letter-spacing:.02em;border:1px solid;
+                      line-height:1.4;user-select:none; }
+        .tag-todo   { background:rgba(230,126,34,0.15);color:#e67e22;border-color:rgba(230,126,34,0.3); }
+        .tag-doing  { background:rgba(241,196,15,0.15);color:#f1c40f;border-color:rgba(241,196,15,0.3); }
+        .tag-done   { background:rgba(46,204,113,0.15);color:#2ecc71;border-color:rgba(46,204,113,0.3); }
+        .tag-upto   { background:rgba(52,152,219,0.15);color:#3498db;border-color:rgba(52,152,219,0.3); }
+        .doing-bar  { margin-top:6px;height:5px;background:rgba(128,128,128,0.15);border-radius:2px;
+                      overflow:hidden; }
+        .doing-fill { height:100%;border-radius:2px;background:#f1c40f;transition:width .3s ease; }
+    `;
+
     function renderTagBadges(tags) {
         if (!tags || !tags.length) return '';
         return tags.map(tag => {
@@ -713,17 +728,7 @@
             .pl-cancel-btn { display:block;width:100%;padding:11px;background:none;
                              border:1px solid var(--main-border-color);border-radius:7px;
                              color:var(--muted-text-color);font-size:17px;cursor:pointer;margin-top:4px; }
-            .task-tags  { display:flex;flex-wrap:wrap;gap:3px;margin-top:6px; }
-            .tag-badge  { display:inline-flex;align-items:center;font-size:11px;padding:2px 6px;
-                          border-radius:3px;font-weight:600;letter-spacing:.02em;border:1px solid;
-                          line-height:1.4;user-select:none; }
-            .tag-todo   { background:rgba(230,126,34,0.15);color:#e67e22;border-color:rgba(230,126,34,0.3); }
-            .tag-doing  { background:rgba(241,196,15,0.15);color:#f1c40f;border-color:rgba(241,196,15,0.3); }
-            .tag-done   { background:rgba(46,204,113,0.15);color:#2ecc71;border-color:rgba(46,204,113,0.3); }
-            .tag-upto   { background:rgba(52,152,219,0.15);color:#3498db;border-color:rgba(52,152,219,0.3); }
-            .doing-bar  { margin-top:6px;height:5px;background:rgba(128,128,128,0.15);border-radius:2px;
-                          overflow:hidden; }
-            .doing-fill { height:100%;border-radius:2px;background:#f1c40f;transition:width .3s ease; }
+            ${TAG_CSS}
             .pl-done-btn { position:absolute;top:6px;right:8px;font-size:16px;line-height:1;z-index:2;
                            cursor:pointer;user-select:none;color:var(--muted-text-color);opacity:0;
                            transition:opacity .12s,color .12s;border-radius:3px;padding:0 2px; }
@@ -925,13 +930,7 @@
         .gantt-label-tags { display:flex;flex-wrap:wrap;gap:3px;margin-top:2px; }
         .gantt-label-doing { margin-top:2px;height:4px;background:rgba(128,128,128,0.15);border-radius:2px;overflow:hidden; }
         .gantt-label-doing-fill { height:100%;border-radius:2px;background:#f1c40f;transition:width .3s ease; }
-        .tag-badge  { display:inline-flex;align-items:center;font-size:11px;padding:2px 6px;
-                      border-radius:3px;font-weight:600;letter-spacing:.02em;border:1px solid;
-                      line-height:1.4;user-select:none; }
-        .tag-todo   { background:rgba(230,126,34,0.15);color:#e67e22;border-color:rgba(230,126,34,0.3); }
-        .tag-doing  { background:rgba(241,196,15,0.15);color:#f1c40f;border-color:rgba(241,196,15,0.3); }
-        .tag-done   { background:rgba(46,204,113,0.15);color:#2ecc71;border-color:rgba(46,204,113,0.3); }
-        .tag-upto   { background:rgba(52,152,219,0.15);color:#3498db;border-color:rgba(52,152,219,0.3); }
+        ${TAG_CSS}
         .gantt-today-line { border-left:2px dashed rgba(137,180,250,0.5);pointer-events:none; }
         .gantt-weekend-bg { background:rgba(128,128,128,0.04);pointer-events:none; }
         .gantt-hdr-weekend { background:rgba(128,128,128,0.06); }
@@ -1235,37 +1234,42 @@
 
         const css = `
         .mn-wrap { display:flex;flex-direction:column;height:100%;overflow:hidden; }
-        .mn-scroll { overflow-y:auto;flex:1;padding:0 14px 20px; }
-        .mn-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:640px; }
+        .mn-scroll { overflow-y:auto;flex:1;padding:0 16px 20px; }
+        .mn-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-width:640px; }
         .mn-weekday { text-align:center;font-size:13px;font-weight:700;text-transform:uppercase;
-                      letter-spacing:.06em;color:var(--muted-text-color,#888);
-                      padding:6px 0;border-bottom:1px solid var(--main-border-color,#313244); }
-        .mn-cell { border:1px solid var(--main-border-color,#313244);border-radius:6px;
+                      letter-spacing:.08em;color:var(--muted-text-color,#888);
+                      padding:8px 0 10px;border-bottom:1px solid var(--main-border-color,#313244); }
+        .mn-cell { border:1px solid var(--main-border-color,#313244);border-radius:8px;
                    background:var(--accented-background-color,#1e1e2e);
-                   min-height:96px;display:flex;flex-direction:column;
-                   padding:5px 6px;gap:3px;transition:border-color .1s; }
+                   min-height:110px;display:flex;flex-direction:column;
+                   padding:7px 8px;gap:4px;transition:border-color .1s; }
         .mn-cell.out { opacity:.35; }
         .mn-cell.today { border-color:var(--main-active-border-color,#89b4fa); }
         .mn-cell.weekend { background:rgba(128,128,128,.05); }
-        .mn-daynum { font-size:12px;color:var(--muted-text-color,#888);font-weight:600; }
+        .mn-daynum { font-size:13px;color:var(--muted-text-color,#888);font-weight:600;
+                     padding-bottom:3px;border-bottom:1px solid rgba(128,128,128,.12);
+                     margin-bottom:2px; }
         .mn-cell.today .mn-daynum { color:var(--main-active-border-color,#89b4fa); }
-        .mn-tasks { display:flex;flex-direction:column;gap:3px;overflow:hidden;flex:1; }
-        .mn-task { background:rgba(137,180,250,.10);border:1px solid rgba(137,180,250,.2);
-                   border-radius:4px;padding:2px 6px;font-size:12px;line-height:1.35;
-                   cursor:grab;position:relative;overflow:hidden;text-overflow:ellipsis;
-                   white-space:nowrap;user-select:none; }
+        .mn-tasks { display:flex;flex-direction:column;gap:5px;overflow:hidden;flex:1; }
+        .mn-task { background:linear-gradient(rgba(0,0,0,.07),rgba(0,0,0,.07)),var(--accented-background-color,#1e1e2e);
+                   border:1.5px solid transparent;border-radius:5px;padding:4px 8px;
+                   font-size:13px;line-height:1.5;cursor:grab;position:relative;
+                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:none;
+                   transition:border-color .1s,opacity .15s; }
         .mn-task:hover { border-color:var(--main-border-color,#45475a); }
         .mn-task.done { background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.25);
                         text-decoration:line-through;opacity:.7; }
-        .mn-task.dragging { opacity:.35; }
-        .mn-done-btn { position:absolute;top:1px;right:4px;font-size:12px;opacity:0;
-                       cursor:pointer;color:var(--muted-text-color); }
+        .mn-task.dragging { opacity:.35;cursor:grabbing; }
+        .mn-done-btn { position:absolute;top:2px;right:5px;font-size:12px;opacity:0;
+                       cursor:pointer;color:var(--muted-text-color);border-radius:3px;
+                       padding:0 2px; }
         .mn-task:hover .mn-done-btn { opacity:.6; }
-        .mn-drop { display:none;height:18px;border:1.5px dashed var(--main-border-color,#45475a);
-                   border-radius:4px;opacity:.5; }
+        .mn-done-btn:hover { opacity:1 !important;color:var(--active-item-background-color,#a6e3a1) !important; }
+        .mn-drop { display:none;height:20px;border:2px dashed var(--main-border-color,#45475a);
+                   border-radius:5px;opacity:.4; }
         .mn-cell.drag-over { border-color:var(--main-active-border-color,#89b4fa); }
         .mn-cell.drag-over .mn-drop { display:block; }
-        .mn-backlog { margin-top:14px;border-top:1px solid var(--main-border-color,#313244);
+        .mn-backlog { margin-top:16px;border-top:1px solid var(--main-border-color,#313244);
                       padding-top:8px; }
         .mn-backlog summary { cursor:pointer;font-weight:600;font-size:14px;
                               color:var(--muted-text-color,#888);user-select:none; }
@@ -1301,11 +1305,12 @@
         .pl-cancel-btn { display:block;width:100%;padding:11px;background:none;
                          border:1px solid var(--main-border-color);border-radius:7px;
                          color:var(--muted-text-color);font-size:17px;cursor:pointer;margin-top:4px; }
+        ${TAG_CSS}
         ${MODE_CSS}
         @media (max-width:700px) {
             .mn-grid { min-width:520px; }
-            .mn-cell { min-height:64px;padding:3px 4px; }
-            .mn-task { font-size:11px; }
+            .mn-cell { min-height:80px;padding:4px 6px; }
+            .mn-task { font-size:12px;padding:3px 6px; }
         }`;
 
         let html = `<style>${css}</style>
@@ -1792,24 +1797,58 @@
         }
 
         let html = `
+        <style>
+            .tk-head { display:flex;align-items:center;gap:8px;padding:10px 14px;
+                       flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244); }
+            .tk-head-title { font-size:19px;font-weight:700; }
+            .tk-total { font-size:16px;color:var(--muted-text-color); }
+            .tk-list { overflow-y:auto;flex:1;padding:12px 14px; }
+            .tk-empty { color:var(--muted-text-color);font-size:17px;margin-top:4px; }
+            .tk-group { background:var(--accented-background-color,#1e1e2e);
+                        border:1px solid var(--main-border-color,#313244);
+                        border-radius:8px;margin-bottom:14px;overflow:hidden; }
+            .tk-note-link { display:flex;align-items:center;gap:5px;padding:8px 10px;
+                            cursor:pointer;font-size:14px;font-weight:700;text-transform:uppercase;
+                            letter-spacing:.06em;color:var(--muted-text-color,#888);
+                            background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.05));
+                            border-bottom:1px solid var(--main-border-color,#313244);
+                            transition:color .15s; }
+            .tk-note-link:hover { color:var(--main-text-color); }
+            .tk-col-icon { font-size:12px;opacity:.5;width:12px;text-align:center;flex-shrink:0; }
+            .tk-badge { font-size:13px;background:rgba(128,128,128,.15);color:var(--muted-text-color);
+                        padding:0 6px;border-radius:8px;white-space:nowrap;flex-shrink:0; }
+            .tk-badge.done { background:rgba(46,204,113,.15);color:var(--active-item-background-color,#a6e3a1); }
+            .tk-tasks { border-left:2px solid var(--main-border-color,#313244);
+                        margin:0 10px;padding:6px 0 8px 10px; }
+            .tk-task-row { display:flex;align-items:flex-start;gap:6px;
+                           padding:4px 8px;margin:2px 0;border-radius:5px;line-height:1.5;
+                           border:1.5px solid transparent;transition:background .12s,border-color .12s; }
+            .tk-task-row:hover { background:rgba(0,0,0,.05);border-color:rgba(128,128,128,.18); }
+            .tk-check { flex-shrink:0;width:15px;height:15px;margin-top:3px;
+                        border:1.5px solid var(--main-border-color,#45475a);
+                        border-radius:3px;display:inline-flex;align-items:center;
+                        justify-content:center;cursor:pointer;font-size:12px;color:transparent;
+                        transition:border-color .15s,background .15s,color .15s;user-select:none; }
+            .tk-task-text { cursor:pointer;font-size:17px;transition:color .15s; }
+            .tk-task-text:hover { text-decoration:underline; }
+            .tk-day-badge { display:inline-block;font-size:13px;padding:1px 6px;border-radius:3px;
+                            margin-left:5px;background:var(--accented-background-color);
+                            color:var(--muted-text-color);white-space:nowrap;vertical-align:middle; }
+        </style>
+
             <!-- CABEÇALHO TAREFAS -->
-            <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;
-                        flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);">
-                <span style="font-size:19px;font-weight:700;">Tarefas</span>
-                <span class="tk-total" style="font-size:16px;color:var(--muted-text-color);">
-                    ${total}
-                </span>
+            <div class="tk-head">
+                <span class="tk-head-title">Tarefas</span>
+                <span class="tk-total">${total}</span>
             </div>
 
             <!-- LISTA -->
-            <div style="overflow-y:auto;flex:1;padding:12px 14px;">
+            <div class="tk-list">
         `;
 
         if (total === 0) {
             html += `
-                <p style="color:var(--muted-text-color);font-size:17px;margin-top:4px;">
-                    ✓ Nenhuma tarefa aberta.
-                </p>`;
+                <p class="tk-empty">✓ Nenhuma tarefa aberta.</p>`;
         } else {
             for (const [, group] of grouped) {
                 const stats = cbStats[group.noteId];
@@ -1819,68 +1858,36 @@
                 const collapsed = collapsedNotes.has(group.noteId);
 
                 html += `
-                <div class="tk-group${collapsed ? ' tk-collapsed' : ''}" style="margin-bottom:18px;">
+                <div class="tk-group${collapsed ? ' tk-collapsed' : ''}">
 
-                    <div class="tk-note-link"
-                         data-note-id="${esc(group.noteId)}"
-                         style="display:inline-flex;align-items:center;gap:5px;
-                                margin-bottom:5px;cursor:pointer;
-                                 font-size:15px;font-weight:700;text-transform:uppercase;
-                                 letter-spacing:.06em;color:var(--muted-text-color,#888);
-                                 transition:color .15s;">
-                        <span class="tk-col-icon" style="font-size:12px;opacity:.5;width:12px;text-align:center;">${collapsed ? '▸' : '▾'}</span>
+                    <div class="tk-note-link" data-note-id="${esc(group.noteId)}">
+                        <span class="tk-col-icon">${collapsed ? '▸' : '▾'}</span>
                         ${esc(group.noteTitle)}
-                        <span style="font-size:14px;background:var(--accented-background-color);
-                                     padding:0 5px;border-radius:8px;color:${done > 0 ? 'var(--main-text-color)' : 'inherit'};">
-                            ${badgeText}
-                        </span>
+                        <span class="tk-badge${done > 0 ? ' done' : ''}">${badgeText}</span>
                     </div>
 
-                    <div class="tk-tasks"${collapsed ? ' style="display:none;"' : ''}
-                         style="border-left:2px solid var(--main-border-color,#313244);
-                                padding-left:10px;">
+                    <div class="tk-tasks"${collapsed ? ' style="display:none;"' : ''}>
                         ${group.tasks.map(t => {
 
                             const day = plannerData[t.id];
                             const badge = day
-                                ? `<span style="
-                                        display:inline-block;font-size:13px;
-                                        padding:1px 6px;border-radius:3px;margin-left:5px;
-                                        background:var(--accented-background-color);
-                                        color:var(--muted-text-color);white-space:nowrap;
-                                        vertical-align:middle;">
-                                        ${dayBadge(day)}
-                                   </span>`
+                                ? `<span class="tk-day-badge">${dayBadge(day)}</span>`
                                 : '';
 
                             return `
                             <div class="tk-task-row"
                                  data-task-id="${esc(t.id)}"
                                  data-note-id="${esc(t.noteId)}"
-                                 data-cb-index="${t.checkboxIndex}"
-                                 style="display:flex;align-items:flex-start;gap:6px;
-                                        padding:4px 0;line-height:1.5;">
+                                 data-cb-index="${t.checkboxIndex}">
 
-                                <span class="tk-check"
-                                      title="Marcar como concluída"
-                                      style="
-                                        flex-shrink:0;width:14px;height:14px;margin-top:4px;
-                                        border:1.5px solid var(--main-border-color,#45475a);
-                                          border-radius:3px;display:inline-flex;
-                                          align-items:center;justify-content:center;
-                                          cursor:pointer;font-size:12px;color:transparent;
-                                          transition:border-color .15s,background .15s,color .15s;
-                                          user-select:none;">✓</span>
+                                <span class="tk-check" title="Marcar como concluída">✓</span>
 
                                 <div style="flex:1;min-width:0;">
-                                    <span class="tk-task-text"
-                                          data-note-id="${esc(t.noteId)}"
-                                          style="cursor:pointer;font-size:17px;
-                                                 transition:color .15s;">
+                                    <span class="tk-task-text" data-note-id="${esc(t.noteId)}">
                                         ${esc(t.text)}${badge}
                                     </span>
                                     ${t.tags && t.tags.length
-                                        ? `<div class="task-tags">${renderTagBadges(t.tags)}</div>`
+                                        ? `<div class="task-tags" style="margin-top:2px;">${renderTagBadges(t.tags)}</div>`
                                         : ''}
                                     ${renderDoingBar(t.tags)}
                                 </div>
