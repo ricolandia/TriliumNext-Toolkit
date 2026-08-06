@@ -92,9 +92,10 @@
     ═══════════════════════════════════════════════════════════ */
 
     let weekOffset  = 0;
+    let monthOffset = 0;
     let allTasks    = [];    // { id, text, tags, checkboxIndex, noteId, noteTitle }
     let plannerData = {};    // { taskId: 'YYYY-MM-DD' }
-    let viewMode    = 'kanban'; // 'kanban' | 'gantt'
+    let viewMode    = 'kanban'; // 'kanban' | 'gantt' | 'month'
     let cbStats     = {};    // { noteId: { checked, total } }
     let collapsedNotes = new Set(); // noteIds colapsados na lista de tarefas
 
@@ -548,6 +549,29 @@
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+    function modeSwitcher() {
+        const modes = [
+            { id: 'kanban', label: 'Semana' },
+            { id: 'month',  label: 'Mês' },
+            { id: 'gantt',  label: 'Gantt' },
+        ];
+        return `<span class="pl-mode-switch">
+            ${modes.map(m => `
+                <button class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
+                        data-mode="${m.id}" title="Ver ${m.label}">${m.label}</button>
+            `).join('')}
+        </span>`;
+    }
+
+    const MODE_CSS = `
+        .pl-mode-switch { display:inline-flex;gap:2px;margin-left:auto; }
+        .pl-mode-btn { background:none;border:1px solid var(--main-border-color,#313244);border-radius:4px;
+                       color:var(--muted-text-color,#888);font-size:13px;padding:2px 8px;cursor:pointer; }
+        .pl-mode-btn:hover { color:var(--main-text-color); }
+        .pl-mode-btn--active { background:var(--accented-background-color,#313244);
+                               color:var(--main-text-color);font-weight:600; }
+    `;
+
     function renderTagBadges(tags) {
         if (!tags || !tags.length) return '';
         return tags.map(tag => {
@@ -613,7 +637,8 @@
     ═══════════════════════════════════════════════════════════ */
 
     function renderPlanner() {
-        if (viewMode === 'gantt') { renderGantt(); return; }
+        if (viewMode === 'gantt')  { renderGantt(); return; }
+        if (viewMode === 'month')  { renderMonth(); return; }
 
         const weekCols      = getWeekCols(weekOffset);
         const label         = weekLabel(weekCols);
@@ -718,10 +743,11 @@
                 .tk-total { font-size:14px; }
                 .task-tags { margin-top:4px; }
                 .doing-bar { margin-top:4px;height:4px; }
-                .pl-day-sheet h4 { font-size:16px; }
-                .pl-day-btn,.pl-cancel-btn { font-size:15px; }
-            }
-        </style>
+                 .pl-day-sheet h4 { font-size:16px; }
+                 .pl-day-btn,.pl-cancel-btn { font-size:15px; }
+             }
+             ${MODE_CSS}
+         </style>
 
         <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
 
@@ -741,7 +767,7 @@
                 </span>
                 <button class="pl-icon-btn" id="pl-clear"  title="Limpar esta semana">↺</button>
                 <button class="pl-icon-btn" id="pl-reload" title="Recarregar tarefas">⟳</button>
-                <button class="pl-icon-btn" id="pl-mode-toggle" title="Alternar visualização" style="font-weight:700;">Gantt</button>
+                ${modeSwitcher()}
             </div>
 
             <!-- BOARD -->
@@ -909,6 +935,7 @@
         .gantt-today-line { border-left:2px dashed rgba(137,180,250,0.5);pointer-events:none; }
         .gantt-weekend-bg { background:rgba(128,128,128,0.04);pointer-events:none; }
         .gantt-hdr-weekend { background:rgba(128,128,128,0.06); }
+        ${MODE_CSS}
         @media (max-width:700px) {
             .gantt-grid { grid-template-columns:140px repeat(7,minmax(55px,1fr));min-width:500px; }
             .gantt-label { font-size:12px;padding:3px 4px; }
@@ -937,7 +964,7 @@
                 </span>
                 <button class="pl-icon-btn" id="gantt-clear" title="Limpar esta semana">↺</button>
                 <button class="pl-icon-btn" id="gantt-reload" title="Recarregar tarefas">⟳</button>
-                <button class="pl-icon-btn" id="gantt-mode" title="Alternar visualização" style="font-weight:700;">Quadro</button>
+                ${modeSwitcher()}
             </div>
 
             <div class="gantt-scroll">
@@ -1089,9 +1116,11 @@
             renderTasks();
         });
 
-        $pl.find('#gantt-mode').on('click', async () => {
-            viewMode = 'kanban';
-            plannerData._viewMode = 'kanban';
+        $pl.find('.pl-mode-btn').on('click', async function () {
+            const mode = $(this).data('mode');
+            if (mode === viewMode) return;
+            viewMode = mode;
+            plannerData._viewMode = mode;
             await save();
             renderPlanner();
         });
@@ -1144,6 +1173,389 @@
 
 
     /* ═══════════════════════════════════════════════════════════
+        7d. RENDER — VISÃO MENSAL (viewMode='month')
+    ═══════════════════════════════════════════════════════════ */
+
+    function getMonthDays(offset) {
+        const ref = new Date(todayBase);
+        ref.setDate(1);
+        ref.setMonth(ref.getMonth() + offset);
+
+        const year  = ref.getFullYear();
+        const month = ref.getMonth();
+        const firstDay = new Date(year, month, 1);
+
+        // Alinha o primeiro dia na segunda-feira (dow: 0=Dom..6=Sáb)
+        const lead = (firstDay.getDay() + 6) % 7;
+        const start = new Date(firstDay);
+        start.setDate(firstDay.getDate() - lead);
+
+        const weeks = [];
+        const labels = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+        let d = new Date(start);
+
+        while (weeks.length < 6) {
+            const week = [];
+            for (let i = 0; i < 7; i++) {
+                const iso = d.toISOString().slice(0, 10);
+                week.push({
+                    key:           iso,
+                    label:         labels[i],
+                    dayNum:        d.getDate(),
+                    isToday:       d.getTime() === todayBase.getTime(),
+                    isCurrentMonth: d.getMonth() === month,
+                });
+                d.setDate(d.getDate() + 1);
+            }
+            weeks.push(week);
+            // Para no fim do mês (5 ou 6 semanas)
+            if (weeks.length >= 5 && d.getMonth() !== month && d.getDate() > 1) break;
+        }
+        return { year, month, weeks };
+    }
+
+    function monthLabel(monthView) {
+        const months = ['jan','fev','mar','abr','mai','jun',
+                        'jul','ago','set','out','nov','dez'];
+        return `${months[monthView.month]} ${monthView.year}`;
+    }
+
+    function renderMonth() {
+
+        const monthView = getMonthDays(monthOffset);
+        const label     = monthLabel(monthView);
+        const mobile    = isMobile();
+        const isCurrent = monthOffset === 0;
+        const total     = allTasks.length;
+        const monthKeys = new Set();
+        for (const week of monthView.weeks) {
+            for (const day of week) monthKeys.add(day.key);
+        }
+        const planned = allTasks.filter(t => monthKeys.has(plannerData[t.id])).length;
+
+        const css = `
+        .mn-wrap { display:flex;flex-direction:column;height:100%;overflow:hidden; }
+        .mn-scroll { overflow-y:auto;flex:1;padding:0 14px 20px; }
+        .mn-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:6px;min-width:640px; }
+        .mn-weekday { text-align:center;font-size:13px;font-weight:700;text-transform:uppercase;
+                      letter-spacing:.06em;color:var(--muted-text-color,#888);
+                      padding:6px 0;border-bottom:1px solid var(--main-border-color,#313244); }
+        .mn-cell { border:1px solid var(--main-border-color,#313244);border-radius:6px;
+                   background:var(--accented-background-color,#1e1e2e);
+                   min-height:96px;display:flex;flex-direction:column;
+                   padding:5px 6px;gap:3px;transition:border-color .1s; }
+        .mn-cell.out { opacity:.35; }
+        .mn-cell.today { border-color:var(--main-active-border-color,#89b4fa); }
+        .mn-cell.weekend { background:rgba(128,128,128,.05); }
+        .mn-daynum { font-size:12px;color:var(--muted-text-color,#888);font-weight:600; }
+        .mn-cell.today .mn-daynum { color:var(--main-active-border-color,#89b4fa); }
+        .mn-tasks { display:flex;flex-direction:column;gap:3px;overflow:hidden;flex:1; }
+        .mn-task { background:rgba(137,180,250,.10);border:1px solid rgba(137,180,250,.2);
+                   border-radius:4px;padding:2px 6px;font-size:12px;line-height:1.35;
+                   cursor:grab;position:relative;overflow:hidden;text-overflow:ellipsis;
+                   white-space:nowrap;user-select:none; }
+        .mn-task:hover { border-color:var(--main-border-color,#45475a); }
+        .mn-task.done { background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.25);
+                        text-decoration:line-through;opacity:.7; }
+        .mn-task.dragging { opacity:.35; }
+        .mn-done-btn { position:absolute;top:1px;right:4px;font-size:12px;opacity:0;
+                       cursor:pointer;color:var(--muted-text-color); }
+        .mn-task:hover .mn-done-btn { opacity:.6; }
+        .mn-drop { display:none;height:18px;border:1.5px dashed var(--main-border-color,#45475a);
+                   border-radius:4px;opacity:.5; }
+        .mn-cell.drag-over { border-color:var(--main-active-border-color,#89b4fa); }
+        .mn-cell.drag-over .mn-drop { display:block; }
+        .mn-backlog { margin-top:14px;border-top:1px solid var(--main-border-color,#313244);
+                      padding-top:8px; }
+        .mn-backlog summary { cursor:pointer;font-weight:600;font-size:14px;
+                              color:var(--muted-text-color,#888);user-select:none; }
+        .mn-backlog summary:hover { color:var(--main-text-color); }
+        .mn-blog-item { padding:3px 8px;font-size:13px;display:flex;align-items:center;gap:8px; }
+        .mn-blog-text { cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+        .mn-blog-text:hover { text-decoration:underline; }
+        .mn-blog-note { font-size:11px;color:var(--muted-text-color,#888);flex-shrink:0; }
+        .pl-nav-btn { background:none;border:1px solid var(--main-border-color);border-radius:5px;
+                      color:var(--main-text-color);font-size:19px;width:28px;height:26px;
+                      cursor:pointer;line-height:1;padding:0; }
+        .pl-nav-btn:hover { background:var(--accented-background-color); }
+        .pl-today-btn { font-size:14px;padding:2px 8px;background:none;
+                        border:1px solid var(--main-border-color);border-radius:4px;
+                        cursor:pointer;color:var(--muted-text-color); }
+        .pl-today-btn:hover { color:var(--main-text-color); }
+        .pl-icon-btn { background:none;border:1px solid var(--main-border-color);
+                       border-radius:4px;color:var(--muted-text-color);font-size:16px;
+                       padding:2px 8px;cursor:pointer; }
+        .pl-icon-btn:hover { color:var(--main-text-color); }
+        .pl-day-picker { position:fixed;inset:0;background:rgba(0,0,0,.6);
+                         display:flex;align-items:flex-end;z-index:9999; }
+        .pl-day-sheet { background:var(--main-background-color,#1e1e2e);
+                        border-radius:16px 16px 0 0;padding:20px 16px 32px;
+                        width:100%;max-height:80vh;overflow-y:auto; }
+        .pl-day-sheet h4 { margin:0 0 14px;font-size:18px;font-weight:600;
+                           overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+        .pl-day-btn { display:block;width:100%;padding:11px 14px;margin-bottom:6px;
+                      background:var(--accented-background-color,#313244);border:none;
+                      border-radius:7px;color:var(--main-text-color);font-size:17px;
+                      text-align:left;cursor:pointer; }
+        .pl-day-btn.active { color:var(--main-active-border-color,#89b4fa);font-weight:600; }
+        .pl-cancel-btn { display:block;width:100%;padding:11px;background:none;
+                         border:1px solid var(--main-border-color);border-radius:7px;
+                         color:var(--muted-text-color);font-size:17px;cursor:pointer;margin-top:4px; }
+        ${MODE_CSS}
+        @media (max-width:700px) {
+            .mn-grid { min-width:520px; }
+            .mn-cell { min-height:64px;padding:3px 4px; }
+            .mn-task { font-size:11px; }
+        }`;
+
+        let html = `<style>${css}</style>
+        <div class="mn-wrap">
+
+            <!-- CABEÇALHO MÊS -->
+            <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
+                        flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
+                        flex-wrap:wrap;">
+                <span style="font-size:19px;font-weight:700;">Mês</span>
+                <button class="pl-nav-btn" id="month-prev" title="Mês anterior">‹</button>
+                <span style="font-size:16px;color:var(--muted-text-color);white-space:nowrap;text-transform:capitalize;">
+                    ${esc(label)}
+                </span>
+                <button class="pl-nav-btn" id="month-next" title="Próximo mês">›</button>
+                ${!isCurrent ? `<button class="pl-today-btn" id="month-now">hoje</button>` : ''}
+                <span style="font-size:14px;color:var(--muted-text-color);margin-left:auto;">
+                    ${planned}/${total}
+                </span>
+                <button class="pl-icon-btn" id="month-clear" title="Limpar este mês">↺</button>
+                <button class="pl-icon-btn" id="month-reload" title="Recarregar tarefas">⟳</button>
+                ${modeSwitcher()}
+            </div>
+
+            <div class="mn-scroll">
+                <div class="mn-grid">`;
+
+        // Headers dos dias
+        for (const day of monthView.weeks[0]) {
+            html += `<div class="mn-weekday">${esc(day.label)}</div>`;
+        }
+
+        // Células do calendário
+        for (const week of monthView.weeks) {
+            for (const day of week) {
+                const tasks = getDayTasks(day.key);
+                const cls = [
+                    'mn-cell',
+                    day.isCurrentMonth ? '' : 'out',
+                    day.isToday ? 'today' : '',
+                    (day.label === 'Sáb' || day.label === 'Dom') ? 'weekend' : '',
+                ].join(' ').replace(/\s+/g, ' ');
+
+                html += `<div class="${cls}" data-col="${esc(day.key)}">
+                    <div class="mn-daynum">${day.dayNum}</div>
+                    <div class="mn-tasks">
+                        ${tasks.map(t => {
+                            const done = t.tags.some(tag => tag.type === 'status' && tag.value === 'done');
+                            return `<div class="mn-task${done ? ' done' : ''}"
+                                         draggable="${!mobile}"
+                                         data-task-id="${esc(t.id)}"
+                                         data-note-id="${esc(t.noteId)}"
+                                         data-cb-index="${t.checkboxIndex}"
+                                         title="${esc(t.text)}">
+                                    <span class="mn-done-btn" title="Marcar como concluída">✓</span>
+                                    ${esc(t.text)}
+                                </div>`;
+                        }).join('')}
+                        <div class="mn-drop"></div>
+                    </div>
+                </div>`;
+            }
+        }
+
+        html += `</div>`;
+
+        // Backlog do mês (tasks sem data)
+        const backlogTasks = allTasks.filter(t => !plannerData[t.id]);
+        if (backlogTasks.length) {
+            html += `<div class="mn-backlog">
+                <details>
+                    <summary>Backlog (${backlogTasks.length} tarefa${backlogTasks.length !== 1 ? 's' : ''} sem data)</summary>
+                    <div style="margin-top:6px;">
+                    ${backlogTasks.map(t => `
+                        <div class="mn-blog-item">
+                            <span class="mn-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
+                            <span class="mn-blog-note">${esc(t.noteTitle)}</span>
+                        </div>`).join('')}
+                    </div>
+                </details>
+            </div>`;
+        }
+
+        html += `</div></div>`;
+
+        $pl.html(html);
+        bindMonthEvents(monthView);
+    }
+
+
+    /* ═══════════════════════════════════════════════════════════
+        7e. EVENTOS DO MÊS
+    ═══════════════════════════════════════════════════════════ */
+
+    function bindMonthEvents(monthView) {
+
+        $pl.find('#month-prev').on('click',  () => { monthOffset--; renderPlanner(); });
+        $pl.find('#month-next').on('click',  () => { monthOffset++; renderPlanner(); });
+        $pl.find('#month-now').on('click',   () => { monthOffset = 0; renderPlanner(); });
+
+        $pl.find('#month-reload').on('click', async function () {
+            $(this).text('…');
+            try { await fetchTasks(); } catch (_) {}
+            renderPlanner();
+            renderTasks();
+        });
+
+        $pl.find('#month-clear').on('click', () => {
+            if (!confirm(`Limpar planejamento de ${monthLabel(monthView)}?`)) return;
+            const monthKeys = new Set();
+            for (const week of monthView.weeks) {
+                for (const day of week) monthKeys.add(day.key);
+            }
+            for (const t of allTasks) {
+                if (monthKeys.has(plannerData[t.id])) delete plannerData[t.id];
+            }
+            save();
+            renderPlanner();
+            renderTasks();
+        });
+
+        $pl.find('.pl-mode-btn').on('click', async function () {
+            const mode = $(this).data('mode');
+            if (mode === viewMode) return;
+            viewMode = mode;
+            plannerData._viewMode = mode;
+            await save();
+            renderPlanner();
+        });
+
+        // Clique no texto do backlog → abre a nota
+        $pl.find('.mn-blog-text').on('click', function () {
+            api.activateNote($(this).data('noteId'));
+        });
+
+        // ✓ concluir
+        $pl.find('.mn-done-btn').on('click', async function (e) {
+            e.stopPropagation();
+            const $chip = $(this).closest('.mn-task');
+            const taskId  = String($chip.data('taskId'));
+            const noteId  = String($chip.data('noteId'));
+            const cbIndex = parseInt($chip.data('cbIndex'), 10);
+            if (!taskId || !noteId || isNaN(cbIndex)) return;
+            try {
+                await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
+                renderPlanner();
+                renderTasks();
+            } catch (err) { console.error('month markDone error:', err); }
+        });
+
+        /* ── Desktop: drag-and-drop entre células ───────────── */
+        if (!isMobile()) {
+
+            let draggingId = null;
+
+            $pl.find('.mn-task').each(function () {
+                this.addEventListener('dragstart', function (e) {
+                    draggingId = this.dataset.taskId;
+                    e.dataTransfer.effectAllowed = 'move';
+                    setTimeout(() => this.classList.add('dragging'), 0);
+                });
+                this.addEventListener('dragend', function () {
+                    this.classList.remove('dragging');
+                    $pl.find('.mn-cell').removeClass('drag-over');
+                    draggingId = null;
+                });
+                this.addEventListener('click', function () {
+                    if (!this.classList.contains('was-dragged'))
+                        api.activateNote(this.dataset.noteId);
+                    this.classList.remove('was-dragged');
+                });
+            });
+
+            $pl.find('.mn-cell').each(function () {
+                const cell = this;
+                cell.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    cell.classList.add('drag-over');
+                });
+                cell.addEventListener('dragleave', e => {
+                    if (!cell.contains(e.relatedTarget)) cell.classList.remove('drag-over');
+                });
+                cell.addEventListener('drop', async e => {
+                    e.preventDefault();
+                    cell.classList.remove('drag-over');
+                    if (!draggingId) return;
+                    const col = cell.dataset.col;
+                    const oldDay = plannerData[draggingId];
+                    if (oldDay && oldDay !== col && plannerData._order && plannerData._order[oldDay]) {
+                        plannerData._order[oldDay] = plannerData._order[oldDay].filter(id => id !== draggingId);
+                    }
+                    plannerData[draggingId] = col;
+                    await save();
+                    renderPlanner();
+                    renderTasks();
+                });
+            });
+        }
+
+        /* ── Mobile: tap no chip → sheet picker ─────────────── */
+        if (isMobile()) {
+            $pl.find('.mn-task').on('click', function () {
+                const taskId   = $(this).data('taskId');
+                const noteId   = $(this).data('noteId');
+                const taskText = $(this).text().replace('✓', '').trim();
+                const current  = plannerData[taskId] || 'backlog';
+
+                const allDays = [];
+                for (const week of monthView.weeks) {
+                    for (const day of week) {
+                        const mm = Number(day.key.split('-')[1]);
+                        allDays.push({ key: day.key, label: `${day.dayNum}/${mm}` });
+                    }
+                }
+
+                $pl.append(`
+                <div class="pl-day-picker" id="month-picker">
+                    <div class="pl-day-sheet">
+                        <h4>${esc(taskText)}</h4>
+                        <button class="pl-day-btn${current === 'backlog' ? ' active' : ''}"
+                                data-col="backlog">↩ Backlog</button>
+                        ${allDays.map(d => `
+                        <button class="pl-day-btn${current === d.key ? ' active' : ''}"
+                                data-col="${esc(d.key)}">${esc(d.label)}</button>`).join('')}
+                        <button class="pl-cancel-btn" id="month-picker-cancel">Cancelar</button>
+                    </div>
+                </div>`);
+
+                $pl.find('#month-picker').on('click', function (e2) {
+                    if (e2.target === this) $(this).remove();
+                });
+                $pl.find('#month-picker-cancel').on('click', () =>
+                    $pl.find('#month-picker').remove()
+                );
+
+                $pl.find('.pl-day-btn').on('click', async function () {
+                    const col = $(this).data('col');
+                    if (col === 'backlog') delete plannerData[taskId];
+                    else plannerData[taskId] = col;
+                    await save();
+                    $pl.find('#month-picker').remove();
+                    renderPlanner();
+                    renderTasks();
+                });
+            });
+        }
+    }
+
+
+    /* ═══════════════════════════════════════════════════════════
         8. EVENTOS DO PLANEJADOR
     ═══════════════════════════════════════════════════════════ */
 
@@ -1160,9 +1572,11 @@
             renderTasks();
         });
 
-        $pl.find('#pl-mode-toggle').on('click', async () => {
-            viewMode = 'gantt';
-            plannerData._viewMode = 'gantt';
+        $pl.find('.pl-mode-btn').on('click', async function () {
+            const mode = $(this).data('mode');
+            if (mode === viewMode) return;
+            viewMode = mode;
+            plannerData._viewMode = mode;
             await save();
             renderPlanner();
         });
@@ -1577,7 +1991,7 @@
 
     try {
         plannerData = await loadPlannerData();
-        if (plannerData._viewMode === 'gantt' || plannerData._viewMode === 'kanban') {
+        if (plannerData._viewMode === 'gantt' || plannerData._viewMode === 'kanban' || plannerData._viewMode === 'month') {
             viewMode = plannerData._viewMode;
         }
         await fetchTasks();
