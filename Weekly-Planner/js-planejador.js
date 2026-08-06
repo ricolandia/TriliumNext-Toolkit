@@ -1276,11 +1276,16 @@
         .mn-cell.drag-over { border-color:var(--main-active-border-color,#89b4fa); }
         .mn-cell.drag-over .mn-drop { display:block; }
         .mn-backlog { margin-top:16px;border-top:1px solid var(--main-border-color,#313244);
-                      padding-top:8px; }
+                      padding-top:8px;border-radius:8px;transition:background .12s,border-color .12s; }
+        .mn-backlog.drag-over { background:rgba(137,180,250,.08); }
         .mn-backlog summary { cursor:pointer;font-weight:600;font-size:14px;
                               color:var(--muted-text-color,#888);user-select:none; }
         .mn-backlog summary:hover { color:var(--main-text-color); }
-        .mn-blog-item { padding:3px 8px;font-size:13px;display:flex;align-items:center;gap:8px; }
+        .mn-blog-item { padding:3px 8px;font-size:13px;display:flex;align-items:center;gap:8px;
+                        cursor:grab;border-radius:5px;border:1.5px solid transparent;
+                        transition:border-color .1s,background .12s; }
+        .mn-blog-item:hover { border-color:var(--main-border-color,#45475a); }
+        .mn-blog-item.dragging { opacity:.35;cursor:grabbing; }
         .mn-blog-text { cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
         .mn-blog-text:hover { text-decoration:underline; }
         .mn-blog-note { font-size:11px;color:var(--muted-text-color,#888);flex-shrink:0; }
@@ -1372,15 +1377,19 @@
 
         html += `</div>`;
 
-        // Backlog do mês (tasks sem data)
+        // Backlog do mês (tasks sem data) — também é zona de drop
         const backlogTasks = allTasks.filter(t => !plannerData[t.id]);
         if (backlogTasks.length) {
-            html += `<div class="mn-backlog">
+            html += `<div class="mn-backlog" data-col="backlog">
                 <details>
                     <summary>Backlog (${backlogTasks.length} tarefa${backlogTasks.length !== 1 ? 's' : ''} sem data)</summary>
                     <div style="margin-top:6px;">
                     ${backlogTasks.map(t => `
-                        <div class="mn-blog-item">
+                        <div class="mn-blog-item"
+                             draggable="${!mobile}"
+                             data-task-id="${esc(t.id)}"
+                             data-note-id="${esc(t.noteId)}"
+                             data-cb-index="${t.checkboxIndex}">
                             <span class="mn-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
                             <span class="mn-blog-note">${esc(t.noteTitle)}</span>
                         </div>`).join('')}
@@ -1436,8 +1445,9 @@
             renderPlanner();
         });
 
-        // Clique no texto do backlog → abre a nota
-        $pl.find('.mn-blog-text').on('click', function () {
+        // Clique no item do backlog → abre a nota (desktop e mobile)
+        $pl.find('.mn-blog-item').on('click', function (e) {
+            if (!$(e.target).closest('.mn-blog-item').length) return;
             api.activateNote($(this).data('noteId'));
         });
 
@@ -1461,7 +1471,7 @@
 
             let draggingId = null;
 
-            $pl.find('.mn-task').each(function () {
+            $pl.find('.mn-task, .mn-blog-item').each(function () {
                 this.addEventListener('dragstart', function (e) {
                     draggingId = this.dataset.taskId;
                     e.dataTransfer.effectAllowed = 'move';
@@ -1470,8 +1480,13 @@
                 this.addEventListener('dragend', function () {
                     this.classList.remove('dragging');
                     $pl.find('.mn-cell').removeClass('drag-over');
+                    $pl.find('.mn-backlog').removeClass('drag-over');
                     draggingId = null;
                 });
+            });
+
+            // Click no chip → abre a nota (desktop)
+            $pl.find('.mn-task').each(function () {
                 this.addEventListener('click', function () {
                     if (!this.classList.contains('was-dragged'))
                         api.activateNote(this.dataset.noteId);
@@ -1479,6 +1494,7 @@
                 });
             });
 
+            // Drop em células do calendário (dias do mês)
             $pl.find('.mn-cell').each(function () {
                 const cell = this;
                 cell.addEventListener('dragover', e => {
@@ -1503,6 +1519,31 @@
                     renderTasks();
                 });
             });
+
+            // Zona de drop do backlog — desagenda a task (volta para backlog)
+            const $backlog = $pl.find('.mn-backlog');
+            if ($backlog.length) {
+                $backlog[0].addEventListener('dragover', e => {
+                    e.preventDefault();
+                    $backlog.addClass('drag-over');
+                });
+                $backlog[0].addEventListener('dragleave', e => {
+                    if (!$backlog[0].contains(e.relatedTarget)) $backlog.removeClass('drag-over');
+                });
+                $backlog[0].addEventListener('drop', async e => {
+                    e.preventDefault();
+                    $backlog.removeClass('drag-over');
+                    if (!draggingId) return;
+                    const oldDay = plannerData[draggingId];
+                    delete plannerData[draggingId];
+                    if (oldDay && plannerData._order && plannerData._order[oldDay]) {
+                        plannerData._order[oldDay] = plannerData._order[oldDay].filter(id => id !== draggingId);
+                    }
+                    await save();
+                    renderPlanner();
+                    renderTasks();
+                });
+            }
         }
 
         /* ── Mobile: tap no chip → sheet picker ─────────────── */
