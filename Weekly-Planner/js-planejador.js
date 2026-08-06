@@ -587,6 +587,22 @@
         .doing-fill { height:100%;border-radius:2px;background:#f1c40f;transition:width .3s ease; }
     `;
 
+    // Botões de navegação/header — idênticos ao modelo da guia Semana
+    const BTN_CSS = `
+        .pl-nav-btn { background:none;border:1px solid var(--main-border-color);border-radius:5px;
+                      color:var(--main-text-color);font-size:19px;width:28px;height:26px;
+                      cursor:pointer;line-height:1;padding:0; }
+        .pl-nav-btn:hover { background:var(--accented-background-color); }
+        .pl-today-btn { font-size:14px;padding:2px 8px;background:none;
+                        border:1px solid var(--main-border-color);border-radius:4px;
+                        cursor:pointer;color:var(--muted-text-color); }
+        .pl-today-btn:hover { color:var(--main-text-color); }
+        .pl-icon-btn { background:none;border:1px solid var(--main-border-color);
+                       border-radius:4px;color:var(--muted-text-color);font-size:16px;
+                       padding:2px 8px;cursor:pointer; }
+        .pl-icon-btn:hover { color:var(--main-text-color); }
+    `;
+
     function renderTagBadges(tags) {
         if (!tags || !tags.length) return '';
         return tags.map(tag => {
@@ -699,18 +715,7 @@
             .pl-insert-marker { height:2px;border-radius:2px;flex-shrink:0;
                                 background:var(--main-active-border-color,#89b4fa);
                                 margin:2px 0;pointer-events:none; }
-            .pl-nav-btn { background:none;border:1px solid var(--main-border-color);border-radius:5px;
-                          color:var(--main-text-color);font-size:19px;width:28px;height:26px;
-                          cursor:pointer;line-height:1;padding:0; }
-            .pl-nav-btn:hover { background:var(--accented-background-color); }
-            .pl-today-btn { font-size:14px;padding:2px 8px;background:none;
-                            border:1px solid var(--main-border-color);border-radius:4px;
-                            cursor:pointer;color:var(--muted-text-color); }
-            .pl-today-btn:hover { color:var(--main-text-color); }
-            .pl-icon-btn { background:none;border:1px solid var(--main-border-color);
-                           border-radius:4px;color:var(--muted-text-color);font-size:16px;
-                           padding:2px 8px;cursor:pointer; }
-            .pl-icon-btn:hover { color:var(--main-text-color); }
+            ${BTN_CSS}
             /* mobile picker */
             .pl-day-picker { position:fixed;inset:0;background:rgba(0,0,0,.6);
                              display:flex;align-items:flex-end;z-index:9999; }
@@ -931,6 +936,7 @@
         .gantt-label-doing { margin-top:2px;height:4px;background:rgba(128,128,128,0.15);border-radius:2px;overflow:hidden; }
         .gantt-label-doing-fill { height:100%;border-radius:2px;background:#f1c40f;transition:width .3s ease; }
         ${TAG_CSS}
+        ${BTN_CSS}
         .gantt-today-line { border-left:2px dashed rgba(137,180,250,0.5);pointer-events:none; }
         .gantt-weekend-bg { background:rgba(128,128,128,0.04);pointer-events:none; }
         .gantt-hdr-weekend { background:rgba(128,128,128,0.06); }
@@ -1278,18 +1284,7 @@
         .mn-blog-text { cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
         .mn-blog-text:hover { text-decoration:underline; }
         .mn-blog-note { font-size:11px;color:var(--muted-text-color,#888);flex-shrink:0; }
-        .pl-nav-btn { background:none;border:1px solid var(--main-border-color);border-radius:5px;
-                      color:var(--main-text-color);font-size:19px;width:28px;height:26px;
-                      cursor:pointer;line-height:1;padding:0; }
-        .pl-nav-btn:hover { background:var(--accented-background-color); }
-        .pl-today-btn { font-size:14px;padding:2px 8px;background:none;
-                        border:1px solid var(--main-border-color);border-radius:4px;
-                        cursor:pointer;color:var(--muted-text-color); }
-        .pl-today-btn:hover { color:var(--main-text-color); }
-        .pl-icon-btn { background:none;border:1px solid var(--main-border-color);
-                       border-radius:4px;color:var(--muted-text-color);font-size:16px;
-                       padding:2px 8px;cursor:pointer; }
-        .pl-icon-btn:hover { color:var(--main-text-color); }
+        ${BTN_CSS}
         .pl-day-picker { position:fixed;inset:0;background:rgba(0,0,0,.6);
                          display:flex;align-items:flex-end;z-index:9999; }
         .pl-day-sheet { background:var(--main-background-color,#1e1e2e);
