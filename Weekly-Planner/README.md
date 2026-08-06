@@ -10,7 +10,10 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 * **Contextual Badges:** Tasks allocated in the planner display a discreet badge (e.g., Wed 14/5) in the tasks panel.
 * **Mark as Done:** Check off individual tasks directly from the panel, or click to enter the source note. Marking as done removes the task from the backlog.
 * **Gantt View:** Toggle between Kanban board and Gantt chart. Bars span from the planned day to `#upto` deadline, color-coded by status.
+* **Month View:** Calendar-style monthly view (5-6 weeks × 7 days) with drag & drop between day cells, dimmed out-of-month days, and collapsible backlog.
 * **Recurring Tasks:** Create tasks that repeat automatically with `#every=Nd` + `#total=N`. Clones are generated in the note and auto-placed on their due dates.
+* **Mode Switcher:** Segmented control in every header — `[Semana] [Mês] [Gantt]` — with persisted preference across reloads.
+* **Task List Enhancements:** Note groups are cards with done/total badges and collapsible tasks (click ▾/▸).
 
 
 ## Installation
@@ -67,7 +70,10 @@ Revisar senhas #every=7d #total=4 #upto=07-21-2026
 - `parseTaskTags(text)` → `{ cleanText, tags[] }` — parses `#todo`, `#doing`, `#done`, `#upto`, `#every`, `#total`
 - `renderTagBadges(tags)`, `renderDoingBar(tags)` helpers
 - `renderGantt()` — Gantt chart view with day columns, progress bars, and weekend/today highlights
+- `renderMonth()` — calendar month view (grid of weeks × days) with task chips and drag & drop
+- `getMonthDays(offset)` — builds the month grid aligned to Monday, marking out-of-month days
 - `expandRecurringInContent(content)` — clones `<li>` elements with `#every+Nd` + `#total+N`
+- Shared CSS constants (`TAG_CSS`, `BTN_CSS`, `MODE_CSS`) keep all three views visually identical
 - Cross-theme CSS with CSS variables + fallbacks + overlay
 
 ## Original link
