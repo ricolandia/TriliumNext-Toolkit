@@ -70,20 +70,20 @@
     .dmn-svg { width:100%;height:100%;min-height:480px; }
     .dmn-node { cursor:pointer;transition:opacity .15s; }
     .dmn-node:hover { opacity:.85; }
-    .dmn-node-rect { fill:var(--accented-background-color,#1e1e2e);
-                     stroke-width:1.5; }
-    .dmn-node-rect:hover { stroke-width:2.5; }
-    .dmn-node-title { fill:var(--main-text-color);font-size:14px;font-weight:600;
+    .dmn-node-circle { fill:var(--accented-background-color,#1e1e2e);
+                       stroke-width:2; }
+    .dmn-node-circle:hover { stroke-width:3; }
+    .dmn-node-title { fill:var(--main-text-color);font-size:11px;font-weight:600;
                       pointer-events:none; }
-    .dmn-node-time { fill:var(--muted-text-color,#888);font-size:11px;
-                     pointer-events:none; }
     .dmn-journal { cursor:pointer; }
-    .dmn-journal-rect { fill:rgba(137,180,250,.12);stroke:#89b4fa;stroke-width:2;
-                        stroke-dasharray:6 4; }
-    .dmn-journal-title { fill:#89b4fa;font-size:17px;font-weight:700;pointer-events:none; }
-    .dmn-journal-sub { fill:var(--muted-text-color,#888);font-size:12px;pointer-events:none; }
+    .dmn-journal-circle { fill:rgba(137,180,250,.12);stroke:#89b4fa;stroke-width:2;
+                          stroke-dasharray:6 4; }
+    .dmn-journal-title { fill:#89b4fa;font-size:13px;font-weight:700;pointer-events:none; }
+    .dmn-journal-sub { fill:var(--muted-text-color,#888);font-size:10px;pointer-events:none; }
     .dmn-edge { stroke:var(--main-border-color,#45475a);stroke-width:1.5;
                 fill:none;opacity:.7; }
+    .dmn-day-edge { stroke:var(--main-border-color,#45475a);stroke-width:1;
+                    fill:none;opacity:.35; }
     .dmn-arrow { fill:var(--main-border-color,#45475a); }
     .dmn-empty { color:var(--muted-text-color,#888);font-size:17px;text-align:center;
                  padding:60px 20px; }
@@ -239,8 +239,9 @@
 
             const W = 1200, H = 700;
             const CX = W / 2, CY = H / 2;
-            const RX = 420, RY = 240;
+            const RX = 440, RY = 270;
             const N = data.notes.length;
+            const J_R = 26, N_R = 15; // raios: diário / satélite
 
             // Posições dos satélites (elipse)
             const pos = {};
@@ -263,10 +264,29 @@
                 return pid && colorByParent[pid] ? colorByParent[pid] : '#6c7086';
             };
 
+            const trunc = (s, n) => s.length > n ? s.slice(0, n - 1) + '…' : s;
+
             let svg = `<svg class="dmn-svg" viewBox="0 0 ${W} ${H}"
                            xmlns="http://www.w3.org/2000/svg">`;
 
-            // Setas entre notas relacionadas
+            svg += `<defs>
+                    <marker id="dmn-arrow" viewBox="0 0 10 10" refX="9" refY="5"
+                            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                        <path class="dmn-arrow" d="M 0 0 L 10 5 L 0 10 z"/>
+                    </marker>
+                </defs>`;
+
+            // Ligações diário → satélites (sempre visíveis, linha fina)
+            if (data.journal) {
+                for (const n of data.notes) {
+                    const p = pos[n.noteId];
+                    if (!p) continue;
+                    svg += `<line class="dmn-day-edge"
+                                  x1="${CX}" y1="${CY}" x2="${p.x}" y2="${p.y}"/>`;
+                }
+            }
+
+            // Setas entre notas relacionadas (relações/links reais)
             for (const rel of data.relations) {
                 const a = pos[rel.source], b = pos[rel.target];
                 if (!a || !b) continue;
@@ -279,40 +299,27 @@
                         </path>`;
             }
 
-            svg += `<defs>
-                    <marker id="dmn-arrow" viewBox="0 0 10 10" refX="9" refY="5"
-                            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                        <path class="dmn-arrow" d="M 0 0 L 10 5 L 0 10 z"/>
-                    </marker>
-                </defs>`;
-
             // Nó central — nota do diário
             if (data.journal) {
-                const jw = 260, jh = 84;
-                const jx = CX - jw / 2, jy = CY - jh / 2;
                 svg += `<g class="dmn-journal" data-note-id="${esc(data.journal.noteId)}">
-                    <rect class="dmn-journal-rect" x="${jx}" y="${jy}"
-                          width="${jw}" height="${jh}" rx="12"/>
-                    <text class="dmn-journal-title" x="${CX}" y="${jy + 40}"
-                          text-anchor="middle">${esc(data.journal.title)}</text>
-                    <text class="dmn-journal-sub" x="${CX}" y="${jy + 62}"
+                    <circle class="dmn-journal-circle" cx="${CX}" cy="${CY}" r="${J_R}"/>
+                    <text class="dmn-journal-title" x="${CX}" y="${CY + 42}"
+                          text-anchor="middle">${esc(trunc(data.journal.title, 24))}</text>
+                    <text class="dmn-journal-sub" x="${CX}" y="${CY + 58}"
                           text-anchor="middle">diário · ${esc(dayLabel(offset))}</text>
                 </g>`;
             }
 
-            // Satélites
+            // Satélites (círculos pequenos + título abaixo)
             for (const n of data.notes) {
                 const p = pos[n.noteId];
                 const color = colorOf(n.noteId);
-                const w = 190, h = 56;
-                const x = p.x - w / 2, y = p.y - h / 2;
-                svg += `<g class="dmn-node" data-note-id="${esc(n.noteId)}">
-                    <rect class="dmn-node-rect" x="${x}" y="${y}" width="${w}" height="${h}"
-                          rx="8" stroke="${color}"/>
-                    <text class="dmn-node-title" x="${p.x}" y="${y + 24}"
-                          text-anchor="middle">${esc(n.title.length > 24 ? n.title.slice(0, 24) + '…' : n.title)}</text>
-                    <text class="dmn-node-time" x="${p.x}" y="${y + 42}"
-                          text-anchor="middle">${esc(n.time || '')}</text>
+                svg += `<g class="dmn-node" data-note-id="${esc(n.noteId)}"
+                           title="${esc(n.title)}${n.time ? ' · ' + esc(n.time) : ''}">
+                    <circle class="dmn-node-circle" cx="${p.x}" cy="${p.y}" r="${N_R}"
+                            stroke="${color}"/>
+                    <text class="dmn-node-title" x="${p.x}" y="${p.y + N_R + 14}"
+                          text-anchor="middle">${esc(trunc(n.title, 18))}</text>
                 </g>`;
             }
 
