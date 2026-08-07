@@ -106,12 +106,23 @@
                 }
             } catch (_) {}
 
+            // Detecta o formato de dateModified (string ISO ou epoch numérico)
+            let dateExpr = "substr(dateModified, 1, 10) = ?";
+            try {
+                const sample = api.sql.getRows(
+                    "SELECT typeof(dateModified) AS t, dateModified AS v FROM notes WHERE isDeleted = 0 AND dateModified IS NOT NULL LIMIT 3"
+                );
+                if (sample.length && sample.every(r => r.t === 'integer')) {
+                    dateExpr = "date(dateModified / 1000, 'unixepoch', 'localtime') = date(?, 'localtime')";
+                }
+            } catch (_) {}
+
             const rows = api.sql.getRows(`
                 SELECT noteId, title, type, dateModified
                 FROM notes
                 WHERE isDeleted = 0
                   AND noteId NOT LIKE '\\_%' ESCAPE '\\'
-                  AND date(dateModified) = date(?)
+                  AND ${dateExpr}
                 ORDER BY dateModified ASC
             `, [iso]);
 
