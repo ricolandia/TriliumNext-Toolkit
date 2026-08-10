@@ -26,6 +26,8 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 
 ### Features
 
+- **Mobile layout**: painéis empilhados em coluna única (planner acima, tarefas abaixo) em telas < 700px — sem espremer as duas colunas no celular
+- **Mobile Gantt**: no celular o Gantt vira uma lista vertical por dia (em vez do grid largo com scroll horizontal); tocar no item abre a nota e ✓ conclui
 - **Tag parsing**: `#todo`, `#doing=N%`, `#done`, `#upto=MM-DD-YYYY` in task text are extracted and displayed as colored badges
 - **Planner badges**: tags show up on draggable kanban cards in the weekly board
 - **Task list badges**: tags show up in the right sidebar task list
