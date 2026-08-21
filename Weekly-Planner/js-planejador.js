@@ -57,10 +57,12 @@
         <style>
         @media (max-width:700px) {
             .wp-root { flex-direction:column !important; }
-            .wp-pl { flex:0 0 62vh !important; width:100%; max-width:none;
+            .wp-pl { flex:0 0 62vh !important; width:100% !important;
+                     max-width:none !important; min-width:0 !important;
                      border-right:none !important;
                      border-bottom:1px solid var(--main-border-color,#313244); }
-            .wp-tk { flex:1 1 auto !important; width:100%; max-width:none; min-width:0; }
+            .wp-tk { flex:1 1 auto !important; width:100% !important;
+                     max-width:none !important; min-width:0 !important; }
         }
         </style>`);
 
@@ -1561,8 +1563,9 @@
             renderPlanner();
         });
 
-        // Clique no item do backlog → abre a nota (desktop e mobile)
+        // Clique no item do backlog → abre a nota (desktop; no mobile o tap agenda)
         $pl.find('.mn-blog-item').on('click', function (e) {
+            if (isMobile()) return; // no mobile o picker assume
             if (!$(e.target).closest('.mn-blog-item').length) return;
             api.activateNote($(this).data('noteId'));
         });
@@ -1664,12 +1667,8 @@
 
         /* ── Mobile: tap no chip → sheet picker ─────────────── */
         if (isMobile()) {
-            $pl.find('.mn-task').on('click', function () {
-                const taskId   = $(this).data('taskId');
-                const noteId   = $(this).data('noteId');
-                const taskText = $(this).text().replace('✓', '').trim();
-                const current  = plannerData[taskId] || 'backlog';
 
+            function openMonthPicker(taskId, taskText, current) {
                 const allDays = [];
                 for (const week of monthView.weeks) {
                     for (const day of week) {
@@ -1707,6 +1706,22 @@
                     renderPlanner();
                     renderTasks();
                 });
+            }
+
+            $pl.find('.mn-task').on('click', function () {
+                openMonthPicker(
+                    $(this).data('taskId'),
+                    $(this).text().replace('✓', '').trim(),
+                    plannerData[$(this).data('taskId')] || 'backlog'
+                );
+            });
+
+            $pl.find('.mn-blog-item').on('click', function () {
+                openMonthPicker(
+                    $(this).data('taskId'),
+                    $(this).find('.mn-blog-text').text().trim(),
+                    'backlog'
+                );
             });
         }
     }

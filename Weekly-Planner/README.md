@@ -27,6 +27,7 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 ### Features
 
 - **Mobile layout**: painéis empilhados em coluna única (planner acima, tarefas abaixo) em telas < 700px — sem espremer as duas colunas no celular
+- **Mobile Mês — backlog agendável**: no celular, tocar num item do backlog da visão Mês abre o seletor de dias (mesmo comportamento do Kanban); antes só abria a nota
 - **Mobile Gantt**: no celular o Gantt vira uma lista vertical por dia (em vez do grid largo com scroll horizontal); tocar no item abre a nota e ✓ conclui
 - **Tag parsing**: `#todo`, `#doing=N%`, `#done`, `#upto=MM-DD-YYYY` in task text are extracted and displayed as colored badges
 - **Planner badges**: tags show up on draggable kanban cards in the weekly board
@@ -40,6 +41,7 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 - **Larger fonts**: task text 16→17px, badges 10→11px, headers 18→19px
 - **More spacing**: card gap 6→8px, increased internal margins
 - **Darker card background**: overlay on `--accented-background-color` for better contrast on both themes
+- **Fix mobile — largura do painel de tarefas**: `max-width:320px` inline do `.wp-tk` sobrepunha o media query (que não tinha `!important`) — o painel "Tarefas" ficava numa tira estreita de 320px embaixo do planner no celular. Corrigido com `width/max-width/min-width !important` nos dois painéis.
 - **Monochrome icon**: `⇢` instead of `⏰` for terminal-friendly display
 
 ### Tag color palette
