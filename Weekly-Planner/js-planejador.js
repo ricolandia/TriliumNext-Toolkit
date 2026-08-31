@@ -55,8 +55,14 @@
     // Mobile: empilha planner (acima) + tarefas (abaixo) em vez de duas colunas
     $root.append(`
         <style>
+        /* Nunca ultrapassar a largura visível (webview/containers mais largos que a tela) */
+        .wp-root { max-width:100vw !important; min-width:0 !important; }
         /* Barra de modo (Semana/Mês/Gantt): oculta no desktop, dedicada no mobile */
         .pl-mode-bar { display:none; }
+        /* ⚠️ Badge diagnóstico TEMPORÁRIO (remover após validar larguras no mobile) */
+        .wp-diag-badge { position:fixed;bottom:4px;right:4px;z-index:99999;font-size:10px;
+                         font-family:monospace;color:#fff;background:rgba(0,0,0,.7);
+                         padding:2px 6px;border-radius:4px;pointer-events:none; }
         @media (max-width:700px) {
             .wp-root { flex-direction:column !important; }
             .wp-pl { flex:0 0 62vh !important; width:100% !important;
@@ -73,6 +79,15 @@
             .pl-mode-switch { display:none !important; }
         }
         </style>`);
+
+    // ⚠️ Badge diagnóstico TEMPORÁRIO — mostra larguras reais (remover após validação)
+    function updateDiagBadge() {
+        let $badge = $root.find('.wp-diag-badge');
+        if (!$badge.length) $badge = $('<div class="wp-diag-badge">').appendTo($root);
+        const cw = ($container[0] && $container[0].clientWidth) || 0;
+        $badge.text(`c:${cw} iw:${window.innerWidth} mm:${window.matchMedia('(max-width:700px)').matches}`);
+    }
+    window.addEventListener('resize', updateDiagBadge);
 
     // painel esquerdo — Planejador (2/3)
     const $pl = $('<div class="wp-pl">').css({
@@ -778,8 +793,8 @@
             .pl-task:hover .pl-done-btn { opacity:0.45; }
             @media (max-width:700px) {
                 .pl-done-btn { opacity:0.5; }
-                .pl-board { align-items:stretch; }
-                .pl-col { height:100%;max-height:none;min-height:0; }
+                .pl-board { align-items:flex-start; }
+                .pl-col { max-height:100%;min-height:0; }
                 .pl-task { font-size:15px;padding:8px 10px; }
                 .pl-task-note { font-size:12px;margin-top:4px; }
                 .tag-badge { font-size:10px;padding:1px 5px; }
@@ -974,36 +989,6 @@
         .gantt-label-tags { display:flex;flex-wrap:wrap;gap:3px;margin-top:2px; }
         .gantt-label-doing { margin-top:2px;height:4px;background:rgba(128,128,128,0.15);border-radius:2px;overflow:hidden; }
         .gantt-label-doing-fill { height:100%;border-radius:2px;background:#f1c40f;transition:width .3s ease; }
-        /* ── Gantt mobile: lista vertical por dia ── */
-        .gantt-mobile { display:flex;flex-direction:column;gap:10px;padding:12px 14px 20px;
-                        overflow-y:auto;flex:1; }
-        .gm-day { border:1px solid var(--main-border-color,#313244);border-radius:8px;overflow:hidden;
-                  background:var(--accented-background-color,#1e1e2e);flex-shrink:0; }
-        .gm-day.gm-today { border-color:var(--main-active-border-color,#89b4fa); }
-        .gm-day.gm-weekend { background:rgba(128,128,128,0.06); }
-        .gm-day-hdr { display:flex;align-items:center;gap:8px;padding:8px 12px;
-                      border-bottom:1px solid var(--main-border-color,#313244); }
-        .gm-day-label { font-size:14px;font-weight:700;text-transform:uppercase;
-                        letter-spacing:.06em;color:var(--muted-text-color,#888); }
-        .gm-day.gm-today .gm-day-label { color:var(--main-active-border-color,#89b4fa); }
-        .gm-day-date { font-size:13px;color:var(--muted-text-color,#888); }
-        .gm-day-count { margin-left:auto;font-size:12px;background:var(--accented-background-color,#313244);
-                        padding:0 7px;border-radius:8px;font-weight:600;color:var(--muted-text-color); }
-        .gm-day-tasks { padding:8px;display:flex;flex-direction:column;gap:6px; }
-        .gm-empty { font-size:13px;color:var(--muted-text-color);opacity:.6;padding:2px 4px; }
-        .gm-item { display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:6px;
-                   cursor:pointer;border:1px solid transparent; }
-        .gm-item.gm-done { background:rgba(46,204,113,0.14);border-color:rgba(46,204,113,0.3); }
-        .gm-item.gm-overdue { background:rgba(243,139,168,0.14);border-color:rgba(243,139,168,0.3); }
-        .gm-item.gm-progress { background:rgba(241,196,15,0.12);border-color:rgba(241,196,15,0.25); }
-        .gm-item.gm-todo { background:rgba(137,180,250,0.1);border-color:rgba(137,180,250,0.2); }
-        .gm-item-main { flex:1;min-width:0; }
-        .gm-task-label { display:block;font-size:15px;line-height:1.4;color:var(--main-text-color);
-                         overflow:hidden;text-overflow:ellipsis; }
-        .gm-item.gm-done .gm-task-label { text-decoration:line-through;opacity:.55; }
-        .gm-note { display:block;font-size:12px;color:var(--muted-text-color,#888);margin-top:2px;
-                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-        .gm-tags { display:flex;flex-wrap:wrap;gap:3px;margin-top:4px; }
         ${TAG_CSS}
         ${BTN_CSS}
         .gantt-today-line { border-left:2px dashed rgba(137,180,250,0.5);pointer-events:none; }
@@ -1042,76 +1027,10 @@
                 ${modeSwitcher()}
             </div>
 
-            ${mobile ? '' : `
             <div class="gantt-scroll">
-                <div class="gantt-grid">`}`;
+                <div class="gantt-grid">`;
 
-        // ── MOBILE: lista vertical agrupada por dia ──
-        if (mobile) {
-            html += `<div class="gantt-mobile">`;
-
-            if (groups.size === 0) {
-                html += `<div class="gantt-empty">
-                    <div>Nenhuma tarefa agendada nesta semana</div>
-                    <div class="gantt-empty-sub">Toque no modo Quadro para agendar tarefas</div>
-                </div>`;
-            }
-
-            for (const [i, col] of weekCols.entries()) {
-                const dayItems = [];
-                for (const [, group] of groups) {
-                    for (const item of group.items) {
-                        if (item.startIdx === i) dayItems.push(item);
-                    }
-                }
-                const weekend = i >= 5 ? ' gm-weekend' : '';
-                const today   = col.isToday ? ' gm-today' : '';
-
-                html += `
-                <div class="gm-day${today}${weekend}">
-                    <div class="gm-day-hdr">
-                        <span class="gm-day-label">${esc(col.label)}</span>
-                        <span class="gm-day-date">${esc(col.dateStr)}</span>
-                        ${dayItems.length ? `<span class="gm-day-count">${dayItems.length}</span>` : ''}
-                    </div>
-                    <div class="gm-day-tasks">
-                        ${dayItems.length ? dayItems.map(item => {
-                            let cls = 'gm-item';
-                            if (item.isDone)            cls += ' gm-done';
-                            else if (item.isOverdue)    cls += ' gm-overdue';
-                            else if (item.progress > 0) cls += ' gm-progress';
-                            else                        cls += ' gm-todo';
-                            const tagsHtml  = renderTagBadges(item.tags);
-                            const doingHtml = renderDoingBar(item.tags);
-                            return `
-                            <div class="${cls}"
-                                 data-task-id="${esc(item.id)}"
-                                 data-note-id="${esc(item.noteId)}"
-                                 data-cb-index="${item.checkboxIndex}">
-                                <span class="gantt-done-btn"
-                                      data-task-id="${esc(item.id)}"
-                                      data-note-id="${esc(item.noteId)}"
-                                      data-cb-index="${item.checkboxIndex}"
-                                      style="flex-shrink:0;width:18px;height:18px;margin-top:2px;
-                                             cursor:pointer;font-size:14px;opacity:.6;
-                                             color:var(--muted-text-color);user-select:none;">✓</span>
-                                <div class="gm-item-main">
-                                    <span class="gantt-task-label" data-note-id="${esc(item.noteId)}">${esc(item.text)}</span>
-                                    <span class="gm-note">${esc(item.noteTitle)}</span>
-                                    ${tagsHtml ? `<div class="gm-tags">${tagsHtml}</div>` : ''}
-                                    ${doingHtml ? doingHtml.replace('doing-bar', 'gantt-label-doing').replace('doing-fill', 'gantt-label-doing-fill') : ''}
-                                </div>
-                            </div>`;
-                        }).join('') : `<div class="gm-empty">sem tarefas</div>`}
-                    </div>
-                </div>`;
-            }
-
-            html += `</div>`; // close gantt-mobile
-        }
-
-        // ── DESKTOP: grid ──
-        if (!mobile) {
+        // ── GRID (desktop e mobile — rolagem horizontal no celular) ──
         // HEADER ROW
         html += `<div class="gantt-hdr" style="grid-column:1"></div>`;
         for (const [i, col] of weekCols.entries()) {
@@ -1199,7 +1118,6 @@
         }
 
         html += `</div></div>`; // close grid + scroll
-        }
 
         // BACKLOG
         if (backlogTasks.length) {
@@ -1270,12 +1188,6 @@
 
         // Bar click → open source note
         $pl.find('.gantt-bar').on('click', function () {
-            api.activateNote($(this).data('noteId'));
-        });
-
-        // Mobile Gantt: chip click → open source note (fora do botão ✓)
-        $pl.find('.gm-item').on('click', function (e) {
-            if ($(e.target).closest('.gantt-done-btn').length) return;
             api.activateNote($(this).data('noteId'));
         });
 
@@ -2211,5 +2123,6 @@
     renderPlanner();
     renderTasks();
     bindTaskEvents();
+    updateDiagBadge(); // ⚠️ temporário — remover com o badge
 
 })();
