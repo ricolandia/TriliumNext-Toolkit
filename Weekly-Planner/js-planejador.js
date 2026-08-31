@@ -71,11 +71,12 @@
                      border-bottom:1px solid var(--main-border-color,#313244); }
             .wp-tk { flex:1 1 auto !important; width:100% !important;
                      max-width:none !important; min-width:0 !important; }
-            .pl-mode-bar { display:flex; flex-direction:row; gap:6px; padding:8px 12px;
+            .pl-mode-bar { display:flex; flex-direction:row; gap:4px; padding:8px 10px;
                            flex-shrink:0; flex-wrap:nowrap;
                            border-bottom:1px solid var(--main-border-color,#313244); }
-            .pl-mode-bar .pl-mode-btn { flex:1; text-align:center; padding:9px 6px;
-                                        font-size:15px; white-space:nowrap; }
+            .pl-mode-bar .pl-mode-btn { flex:1 1 0; min-width:0; text-align:center;
+                                        padding:7px 4px; font-size:13px; white-space:nowrap;
+                                        overflow:hidden; text-overflow:ellipsis; }
             .pl-mode-switch { display:none !important; }
         }
         </style>`);
