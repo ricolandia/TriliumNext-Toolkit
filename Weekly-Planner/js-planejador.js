@@ -58,7 +58,7 @@
         /* Nunca ultrapassar a largura visível (webview/containers mais largos que a tela) */
         .wp-root { max-width:100vw !important; min-width:0 !important; }
         /* Barra de modo (Semana/Mês/Gantt): oculta no desktop, dedicada no mobile */
-        .pl-mode-bar { display:none; }
+        .pl-mode-bar { display:none !important; }
         /* ⚠️ Badge diagnóstico TEMPORÁRIO (remover após validar larguras no mobile) */
         .wp-diag-badge { position:fixed;bottom:4px;right:4px;z-index:99999;font-size:10px;
                          font-family:monospace;color:#fff;background:rgba(0,0,0,.7);
@@ -71,12 +71,14 @@
                      border-bottom:1px solid var(--main-border-color,#313244); }
             .wp-tk { flex:1 1 auto !important; width:100% !important;
                      max-width:none !important; min-width:0 !important; }
-            .pl-mode-bar { display:flex; flex-direction:row; gap:4px; padding:8px 10px;
-                           flex-shrink:0; flex-wrap:nowrap;
-                           border-bottom:1px solid var(--main-border-color,#313244); }
-            .pl-mode-bar .pl-mode-btn { flex:1 1 0; min-width:0; text-align:center;
-                                        padding:7px 4px; font-size:13px; white-space:nowrap;
-                                        overflow:hidden; text-overflow:ellipsis; }
+            .pl-mode-bar { display:flex !important; flex-direction:row !important; gap:4px !important;
+                           padding:7px 10px !important; flex-shrink:0 !important;
+                           flex-wrap:nowrap !important;
+                           border-bottom:1px solid var(--main-border-color,#313244) !important; }
+            .pl-mode-bar .pl-mode-btn { flex:1 1 0 !important; min-width:0 !important;
+                                        text-align:center !important; padding:6px 3px !important;
+                                        font-size:12px !important; white-space:nowrap !important;
+                                        overflow:hidden !important; text-overflow:ellipsis !important; }
             .pl-mode-switch { display:none !important; }
         }
         </style>`);
@@ -86,7 +88,10 @@
         let $badge = $root.find('.wp-diag-badge');
         if (!$badge.length) $badge = $('<div class="wp-diag-badge">').appendTo($root);
         const cw = ($container[0] && $container[0].clientWidth) || 0;
-        $badge.text(`c:${cw} iw:${window.innerWidth} mm:${window.matchMedia('(max-width:700px)').matches}`);
+        const bar = $root.find('.pl-mode-bar')[0];
+        let barInfo = '';
+        if (bar) barInfo = ` b:${bar.clientWidth}/${bar.scrollWidth}`;
+        $badge.text(`c:${cw} iw:${window.innerWidth} mm:${window.matchMedia('(max-width:700px)').matches}${barInfo}`);
     }
     window.addEventListener('resize', updateDiagBadge);
 
@@ -997,12 +1002,12 @@
         .gantt-hdr-weekend { background:rgba(128,128,128,0.06); }
         ${MODE_CSS}
         @media (max-width:700px) {
-            .gantt-grid { grid-template-columns:140px repeat(7,minmax(55px,1fr));min-width:500px; }
-            .gantt-label { font-size:12px;padding:3px 4px; }
-            .gantt-bar-label { font-size:11px; }
-            .gantt-hdr { font-size:11px;padding:6px 4px; }
-            .gantt-hdr-date { font-size:10px; }
-            .gantt-note { font-size:13px; }
+            .gantt-grid { grid-template-columns:minmax(70px,120px) repeat(7,minmax(36px,1fr));min-width:0; }
+            .gantt-label { font-size:11px;padding:3px 4px; }
+            .gantt-bar-label { font-size:10px; }
+            .gantt-hdr { font-size:10px;padding:5px 3px; }
+            .gantt-hdr-date { font-size:9px; }
+            .gantt-note { font-size:12px; }
         }`;
 
         let html = `<style>${css}</style>
