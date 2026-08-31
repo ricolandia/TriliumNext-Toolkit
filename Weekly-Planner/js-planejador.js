@@ -41,6 +41,8 @@
     ═══════════════════════════════════════════════════════════ */
 
     const $root = $container;
+    // id fixo no root → especificidade de ID vence qualquer CSS global do Trilium (#app *, button…)
+    $root.attr('id', 'wp-root');
 
     $root.addClass('wp-root').css({
         display:    'flex',
@@ -56,32 +58,36 @@
     $root.append(`
         <style>
         /* Nunca ultrapassar a largura visível (webview/containers mais largos que a tela) */
-        .wp-root { max-width:100vw !important; min-width:0 !important; }
+        #wp-root { max-width:100vw !important; min-width:0 !important; }
         /* Barra de modo (Semana/Mês/Gantt): oculta no desktop, dedicada no mobile */
-        .pl-mode-bar { display:none !important; }
+        #wp-root .pl-mode-bar { display:none !important; }
         /* ⚠️ Badge diagnóstico TEMPORÁRIO (remover após validar larguras no mobile) */
         .wp-diag-badge { position:fixed;bottom:4px;right:4px;z-index:99999;font-size:10px;
                          font-family:monospace;color:#fff;background:rgba(0,0,0,.7);
                          padding:2px 6px;border-radius:4px;pointer-events:none; }
         @media (max-width:700px) {
-            .wp-root { flex-direction:column !important; }
-            .wp-pl { flex:0 0 62vh !important; width:100% !important;
-                     max-width:none !important; min-width:0 !important;
-                     border-right:none !important;
-                     border-bottom:1px solid var(--main-border-color,#313244); }
-            .wp-tk { flex:1 1 auto !important; width:100% !important;
-                     max-width:none !important; min-width:0 !important; }
-            .pl-mode-bar { display:flex !important; flex-direction:row !important; gap:4px !important;
-                           padding:7px 10px !important; flex-shrink:0 !important;
-                           flex-wrap:nowrap !important; min-width:0 !important;
-                           max-width:100% !important;
-                           border-bottom:1px solid var(--main-border-color,#313244) !important; }
-            .pl-mode-bar .pl-mode-btn { flex:1 1 0 !important; min-width:0 !important;
-                                        text-align:center !important; padding:6px 3px !important;
-                                        font-size:12px !important; white-space:nowrap !important;
-                                        overflow:hidden !important; text-overflow:ellipsis !important; }
-            .pl-mode-btn { cursor:pointer; user-select:none; }
-            .pl-mode-switch { display:none !important; }
+            #wp-root { flex-direction:column !important; }
+            #wp-root .wp-pl { flex:0 0 62vh !important; width:100% !important;
+                              max-width:none !important; min-width:0 !important;
+                              border-right:none !important;
+                              border-bottom:1px solid var(--main-border-color,#313244); }
+            #wp-root .wp-tk { flex:1 1 auto !important; width:100% !important;
+                              max-width:none !important; min-width:0 !important; }
+            #wp-root .pl-mode-bar { display:flex !important; flex-direction:row !important;
+                                    gap:4px !important; padding:7px 10px !important;
+                                    flex-shrink:0 !important; flex-wrap:nowrap !important;
+                                    min-width:0 !important; width:100% !important;
+                                    max-width:100% !important; box-sizing:border-box !important;
+                                    border-bottom:1px solid var(--main-border-color,#313244) !important; }
+            #wp-root .pl-mode-bar .pl-mode-btn { flex:1 1 0 !important; min-width:0 !important;
+                                                 max-width:100% !important;
+                                                 box-sizing:border-box !important;
+                                                 text-align:center !important; padding:6px 2px !important;
+                                                 font-size:12px !important; white-space:nowrap !important;
+                                                 overflow:hidden !important;
+                                                 text-overflow:ellipsis !important; }
+            #wp-root .pl-mode-btn { cursor:pointer; user-select:none; box-sizing:border-box; }
+            #wp-root .pl-mode-switch { display:none !important; }
         }
         </style>`);
 
@@ -607,7 +613,7 @@
         return `<span class="pl-mode-switch">
             ${modes.map(m => `
                 <span class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
-                      role="button" tabindex="0" data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
+                      tabindex="0" data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
             `).join('')}
         </span>`;
     }
@@ -624,7 +630,7 @@
         return `<div class="pl-mode-bar">
             ${modes.map(m => `
                 <span class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
-                      role="button" tabindex="0" data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
+                      tabindex="0" data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
             `).join('')}
         </div>`;
     }
