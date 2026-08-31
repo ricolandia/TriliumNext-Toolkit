@@ -28,6 +28,10 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 
 - **Mobile layout**: painéis empilhados em coluna única (planner acima, tarefas abaixo) em telas < 700px — sem espremer as duas colunas no celular
 - **Mobile Mês — backlog agendável**: no celular, tocar num item do backlog da visão Mês abre o seletor de dias (mesmo comportamento do Kanban); antes só abria a nota
+- **Mobile — barra de modo dedicada**: no celular o seletor Semana/Mês/Gantt sai do header (onde quebrava e ficava cortado à direita) e vira uma barra de largura total com 3 botões flex:1 no topo do planner — alvos de toque grandes, impossível de cortar. Desktop mantém o seletor no header.
+- **Fix mobile — detecção por `matchMedia`**: `isMobile()` usava `window.innerWidth < 700`, que pode divergir da largura real em webviews/emulação (ex.: innerWidth 875 com layout de 360px) — o CSS aplicava o mobile mas o JS achava que era desktop e a barra de modo nem era renderizada. Agora usa `matchMedia('(max-width:700px)')`, alinhado ao CSS.
+- **Fix mobile — colunas do kanban cortadas**: `max-height: calc(100vh - Xpx)` adivinhava a altura pela viewport e estourava o painel de 62vh (corte pelo `overflow:hidden`). Agora flexbox encadeado: `.pl-board` stretch + `.pl-col` height:100%/min-height:0 + `.pl-tasks` min-height:0 com scroll interno.
+- **Fix mobile — grade do Mês cortada**: `min-width:520px` deixava as colunas finais fora da tela. Agora grade fluida (`min-width:0`, células/fontes menores no mobile) + `overflow-x:auto` de segurança.
 - **Mobile Gantt**: no celular o Gantt vira uma lista vertical por dia (em vez do grid largo com scroll horizontal); tocar no item abre a nota e ✓ conclui
 - **Tag parsing**: `#todo`, `#doing=N%`, `#done`, `#upto=MM-DD-YYYY` in task text are extracted and displayed as colored badges
 - **Planner badges**: tags show up on draggable kanban cards in the weekly board

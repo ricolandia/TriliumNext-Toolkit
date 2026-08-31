@@ -55,6 +55,8 @@
     // Mobile: empilha planner (acima) + tarefas (abaixo) em vez de duas colunas
     $root.append(`
         <style>
+        /* Barra de modo (Semana/Mês/Gantt): oculta no desktop, dedicada no mobile */
+        .pl-mode-bar { display:none; }
         @media (max-width:700px) {
             .wp-root { flex-direction:column !important; }
             .wp-pl { flex:0 0 62vh !important; width:100% !important;
@@ -63,6 +65,12 @@
                      border-bottom:1px solid var(--main-border-color,#313244); }
             .wp-tk { flex:1 1 auto !important; width:100% !important;
                      max-width:none !important; min-width:0 !important; }
+            .pl-mode-bar { display:flex; flex-direction:row; gap:6px; padding:8px 12px;
+                           flex-shrink:0; flex-wrap:nowrap;
+                           border-bottom:1px solid var(--main-border-color,#313244); }
+            .pl-mode-bar .pl-mode-btn { flex:1; text-align:center; padding:9px 6px;
+                                        font-size:15px; white-space:nowrap; }
+            .pl-mode-switch { display:none !important; }
         }
         </style>`);
 
@@ -577,6 +585,21 @@
         </span>`;
     }
 
+    // Barra de modo dedicada (mobile): largura total, botões flex:1, sem quebrar/cortar
+    function modeBar() {
+        const modes = [
+            { id: 'kanban', label: 'Semana' },
+            { id: 'month',  label: 'Mês' },
+            { id: 'gantt',  label: 'Gantt' },
+        ];
+        return `<div class="pl-mode-bar">
+            ${modes.map(m => `
+                <button class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
+                        data-mode="${m.id}" title="Ver ${m.label}">${m.label}</button>
+            `).join('')}
+        </div>`;
+    }
+
     const MODE_CSS = `
         .pl-mode-switch { display:inline-flex;gap:2px;margin-left:auto; }
         .pl-mode-btn { background:none;border:1px solid var(--main-border-color,#313244);border-radius:4px;
@@ -646,7 +669,7 @@
         return `<div class="doing-bar"><div class="doing-fill" style="width:${doing.value}%"></div></div>`;
     }
 
-    const isMobile   = () => window.innerWidth < 700;
+    const isMobile   = () => window.matchMedia('(max-width:700px)').matches;
     const getBacklog = () => allTasks.filter(t => !plannerData[t.id]);
 
     function getDayTasks(iso) {
@@ -701,7 +724,7 @@
         let html = `
         <style>
             .pl-board { display:flex;gap:10px;overflow-x:auto;padding:0 16px 20px;flex:1;
-                        align-items:flex-start;-webkit-overflow-scrolling:touch; }
+                        align-items:flex-start;min-height:0;-webkit-overflow-scrolling:touch; }
             .pl-col   { flex-shrink:0;display:flex;flex-direction:column;border-radius:8px;
                         border:1px solid var(--main-border-color,#313244);
                         background:var(--accented-background-color,#1e1e2e);
@@ -755,13 +778,14 @@
             .pl-task:hover .pl-done-btn { opacity:0.45; }
             @media (max-width:700px) {
                 .pl-done-btn { opacity:0.5; }
-                .pl-col { max-height:calc(100vh - 150px); }
+                .pl-board { align-items:stretch; }
+                .pl-col { height:100%;max-height:none;min-height:0; }
                 .pl-task { font-size:15px;padding:8px 10px; }
                 .pl-task-note { font-size:12px;margin-top:4px; }
                 .tag-badge { font-size:10px;padding:1px 5px; }
                 .pl-col-label { font-size:13px; }
                 .pl-col-sub { font-size:13px; }
-                .pl-tasks { gap:6px; }
+                .pl-tasks { gap:6px;min-height:0; }
                 .tk-task-text { font-size:15px; }
                 .tk-note-link { font-size:13px; }
                 .tk-total { font-size:14px; }
@@ -775,6 +799,7 @@
 
         <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
 
+            ${mobile ? modeBar() : ''}
             <!-- CABEÇALHO PLANNER -->
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
@@ -997,6 +1022,7 @@
         let html = `<style>${css}</style>
         <div class="gantt-wrap">
 
+            ${mobile ? modeBar() : ''}
             <!-- CABEÇALHO GANTT -->
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
@@ -1358,7 +1384,7 @@
 
         const css = `
         .mn-wrap { display:flex;flex-direction:column;height:100%;overflow:hidden; }
-        .mn-scroll { overflow-y:auto;flex:1;padding:0 16px 20px; }
+        .mn-scroll { overflow-y:auto;overflow-x:auto;flex:1;padding:0 16px 20px; }
         .mn-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-width:640px; }
         .mn-weekday { text-align:center;font-size:13px;font-weight:700;text-transform:uppercase;
                       letter-spacing:.08em;color:var(--muted-text-color,#888);
@@ -1426,14 +1452,17 @@
         ${TAG_CSS}
         ${MODE_CSS}
         @media (max-width:700px) {
-            .mn-grid { min-width:520px; }
-            .mn-cell { min-height:80px;padding:4px 6px; }
-            .mn-task { font-size:12px;padding:3px 6px; }
+            .mn-grid { min-width:0;gap:4px; }
+            .mn-cell { min-height:70px;padding:3px 4px; }
+            .mn-weekday { font-size:11px;padding:6px 0 8px; }
+            .mn-daynum { font-size:11px;padding-bottom:2px; }
+            .mn-task { font-size:11px;padding:2px 4px;line-height:1.4; }
         }`;
 
         let html = `<style>${css}</style>
         <div class="mn-wrap">
 
+            ${mobile ? modeBar() : ''}
             <!-- CABEÇALHO MÊS -->
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
