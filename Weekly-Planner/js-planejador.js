@@ -73,12 +73,14 @@
                      max-width:none !important; min-width:0 !important; }
             .pl-mode-bar { display:flex !important; flex-direction:row !important; gap:4px !important;
                            padding:7px 10px !important; flex-shrink:0 !important;
-                           flex-wrap:nowrap !important;
+                           flex-wrap:nowrap !important; min-width:0 !important;
+                           max-width:100% !important;
                            border-bottom:1px solid var(--main-border-color,#313244) !important; }
             .pl-mode-bar .pl-mode-btn { flex:1 1 0 !important; min-width:0 !important;
                                         text-align:center !important; padding:6px 3px !important;
                                         font-size:12px !important; white-space:nowrap !important;
                                         overflow:hidden !important; text-overflow:ellipsis !important; }
+            .pl-mode-btn { cursor:pointer; user-select:none; }
             .pl-mode-switch { display:none !important; }
         }
         </style>`);
@@ -89,8 +91,12 @@
         if (!$badge.length) $badge = $('<div class="wp-diag-badge">').appendTo($root);
         const cw = ($container[0] && $container[0].clientWidth) || 0;
         const bar = $root.find('.pl-mode-bar')[0];
+        const ganttBtn = bar && bar.querySelector('.pl-mode-btn[data-mode="gantt"]');
         let barInfo = '';
-        if (bar) barInfo = ` b:${bar.clientWidth}/${bar.scrollWidth}`;
+        if (bar) {
+            const gRight = ganttBtn ? Math.round(ganttBtn.getBoundingClientRect().right) : 0;
+            barInfo = ` b:${bar.clientWidth}/${bar.scrollWidth} g:${gRight}/${cw}`;
+        }
         $badge.text(`c:${cw} iw:${window.innerWidth} mm:${window.matchMedia('(max-width:700px)').matches}${barInfo}`);
     }
     window.addEventListener('resize', updateDiagBadge);
@@ -600,13 +606,15 @@
         ];
         return `<span class="pl-mode-switch">
             ${modes.map(m => `
-                <button class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
-                        data-mode="${m.id}" title="Ver ${m.label}">${m.label}</button>
+                <span class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
+                      role="button" tabindex="0" data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
             `).join('')}
         </span>`;
     }
 
-    // Barra de modo dedicada (mobile): largura total, botões flex:1, sem quebrar/cortar
+    // Barra de modo dedicada (mobile): largura total, botões flex:1, sem quebrar/cortar.
+    // Botões são <span role="button"> — o CSS global do Trilium (button { min-width })
+    // inflava os <button> e cortava o Gantt em telas estreitas.
     function modeBar() {
         const modes = [
             { id: 'kanban', label: 'Semana' },
@@ -615,8 +623,8 @@
         ];
         return `<div class="pl-mode-bar">
             ${modes.map(m => `
-                <button class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
-                        data-mode="${m.id}" title="Ver ${m.label}">${m.label}</button>
+                <span class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
+                      role="button" tabindex="0" data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
             `).join('')}
         </div>`;
     }
@@ -2130,5 +2138,10 @@
     renderTasks();
     bindTaskEvents();
     updateDiagBadge(); // ⚠️ temporário — remover com o badge
+
+    // spans role=button (barra de modo): suporte a Enter/Espaço
+    $pl.on('keydown', '.pl-mode-btn', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(this).trigger('click'); }
+    });
 
 })();
