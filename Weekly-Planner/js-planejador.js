@@ -84,16 +84,16 @@
                               border-bottom:1px solid var(--main-border-color,#313244); }
             #wp-root .wp-tk { flex:0 0 32vh !important; width:100% !important;
                               max-width:none !important; min-width:0 !important; }
-            #wp-root .tk-head { padding:7px 12px !important; }
-            #wp-root .tk-head-title { font-size:13px !important; }
-            #wp-root .tk-total { font-size:11px !important; }
+            #wp-root .tk-head { padding:6px 12px !important; }
+            #wp-root .tk-head-title { font-size:12px !important; }
+            #wp-root .tk-total { font-size:10px !important; }
             #wp-root .tk-list { padding:6px 8px !important; }
-            #wp-root .tk-empty { font-size:12px !important; }
-            #wp-root .tk-note-link { font-size:10px !important; padding:4px 8px !important; }
-            #wp-root .tk-badge { font-size:9px !important; }
-            #wp-root .tk-task-text { font-size:12px !important; line-height:1.35 !important; }
+            #wp-root .tk-empty { font-size:11px !important; }
+            #wp-root .tk-note-link { font-size:9px !important; padding:4px 8px !important; }
+            #wp-root .tk-badge { font-size:8px !important; }
+            #wp-root .tk-task-text { font-size:11px !important; line-height:1.3 !important; }
             #wp-root .tk-task-row { padding:2px 6px !important; }
-            #wp-root .tk-day-badge { font-size:9px !important; padding:0 3px !important; }
+            #wp-root .tk-day-badge { font-size:8px !important; padding:0 3px !important; }
             #wp-root .tk-tasks { margin:0 6px !important; padding:3px 0 5px 8px !important; }
             #wp-root .tk-group { margin-bottom:8px !important; }
             #wp-root .pl-mode-bar { display:flex !important; flex-direction:row !important;
