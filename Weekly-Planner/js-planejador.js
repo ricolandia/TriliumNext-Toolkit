@@ -62,16 +62,6 @@
         /* Barra de modo (Semana/Mês/Gantt): oculta no desktop, dedicada no mobile */
         #wp-root .pl-mode-bar { display:none !important; }
 
-        /* ── Painel de Tarefas recolhível em TODAS as larguras ──
-           Começa recolhido (só o cabeçalho "Tarefas ▾"); o clique no cabeçalho
-           adiciona .tk-panel-expanded (estado em tkPanelExpanded). */
-        #wp-root .wp-tk:not(.tk-panel-expanded) { flex:0 0 auto !important;
-                                                  max-width:none !important; min-width:0 !important; }
-        #wp-root .wp-tk:not(.tk-panel-expanded) .tk-list { display:none !important; }
-        #wp-root .tk-head { cursor:pointer; user-select:none; }
-        #wp-root .tk-chevron { transition:transform .15s; flex-shrink:0; opacity:.6; }
-        #wp-root .wp-tk:not(.tk-panel-expanded) .tk-chevron { transform:rotate(-90deg); }
-
         /* ── Desktop (>1024px): coluna compacta ── */
         @media (min-width:1025px) {
             #wp-root .wp-tk { max-width:280px !important; min-width:0 !important; }
@@ -84,26 +74,26 @@
             #wp-root .pl-task { font-size:16px !important; }
         }
 
-        /* ── Mobile/estreito (≤1024px): empilha; planner ocupa o espaço livre;
-              painel expandido com altura fixa compacta (34vh) ── */
+        /* ── Mobile/estreito (≤1024px): empilha; planner flex:1; painel de Tarefas
+              com altura fixa de 1/3 (32vh) e fontes menores que os cards do planner ── */
         @media (max-width:1024px) {
             #wp-root { flex-direction:column !important; }
             #wp-root .wp-pl { flex:1 1 auto !important; width:100% !important;
                               min-height:0 !important; max-width:none !important;
                               min-width:0 !important; border-right:none !important;
                               border-bottom:1px solid var(--main-border-color,#313244); }
-            #wp-root .wp-tk { width:100% !important; max-width:none !important;
-                              min-width:0 !important; }
-            #wp-root .wp-tk.tk-panel-expanded { flex:0 0 34vh !important; }
+            #wp-root .wp-tk { flex:0 0 32vh !important; width:100% !important;
+                              max-width:none !important; min-width:0 !important; }
             #wp-root .tk-head { padding:8px 12px !important; }
-            #wp-root .tk-head-title { font-size:15px !important; }
-            #wp-root .tk-total { font-size:13px !important; }
+            #wp-root .tk-head-title { font-size:14px !important; }
+            #wp-root .tk-total { font-size:12px !important; }
             #wp-root .tk-list { padding:8px 10px !important; }
-            #wp-root .tk-empty { font-size:14px !important; }
-            #wp-root .tk-note-link { font-size:12px !important; padding:6px 8px !important; }
-            #wp-root .tk-badge { font-size:11px !important; }
-            #wp-root .tk-task-text { font-size:14px !important; }
-            #wp-root .tk-day-badge { font-size:11px !important; padding:0 5px !important; }
+            #wp-root .tk-empty { font-size:13px !important; }
+            #wp-root .tk-note-link { font-size:11px !important; padding:5px 8px !important; }
+            #wp-root .tk-badge { font-size:10px !important; }
+            #wp-root .tk-task-text { font-size:13px !important; }
+            #wp-root .tk-task-row { padding:3px 6px !important; }
+            #wp-root .tk-day-badge { font-size:10px !important; padding:0 4px !important; }
             #wp-root .tk-tasks { margin:0 6px !important; padding:4px 0 6px 8px !important; }
             #wp-root .pl-mode-bar { display:flex !important; flex-direction:row !important;
                                     gap:4px !important; padding:7px 10px !important;
@@ -169,7 +159,6 @@
     let viewMode    = 'kanban'; // 'kanban' | 'gantt' | 'month'
     let cbStats     = {};    // { noteId: { checked, total } }
     let collapsedNotes = new Set(); // noteIds colapsados na lista de tarefas
-    let tkPanelExpanded = false; // painel de Tarefas Abertas expandido (relevante só no mobile; no desktop é sempre visível)
 
 
     /* ═══════════════════════════════════════════════════════════
@@ -832,15 +821,12 @@
                 .pl-done-btn { opacity:0.5; }
                 .pl-board { align-items:flex-start; }
                 .pl-col { max-height:100%;min-height:0; }
-                .pl-task { font-size:15px;padding:8px 10px; }
+                .pl-task { font-size:14px;padding:8px 10px; }
                 .pl-task-note { font-size:12px;margin-top:4px; }
                 .tag-badge { font-size:10px;padding:1px 5px; }
                 .pl-col-label { font-size:13px; }
                 .pl-col-sub { font-size:13px; }
                 .pl-tasks { gap:6px;min-height:0; }
-                .tk-task-text { font-size:15px; }
-                .tk-note-link { font-size:13px; }
-                .tk-total { font-size:14px; }
                 .task-tags { margin-top:4px; }
                 .doing-bar { margin-top:4px;height:4px; }
                  .pl-day-sheet h4 { font-size:16px; }
@@ -1985,7 +1971,6 @@
             <div class="tk-head">
                 <span class="tk-head-title">Tarefas</span>
                 <span class="tk-total">${total}</span>
-                <span class="tk-chevron" style="margin-left:auto;">▾</span>
             </div>
 
             <!-- LISTA -->
@@ -2047,13 +2032,7 @@
         }
 
         html += `</div>`;
-        $tk.toggleClass('tk-panel-expanded', tkPanelExpanded);
         $tk.html(html);
-        // Vínculo direto (não delegado) no cabeçalho, refeito a cada render.
-        $tk.find('.tk-head').off('click').on('click', function () {
-            tkPanelExpanded = !tkPanelExpanded;
-            renderTasks();
-        });
     }
 
 
