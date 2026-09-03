@@ -39,6 +39,8 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 - **Painel de Tarefas recolhível em TODAS as larguras**: começa recolhido (só "Tarefas ▾"); clique no cabeçalho expande/colapsa. Mobile (≤1024px): expandido ocupa altura fixa de 34vh com scroll interno e o planner ganha todo o espaço livre (sem vazios). Desktop (>1024px): recolhido vira uma coluna fina (~120px); expandido com `max-width:280px`. Fontes do painel reduzidas (tarefas 15px no desktop, 14px no mobile).
 - **Breakpoint mobile 700→1024px**: layout empilhado (planner acima + tarefas abaixo) agora cobre tablets e janelas desktop estreitas (≤1024px).
 - **Painel de Tarefas SIMPLIFICADO (sem recolhível)**: sempre visível em todas as larguras (recolhível removido — não funcionava como esperado). Mobile (≤1024px): altura fixa de 1/3 da tela (32vh) com scroll interno e fontes menores que os cards do planner (tarefas 13px < cards 14px; título da nota 11px; badges 10px). Desktop: coluna 280px com tarefas 15px < cards 16px.
+- **Menu de modo sem duplicação no mobile**: o seletor antigo do header não é mais renderizado em telas ≤1024px (só a barra dedicada Semana/Mês/Gantt no topo); no desktop continua no header.
+- **Fontes do painel de Tarefas ainda menores no mobile** (tarefas 12px, título da nota 10px, cabeçalho 13px, badges 9px) + título da nota com reticências (sem texto cortado).
 - **Mobile Gantt**: no celular o Gantt vira uma lista vertical por dia (em vez do grid largo com scroll horizontal); tocar no item abre a nota e ✓ conclui
 - **Tag parsing**: `#todo`, `#doing=N%`, `#done`, `#upto=MM-DD-YYYY` in task text are extracted and displayed as colored badges
 - **Planner badges**: tags show up on draggable kanban cards in the weekly board

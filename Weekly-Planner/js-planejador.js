@@ -84,17 +84,18 @@
                               border-bottom:1px solid var(--main-border-color,#313244); }
             #wp-root .wp-tk { flex:0 0 32vh !important; width:100% !important;
                               max-width:none !important; min-width:0 !important; }
-            #wp-root .tk-head { padding:8px 12px !important; }
-            #wp-root .tk-head-title { font-size:14px !important; }
-            #wp-root .tk-total { font-size:12px !important; }
-            #wp-root .tk-list { padding:8px 10px !important; }
-            #wp-root .tk-empty { font-size:13px !important; }
-            #wp-root .tk-note-link { font-size:11px !important; padding:5px 8px !important; }
-            #wp-root .tk-badge { font-size:10px !important; }
-            #wp-root .tk-task-text { font-size:13px !important; }
-            #wp-root .tk-task-row { padding:3px 6px !important; }
-            #wp-root .tk-day-badge { font-size:10px !important; padding:0 4px !important; }
-            #wp-root .tk-tasks { margin:0 6px !important; padding:4px 0 6px 8px !important; }
+            #wp-root .tk-head { padding:7px 12px !important; }
+            #wp-root .tk-head-title { font-size:13px !important; }
+            #wp-root .tk-total { font-size:11px !important; }
+            #wp-root .tk-list { padding:6px 8px !important; }
+            #wp-root .tk-empty { font-size:12px !important; }
+            #wp-root .tk-note-link { font-size:10px !important; padding:4px 8px !important; }
+            #wp-root .tk-badge { font-size:9px !important; }
+            #wp-root .tk-task-text { font-size:12px !important; line-height:1.35 !important; }
+            #wp-root .tk-task-row { padding:2px 6px !important; }
+            #wp-root .tk-day-badge { font-size:9px !important; padding:0 3px !important; }
+            #wp-root .tk-tasks { margin:0 6px !important; padding:3px 0 5px 8px !important; }
+            #wp-root .tk-group { margin-bottom:8px !important; }
             #wp-root .pl-mode-bar { display:flex !important; flex-direction:row !important;
                                     gap:4px !important; padding:7px 10px !important;
                                     flex-shrink:0 !important; flex-wrap:nowrap !important;
@@ -854,7 +855,7 @@
                 </span>
                 <button class="pl-icon-btn" id="pl-clear"  title="Limpar esta semana">↺</button>
                 <button class="pl-icon-btn" id="pl-reload" title="Recarregar tarefas">⟳</button>
-                ${modeSwitcher()}
+                ${mobile ? '' : modeSwitcher()}
             </div>
 
             <!-- BOARD -->
@@ -1047,7 +1048,7 @@
                 </span>
                 <button class="pl-icon-btn" id="gantt-clear" title="Limpar esta semana">↺</button>
                 <button class="pl-icon-btn" id="gantt-reload" title="Recarregar tarefas">⟳</button>
-                ${modeSwitcher()}
+                ${mobile ? '' : modeSwitcher()}
             </div>
 
             <div class="gantt-scroll">
@@ -1414,7 +1415,7 @@
                 </span>
                 <button class="pl-icon-btn" id="month-clear" title="Limpar este mês">↺</button>
                 <button class="pl-icon-btn" id="month-reload" title="Recarregar tarefas">⟳</button>
-                ${modeSwitcher()}
+                ${mobile ? '' : modeSwitcher()}
             </div>
 
             <div class="mn-scroll">
@@ -1946,6 +1947,7 @@
                             transition:color .15s; }
             .tk-note-link:hover { color:var(--main-text-color); }
             .tk-col-icon { font-size:12px;opacity:.5;width:12px;text-align:center;flex-shrink:0; }
+            .tk-note-title { flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
             .tk-badge { font-size:13px;background:rgba(128,128,128,.15);color:var(--muted-text-color);
                         padding:0 6px;border-radius:8px;white-space:nowrap;flex-shrink:0; }
             .tk-badge.done { background:rgba(46,204,113,.15);color:var(--active-item-background-color,#a6e3a1); }
@@ -1960,7 +1962,7 @@
                         border-radius:3px;display:inline-flex;align-items:center;
                         justify-content:center;cursor:pointer;font-size:12px;color:transparent;
                         transition:border-color .15s,background .15s,color .15s;user-select:none; }
-            .tk-task-text { cursor:pointer;font-size:17px;transition:color .15s; }
+            .tk-task-text { cursor:pointer;font-size:17px;transition:color .15s;overflow-wrap:anywhere; }
             .tk-task-text:hover { text-decoration:underline; }
             .tk-day-badge { display:inline-block;font-size:13px;padding:1px 6px;border-radius:3px;
                             margin-left:5px;background:var(--accented-background-color);
@@ -1993,7 +1995,7 @@
 
                     <div class="tk-note-link" data-note-id="${esc(group.noteId)}">
                         <span class="tk-col-icon">${collapsed ? '▸' : '▾'}</span>
-                        ${esc(group.noteTitle)}
+                        <span class="tk-note-title">${esc(group.noteTitle)}</span>
                         <span class="tk-badge${done > 0 ? ' done' : ''}">${badgeText}</span>
                     </div>
 
