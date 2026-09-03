@@ -62,20 +62,33 @@
         /* Barra de modo (Semana/Mês/Gantt): oculta no desktop, dedicada no mobile */
         #wp-root .pl-mode-bar { display:none !important; }
 
+        /* ── Tipografia compacta do painel de Tarefas — TODAS as larguras ──
+           (fix: não depende de media query, aplica em qualquer viewport) */
+        #wp-root .tk-head { padding:6px 12px !important; }
+        #wp-root .tk-head-title { font-size:12px !important; }
+        #wp-root .tk-total { font-size:10px !important; }
+        #wp-root .tk-list { padding:6px 8px !important; }
+        #wp-root .tk-empty { font-size:11px !important; }
+        #wp-root .tk-note-link { font-size:9px !important; padding:4px 8px !important; }
+        #wp-root .tk-badge { font-size:8px !important; }
+        #wp-root .tk-task-text { font-size:11px !important; line-height:1.3 !important; }
+        #wp-root .tk-task-row { padding:2px 6px !important; }
+        #wp-root .tk-day-badge { font-size:8px !important; padding:0 3px !important; }
+        #wp-root .tk-tasks { margin:0 6px !important; padding:3px 0 5px 8px !important; }
+        #wp-root .tk-group { margin-bottom:8px !important; }
+
+        /* ⚠️ Badge diagnóstico TEMPORÁRIO (remover após confirmar fontes) */
+        .wp-diag-badge { position:fixed;bottom:4px;left:4px;z-index:99999;font-size:10px;
+                         font-family:monospace;color:#fff;background:rgba(0,0,0,.7);
+                         padding:2px 6px;border-radius:4px;pointer-events:none; }
+
         /* ── Desktop (>1024px): coluna compacta ── */
         @media (min-width:1025px) {
             #wp-root .wp-tk { max-width:280px !important; min-width:0 !important; }
-            #wp-root .tk-head-title { font-size:17px !important; }
-            #wp-root .tk-total { font-size:14px !important; }
-            #wp-root .tk-note-link { font-size:13px !important; }
-            #wp-root .tk-badge { font-size:12px !important; }
-            #wp-root .tk-task-text { font-size:15px !important; }
-            #wp-root .tk-day-badge { font-size:12px !important; }
             #wp-root .pl-task { font-size:16px !important; }
         }
 
-        /* ── Mobile/estreito (≤1024px): empilha; planner flex:1; painel de Tarefas
-              com altura fixa de 1/3 (32vh) e fontes menores que os cards do planner ── */
+        /* ── Mobile/estreito (≤1024px): empilha; planner flex:1; Tarefas 32vh ── */
         @media (max-width:1024px) {
             #wp-root { flex-direction:column !important; }
             #wp-root .wp-pl { flex:1 1 auto !important; width:100% !important;
@@ -84,18 +97,6 @@
                               border-bottom:1px solid var(--main-border-color,#313244); }
             #wp-root .wp-tk { flex:0 0 32vh !important; width:100% !important;
                               max-width:none !important; min-width:0 !important; }
-            #wp-root .tk-head { padding:6px 12px !important; }
-            #wp-root .tk-head-title { font-size:12px !important; }
-            #wp-root .tk-total { font-size:10px !important; }
-            #wp-root .tk-list { padding:6px 8px !important; }
-            #wp-root .tk-empty { font-size:11px !important; }
-            #wp-root .tk-note-link { font-size:9px !important; padding:4px 8px !important; }
-            #wp-root .tk-badge { font-size:8px !important; }
-            #wp-root .tk-task-text { font-size:11px !important; line-height:1.3 !important; }
-            #wp-root .tk-task-row { padding:2px 6px !important; }
-            #wp-root .tk-day-badge { font-size:8px !important; padding:0 3px !important; }
-            #wp-root .tk-tasks { margin:0 6px !important; padding:3px 0 5px 8px !important; }
-            #wp-root .tk-group { margin-bottom:8px !important; }
             #wp-root .pl-mode-bar { display:flex !important; flex-direction:row !important;
                                     gap:4px !important; padding:7px 10px !important;
                                     flex-shrink:0 !important; flex-wrap:nowrap !important;
@@ -113,6 +114,18 @@
             #wp-root .pl-mode-switch { display:none !important; }
         }
         </style>`);
+
+    // ⚠️ Badge diagnóstico TEMPORÁRIO — fontes reais do painel de Tarefas
+    function updateDiagBadge() {
+        let $badge = $root.find('.wp-diag-badge');
+        if (!$badge.length) $badge = $('<div class="wp-diag-badge">').appendTo($root);
+        const task = $root.find('.tk-task-text')[0];
+        const note = $root.find('.tk-note-link')[0];
+        const f  = task ? getComputedStyle(task).fontSize : '?';
+        const nf = note ? getComputedStyle(note).fontSize : '?';
+        $badge.text(`t:${f} n:${nf} vw:${window.innerWidth} mm:${window.matchMedia('(max-width:1024px)').matches}`);
+    }
+    window.addEventListener('resize', updateDiagBadge);
 
     // painel esquerdo — Planejador (2/3)
     const $pl = $('<div class="wp-pl">').css({
@@ -2148,6 +2161,7 @@
     renderPlanner();
     renderTasks();
     bindTaskEvents();
+    updateDiagBadge(); // ⚠️ temporário — remover com o badge
 
     // spans role=button (barra de modo): suporte a Enter/Espaço
     $pl.on('keydown', '.pl-mode-btn', function (e) {
