@@ -54,25 +54,57 @@
         boxSizing:  'border-box',
     });
 
-    // Mobile: empilha planner (acima) + tarefas (abaixo) em vez de duas colunas
+    // Mobile/estreito: empilha planner (acima) + tarefas (abaixo) em vez de duas colunas
     $root.append(`
         <style>
         /* Nunca ultrapassar a largura visível (webview/containers mais largos que a tela) */
         #wp-root { max-width:100vw !important; min-width:0 !important; }
         /* Barra de modo (Semana/Mês/Gantt): oculta no desktop, dedicada no mobile */
         #wp-root .pl-mode-bar { display:none !important; }
-        /* ⚠️ Badge diagnóstico TEMPORÁRIO (remover após validar larguras no mobile) */
-        .wp-diag-badge { position:fixed;bottom:4px;right:4px;z-index:99999;font-size:10px;
-                         font-family:monospace;color:#fff;background:rgba(0,0,0,.7);
-                         padding:2px 6px;border-radius:4px;pointer-events:none; }
-        @media (max-width:700px) {
+
+        /* ── Painel de Tarefas recolhível em TODAS as larguras ──
+           Começa recolhido (só o cabeçalho "Tarefas ▾"); o clique no cabeçalho
+           adiciona .tk-panel-expanded (estado em tkPanelExpanded). */
+        #wp-root .wp-tk:not(.tk-panel-expanded) { flex:0 0 auto !important;
+                                                  max-width:none !important; min-width:0 !important; }
+        #wp-root .wp-tk:not(.tk-panel-expanded) .tk-list { display:none !important; }
+        #wp-root .tk-head { cursor:pointer; user-select:none; }
+        #wp-root .tk-chevron { transition:transform .15s; flex-shrink:0; opacity:.6; }
+        #wp-root .wp-tk:not(.tk-panel-expanded) .tk-chevron { transform:rotate(-90deg); }
+
+        /* ── Desktop (>1024px): coluna compacta ── */
+        @media (min-width:1025px) {
+            #wp-root .wp-tk { max-width:280px !important; min-width:0 !important; }
+            #wp-root .tk-head-title { font-size:17px !important; }
+            #wp-root .tk-total { font-size:14px !important; }
+            #wp-root .tk-note-link { font-size:13px !important; }
+            #wp-root .tk-badge { font-size:12px !important; }
+            #wp-root .tk-task-text { font-size:15px !important; }
+            #wp-root .tk-day-badge { font-size:12px !important; }
+            #wp-root .pl-task { font-size:16px !important; }
+        }
+
+        /* ── Mobile/estreito (≤1024px): empilha; planner ocupa o espaço livre;
+              painel expandido com altura fixa compacta (34vh) ── */
+        @media (max-width:1024px) {
             #wp-root { flex-direction:column !important; }
-            #wp-root .wp-pl { flex:0 0 62vh !important; width:100% !important;
-                              max-width:none !important; min-width:0 !important;
-                              border-right:none !important;
+            #wp-root .wp-pl { flex:1 1 auto !important; width:100% !important;
+                              min-height:0 !important; max-width:none !important;
+                              min-width:0 !important; border-right:none !important;
                               border-bottom:1px solid var(--main-border-color,#313244); }
-            #wp-root .wp-tk { flex:1 1 auto !important; width:100% !important;
-                              max-width:none !important; min-width:0 !important; }
+            #wp-root .wp-tk { width:100% !important; max-width:none !important;
+                              min-width:0 !important; }
+            #wp-root .wp-tk.tk-panel-expanded { flex:0 0 34vh !important; }
+            #wp-root .tk-head { padding:8px 12px !important; }
+            #wp-root .tk-head-title { font-size:15px !important; }
+            #wp-root .tk-total { font-size:13px !important; }
+            #wp-root .tk-list { padding:8px 10px !important; }
+            #wp-root .tk-empty { font-size:14px !important; }
+            #wp-root .tk-note-link { font-size:12px !important; padding:6px 8px !important; }
+            #wp-root .tk-badge { font-size:11px !important; }
+            #wp-root .tk-task-text { font-size:14px !important; }
+            #wp-root .tk-day-badge { font-size:11px !important; padding:0 5px !important; }
+            #wp-root .tk-tasks { margin:0 6px !important; padding:4px 0 6px 8px !important; }
             #wp-root .pl-mode-bar { display:flex !important; flex-direction:row !important;
                                     gap:4px !important; padding:7px 10px !important;
                                     flex-shrink:0 !important; flex-wrap:nowrap !important;
@@ -90,22 +122,6 @@
             #wp-root .pl-mode-switch { display:none !important; }
         }
         </style>`);
-
-    // ⚠️ Badge diagnóstico TEMPORÁRIO — mostra larguras reais (remover após validação)
-    function updateDiagBadge() {
-        let $badge = $root.find('.wp-diag-badge');
-        if (!$badge.length) $badge = $('<div class="wp-diag-badge">').appendTo($root);
-        const cw = ($container[0] && $container[0].clientWidth) || 0;
-        const bar = $root.find('.pl-mode-bar')[0];
-        const ganttBtn = bar && bar.querySelector('.pl-mode-btn[data-mode="gantt"]');
-        let barInfo = '';
-        if (bar) {
-            const gRight = ganttBtn ? Math.round(ganttBtn.getBoundingClientRect().right) : 0;
-            barInfo = ` b:${bar.clientWidth}/${bar.scrollWidth} g:${gRight}/${cw}`;
-        }
-        $badge.text(`c:${cw} iw:${window.innerWidth} mm:${window.matchMedia('(max-width:700px)').matches}${barInfo}`);
-    }
-    window.addEventListener('resize', updateDiagBadge);
 
     // painel esquerdo — Planejador (2/3)
     const $pl = $('<div class="wp-pl">').css({
@@ -153,6 +169,7 @@
     let viewMode    = 'kanban'; // 'kanban' | 'gantt' | 'month'
     let cbStats     = {};    // { noteId: { checked, total } }
     let collapsedNotes = new Set(); // noteIds colapsados na lista de tarefas
+    let tkPanelExpanded = false; // painel de Tarefas Abertas expandido (relevante só no mobile; no desktop é sempre visível)
 
 
     /* ═══════════════════════════════════════════════════════════
@@ -704,7 +721,7 @@
         return `<div class="doing-bar"><div class="doing-fill" style="width:${doing.value}%"></div></div>`;
     }
 
-    const isMobile   = () => window.matchMedia('(max-width:700px)').matches;
+    const isMobile   = () => window.matchMedia('(max-width:1024px)').matches;
     const getBacklog = () => allTasks.filter(t => !plannerData[t.id]);
 
     function getDayTasks(iso) {
@@ -811,7 +828,7 @@
                            transition:opacity .12s,color .12s;border-radius:3px;padding:0 2px; }
             .pl-done-btn:hover { opacity:1 !important;color:var(--active-item-background-color,#a6e3a1) !important; }
             .pl-task:hover .pl-done-btn { opacity:0.45; }
-            @media (max-width:700px) {
+            @media (max-width:1024px) {
                 .pl-done-btn { opacity:0.5; }
                 .pl-board { align-items:flex-start; }
                 .pl-col { max-height:100%;min-height:0; }
@@ -1015,7 +1032,7 @@
         .gantt-weekend-bg { background:rgba(128,128,128,0.04);pointer-events:none; }
         .gantt-hdr-weekend { background:rgba(128,128,128,0.06); }
         ${MODE_CSS}
-        @media (max-width:700px) {
+        @media (max-width:1024px) {
             .gantt-grid { grid-template-columns:minmax(70px,120px) repeat(7,minmax(36px,1fr));min-width:0; }
             .gantt-label { font-size:11px;padding:3px 4px; }
             .gantt-bar-label { font-size:10px; }
@@ -1383,7 +1400,7 @@
                          color:var(--muted-text-color);font-size:17px;cursor:pointer;margin-top:4px; }
         ${TAG_CSS}
         ${MODE_CSS}
-        @media (max-width:700px) {
+        @media (max-width:1024px) {
             .mn-grid { min-width:0;gap:4px; }
             .mn-cell { min-height:70px;padding:3px 4px; }
             .mn-weekday { font-size:11px;padding:6px 0 8px; }
@@ -1968,6 +1985,7 @@
             <div class="tk-head">
                 <span class="tk-head-title">Tarefas</span>
                 <span class="tk-total">${total}</span>
+                <span class="tk-chevron" style="margin-left:auto;">▾</span>
             </div>
 
             <!-- LISTA -->
@@ -2029,7 +2047,13 @@
         }
 
         html += `</div>`;
+        $tk.toggleClass('tk-panel-expanded', tkPanelExpanded);
         $tk.html(html);
+        // Vínculo direto (não delegado) no cabeçalho, refeito a cada render.
+        $tk.find('.tk-head').off('click').on('click', function () {
+            tkPanelExpanded = !tkPanelExpanded;
+            renderTasks();
+        });
     }
 
 
@@ -2143,7 +2167,6 @@
     renderPlanner();
     renderTasks();
     bindTaskEvents();
-    updateDiagBadge(); // ⚠️ temporário — remover com o badge
 
     // spans role=button (barra de modo): suporte a Enter/Espaço
     $pl.on('keydown', '.pl-mode-btn', function (e) {
