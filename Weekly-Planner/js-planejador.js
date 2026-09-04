@@ -43,7 +43,6 @@
     const $root = $container;
     // id fixo no root → especificidade de ID vence qualquer CSS global do Trilium (#app *, button…)
     $root.attr('id', 'wp-root');
-    const WP_VERSION = '8b4fc6d'; // ⚠️ versão do build no badge (diagnóstico de importação)
 
     $root.addClass('wp-root').css({
         display:    'flex',
@@ -63,26 +62,21 @@
         /* Barra de modo (Semana/Mês/Gantt): oculta no desktop, dedicada no mobile */
         #wp-root .pl-mode-bar { display:none !important; }
 
-        /* ⚠️ Badge diagnóstico TEMPORÁRIO (remover após confirmar fontes) */
-        .wp-diag-badge { position:fixed;bottom:4px;left:4px;z-index:99999;font-size:10px;
-                         font-family:monospace;color:#fff;background:rgba(0,0,0,.7);
-                         padding:2px 6px;border-radius:4px;pointer-events:none; }
-
         /* ── Desktop (>1024px): coluna compacta + tipografia normal ──
            Seletores com especificidade alta p/ vencer o CSS global do Trilium */
         @media (min-width:1025px) {
             #wp-root .wp-tk { max-width:280px !important; min-width:0 !important; }
             #wp-root .pl-task { font-size:16px !important; }
             #wp-root.wp-root .wp-tk .tk-head { padding:10px 14px !important; }
-            #wp-root.wp-root .wp-tk .tk-head .tk-head-title { font-size:17px !important; }
-            #wp-root.wp-root .wp-tk .tk-total { font-size:14px !important; }
+            #wp-root.wp-root .wp-tk .tk-head .tk-head-title { font-size:18px !important; }
+            #wp-root.wp-root .wp-tk .tk-total { font-size:15px !important; }
             #wp-root.wp-root .wp-tk .tk-list { padding:12px 14px !important; }
-            #wp-root.wp-root .wp-tk .tk-list .tk-empty { font-size:15px !important; }
-            #wp-root.wp-root .wp-tk .tk-list .tk-note-link { font-size:13px !important; padding:8px 10px !important; }
-            #wp-root.wp-root .wp-tk .tk-list .tk-badge { font-size:12px !important; }
-            #wp-root.wp-root .wp-tk .tk-list .tk-task-text { font-size:15px !important; line-height:1.5 !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-empty { font-size:16px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-note-link { font-size:14px !important; padding:8px 10px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-badge { font-size:13px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-task-text { font-size:16px !important; line-height:1.5 !important; }
             #wp-root.wp-root .wp-tk .tk-list .tk-tasks .tk-task-row { padding:4px 8px !important; }
-            #wp-root.wp-root .wp-tk .tk-list .tk-day-badge { font-size:12px !important; padding:1px 6px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-day-badge { font-size:13px !important; padding:1px 6px !important; }
             #wp-root.wp-root .wp-tk .tk-list .tk-tasks { margin:0 10px !important; padding:6px 0 8px 10px !important; }
             #wp-root.wp-root .wp-tk .tk-list .tk-group { margin-bottom:14px !important; }
         }
@@ -127,18 +121,6 @@
         }
         </style>`);
 
-    // ⚠️ Badge diagnóstico TEMPORÁRIO — fontes reais do painel de Tarefas + versão
-    function updateDiagBadge() {
-        let $badge = $root.find('.wp-diag-badge');
-        if (!$badge.length) $badge = $('<div class="wp-diag-badge">').appendTo($root);
-        const task = $root.find('.tk-task-text')[0];
-        const note = $root.find('.tk-note-link')[0];
-        const f  = task ? getComputedStyle(task).fontSize : '?';
-        const nf = note ? getComputedStyle(note).fontSize : '?';
-        $badge.text(`v:${WP_VERSION} t:${f} n:${nf} vw:${window.innerWidth} mm:${window.matchMedia('(max-width:1024px)').matches}`);
-    }
-    window.addEventListener('resize', updateDiagBadge);
-
     // Aplica tipografia do painel de Tarefas via INLINE !important (setProperty 'important'):
     // prioridade máxima do cascade — vence qualquer CSS global do Trilium.
     // Mobile (≤1024px): compacta. Desktop (>1024px): tamanhos normais.
@@ -165,13 +147,13 @@
             set('.tk-tasks',      'margin',       '0 6px');
             set('.tk-tasks',      'padding',      '3px 0 5px 8px');
         } else {
-            set('.tk-task-text',  'font-size',    '15px');
-            set('.tk-note-link',  'font-size',    '13px');
-            set('.tk-head-title', 'font-size',    '17px');
-            set('.tk-total',      'font-size',    '14px');
-            set('.tk-badge',      'font-size',    '12px');
-            set('.tk-day-badge',  'font-size',    '12px');
-            set('.tk-empty',      'font-size',    '15px');
+            set('.tk-task-text',  'font-size',    '16px');
+            set('.tk-note-link',  'font-size',    '14px');
+            set('.tk-head-title', 'font-size',    '18px');
+            set('.tk-total',      'font-size',    '15px');
+            set('.tk-badge',      'font-size',    '13px');
+            set('.tk-day-badge',  'font-size',    '13px');
+            set('.tk-empty',      'font-size',    '16px');
             set('.tk-task-row',   'padding',      '4px 8px');
             set('.tk-note-link',  'padding',      '8px 10px');
             set('.tk-head',       'padding',      '10px 14px');
@@ -2218,7 +2200,6 @@
     renderPlanner();
     renderTasks();
     bindTaskEvents();
-    updateDiagBadge(); // ⚠️ temporário — remover com o badge
 
     // spans role=button (barra de modo): suporte a Enter/Espaço
     $pl.on('keydown', '.pl-mode-btn', function (e) {
