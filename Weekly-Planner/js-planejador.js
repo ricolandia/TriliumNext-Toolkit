@@ -43,6 +43,7 @@
     const $root = $container;
     // id fixo no root → especificidade de ID vence qualquer CSS global do Trilium (#app *, button…)
     $root.attr('id', 'wp-root');
+    const WP_VERSION = '8b4fc6d'; // ⚠️ versão do build no badge (diagnóstico de importação)
 
     $root.addClass('wp-root').css({
         display:    'flex',
@@ -117,7 +118,7 @@
         }
         </style>`);
 
-    // ⚠️ Badge diagnóstico TEMPORÁRIO — fontes reais do painel de Tarefas
+    // ⚠️ Badge diagnóstico TEMPORÁRIO — fontes reais do painel de Tarefas + versão
     function updateDiagBadge() {
         let $badge = $root.find('.wp-diag-badge');
         if (!$badge.length) $badge = $('<div class="wp-diag-badge">').appendTo($root);
@@ -125,9 +126,34 @@
         const note = $root.find('.tk-note-link')[0];
         const f  = task ? getComputedStyle(task).fontSize : '?';
         const nf = note ? getComputedStyle(note).fontSize : '?';
-        $badge.text(`t:${f} n:${nf} vw:${window.innerWidth} mm:${window.matchMedia('(max-width:1024px)').matches}`);
+        $badge.text(`v:${WP_VERSION} t:${f} n:${nf} vw:${window.innerWidth} mm:${window.matchMedia('(max-width:1024px)').matches}`);
     }
     window.addEventListener('resize', updateDiagBadge);
+
+    // Aplica tipografia compacta via INLINE !important (setProperty 'important'):
+    // prioridade máxima do cascade — vence qualquer CSS global do Trilium,
+    // inclusive regras com !important e especificidade maior.
+    function applyCompactTaskFonts() {
+        const set = (sel, prop, val) => {
+            $tk.find(sel).each(function () {
+                this.style.setProperty(prop, val, 'important');
+            });
+        };
+        set('.tk-task-text',  'font-size',    '11px');
+        set('.tk-note-link',  'font-size',     '9px');
+        set('.tk-head-title', 'font-size',    '12px');
+        set('.tk-total',      'font-size',    '10px');
+        set('.tk-badge',      'font-size',     '8px');
+        set('.tk-day-badge',  'font-size',     '8px');
+        set('.tk-empty',      'font-size',    '11px');
+        set('.tk-task-row',   'padding',      '2px 6px');
+        set('.tk-note-link',  'padding',      '4px 8px');
+        set('.tk-head',       'padding',      '6px 12px');
+        set('.tk-list',       'padding',      '6px 8px');
+        set('.tk-group',      'margin-bottom', '8px');
+        set('.tk-tasks',      'margin',       '0 6px');
+        set('.tk-tasks',      'padding',      '3px 0 5px 8px');
+    }
 
     // painel esquerdo — Planejador (2/3)
     const $pl = $('<div class="wp-pl">').css({
@@ -2050,6 +2076,7 @@
 
         html += `</div>`;
         $tk.html(html);
+        applyCompactTaskFonts();
     }
 
 
