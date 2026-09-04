@@ -63,35 +63,32 @@
         /* Barra de modo (Semana/Mês/Gantt): oculta no desktop, dedicada no mobile */
         #wp-root .pl-mode-bar { display:none !important; }
 
-        /* ── Tipografia compacta do painel de Tarefas — TODAS as larguras ──
-           Seletores com especificidade alta (#wp-root.wp-root .wp-tk .tk-list …)
-           para vencer o CSS global do Trilium (ex.: #app .note-detail span),
-           que força 17px/14px nos textos do painel. */
-        #wp-root.wp-root .wp-tk .tk-head { padding:6px 12px !important; }
-        #wp-root.wp-root .wp-tk .tk-head .tk-head-title { font-size:12px !important; }
-        #wp-root.wp-root .wp-tk .tk-total { font-size:10px !important; }
-        #wp-root.wp-root .wp-tk .tk-list { padding:6px 8px !important; }
-        #wp-root.wp-root .wp-tk .tk-list .tk-empty { font-size:11px !important; }
-        #wp-root.wp-root .wp-tk .tk-list .tk-note-link { font-size:9px !important; padding:4px 8px !important; }
-        #wp-root.wp-root .wp-tk .tk-list .tk-badge { font-size:8px !important; }
-        #wp-root.wp-root .wp-tk .tk-list .tk-task-text { font-size:11px !important; line-height:1.3 !important; }
-        #wp-root.wp-root .wp-tk .tk-list .tk-tasks .tk-task-row { padding:2px 6px !important; }
-        #wp-root.wp-root .wp-tk .tk-list .tk-day-badge { font-size:8px !important; padding:0 3px !important; }
-        #wp-root.wp-root .wp-tk .tk-list .tk-tasks { margin:0 6px !important; padding:3px 0 5px 8px !important; }
-        #wp-root.wp-root .wp-tk .tk-list .tk-group { margin-bottom:8px !important; }
-
         /* ⚠️ Badge diagnóstico TEMPORÁRIO (remover após confirmar fontes) */
         .wp-diag-badge { position:fixed;bottom:4px;left:4px;z-index:99999;font-size:10px;
                          font-family:monospace;color:#fff;background:rgba(0,0,0,.7);
                          padding:2px 6px;border-radius:4px;pointer-events:none; }
 
-        /* ── Desktop (>1024px): coluna compacta ── */
+        /* ── Desktop (>1024px): coluna compacta + tipografia normal ──
+           Seletores com especificidade alta p/ vencer o CSS global do Trilium */
         @media (min-width:1025px) {
             #wp-root .wp-tk { max-width:280px !important; min-width:0 !important; }
             #wp-root .pl-task { font-size:16px !important; }
+            #wp-root.wp-root .wp-tk .tk-head { padding:10px 14px !important; }
+            #wp-root.wp-root .wp-tk .tk-head .tk-head-title { font-size:17px !important; }
+            #wp-root.wp-root .wp-tk .tk-total { font-size:14px !important; }
+            #wp-root.wp-root .wp-tk .tk-list { padding:12px 14px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-empty { font-size:15px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-note-link { font-size:13px !important; padding:8px 10px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-badge { font-size:12px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-task-text { font-size:15px !important; line-height:1.5 !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-tasks .tk-task-row { padding:4px 8px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-day-badge { font-size:12px !important; padding:1px 6px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-tasks { margin:0 10px !important; padding:6px 0 8px 10px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-group { margin-bottom:14px !important; }
         }
 
-        /* ── Mobile/estreito (≤1024px): empilha; planner flex:1; Tarefas 32vh ── */
+        /* ── Mobile/estreito (≤1024px): empilha; planner flex:1; Tarefas 32vh;
+              tipografia compacta ── */
         @media (max-width:1024px) {
             #wp-root { flex-direction:column !important; }
             #wp-root .wp-pl { flex:1 1 auto !important; width:100% !important;
@@ -100,6 +97,18 @@
                               border-bottom:1px solid var(--main-border-color,#313244); }
             #wp-root .wp-tk { flex:0 0 32vh !important; width:100% !important;
                               max-width:none !important; min-width:0 !important; }
+            #wp-root.wp-root .wp-tk .tk-head { padding:6px 12px !important; }
+            #wp-root.wp-root .wp-tk .tk-head .tk-head-title { font-size:12px !important; }
+            #wp-root.wp-root .wp-tk .tk-total { font-size:10px !important; }
+            #wp-root.wp-root .wp-tk .tk-list { padding:6px 8px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-empty { font-size:11px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-note-link { font-size:9px !important; padding:4px 8px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-badge { font-size:8px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-task-text { font-size:11px !important; line-height:1.3 !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-tasks .tk-task-row { padding:2px 6px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-day-badge { font-size:8px !important; padding:0 3px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-tasks { margin:0 6px !important; padding:3px 0 5px 8px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-group { margin-bottom:8px !important; }
             #wp-root .pl-mode-bar { display:flex !important; flex-direction:row !important;
                                     gap:4px !important; padding:7px 10px !important;
                                     flex-shrink:0 !important; flex-wrap:nowrap !important;
@@ -130,30 +139,49 @@
     }
     window.addEventListener('resize', updateDiagBadge);
 
-    // Aplica tipografia compacta via INLINE !important (setProperty 'important'):
-    // prioridade máxima do cascade — vence qualquer CSS global do Trilium,
-    // inclusive regras com !important e especificidade maior.
+    // Aplica tipografia do painel de Tarefas via INLINE !important (setProperty 'important'):
+    // prioridade máxima do cascade — vence qualquer CSS global do Trilium.
+    // Mobile (≤1024px): compacta. Desktop (>1024px): tamanhos normais.
     function applyCompactTaskFonts() {
+        const compact = isMobile();
         const set = (sel, prop, val) => {
             $tk.find(sel).each(function () {
                 this.style.setProperty(prop, val, 'important');
             });
         };
-        set('.tk-task-text',  'font-size',    '11px');
-        set('.tk-note-link',  'font-size',     '9px');
-        set('.tk-head-title', 'font-size',    '12px');
-        set('.tk-total',      'font-size',    '10px');
-        set('.tk-badge',      'font-size',     '8px');
-        set('.tk-day-badge',  'font-size',     '8px');
-        set('.tk-empty',      'font-size',    '11px');
-        set('.tk-task-row',   'padding',      '2px 6px');
-        set('.tk-note-link',  'padding',      '4px 8px');
-        set('.tk-head',       'padding',      '6px 12px');
-        set('.tk-list',       'padding',      '6px 8px');
-        set('.tk-group',      'margin-bottom', '8px');
-        set('.tk-tasks',      'margin',       '0 6px');
-        set('.tk-tasks',      'padding',      '3px 0 5px 8px');
+        if (compact) {
+            set('.tk-task-text',  'font-size',    '11px');
+            set('.tk-note-link',  'font-size',     '9px');
+            set('.tk-head-title', 'font-size',    '12px');
+            set('.tk-total',      'font-size',    '10px');
+            set('.tk-badge',      'font-size',     '8px');
+            set('.tk-day-badge',  'font-size',     '8px');
+            set('.tk-empty',      'font-size',    '11px');
+            set('.tk-task-row',   'padding',      '2px 6px');
+            set('.tk-note-link',  'padding',      '4px 8px');
+            set('.tk-head',       'padding',      '6px 12px');
+            set('.tk-list',       'padding',      '6px 8px');
+            set('.tk-group',      'margin-bottom', '8px');
+            set('.tk-tasks',      'margin',       '0 6px');
+            set('.tk-tasks',      'padding',      '3px 0 5px 8px');
+        } else {
+            set('.tk-task-text',  'font-size',    '15px');
+            set('.tk-note-link',  'font-size',    '13px');
+            set('.tk-head-title', 'font-size',    '17px');
+            set('.tk-total',      'font-size',    '14px');
+            set('.tk-badge',      'font-size',    '12px');
+            set('.tk-day-badge',  'font-size',    '12px');
+            set('.tk-empty',      'font-size',    '15px');
+            set('.tk-task-row',   'padding',      '4px 8px');
+            set('.tk-note-link',  'padding',      '8px 10px');
+            set('.tk-head',       'padding',      '10px 14px');
+            set('.tk-list',       'padding',      '12px 14px');
+            set('.tk-group',      'margin-bottom', '14px');
+            set('.tk-tasks',      'margin',       '0 10px');
+            set('.tk-tasks',      'padding',      '6px 0 8px 10px');
+        }
     }
+    window.addEventListener('resize', applyCompactTaskFonts);
 
     // painel esquerdo — Planejador (2/3)
     const $pl = $('<div class="wp-pl">').css({
