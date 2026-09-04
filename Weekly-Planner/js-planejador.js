@@ -63,19 +63,21 @@
         #wp-root .pl-mode-bar { display:none !important; }
 
         /* ── Tipografia compacta do painel de Tarefas — TODAS as larguras ──
-           (fix: não depende de media query, aplica em qualquer viewport) */
-        #wp-root .tk-head { padding:6px 12px !important; }
-        #wp-root .tk-head-title { font-size:12px !important; }
-        #wp-root .tk-total { font-size:10px !important; }
-        #wp-root .tk-list { padding:6px 8px !important; }
-        #wp-root .tk-empty { font-size:11px !important; }
-        #wp-root .tk-note-link { font-size:9px !important; padding:4px 8px !important; }
-        #wp-root .tk-badge { font-size:8px !important; }
-        #wp-root .tk-task-text { font-size:11px !important; line-height:1.3 !important; }
-        #wp-root .tk-task-row { padding:2px 6px !important; }
-        #wp-root .tk-day-badge { font-size:8px !important; padding:0 3px !important; }
-        #wp-root .tk-tasks { margin:0 6px !important; padding:3px 0 5px 8px !important; }
-        #wp-root .tk-group { margin-bottom:8px !important; }
+           Seletores com especificidade alta (#wp-root.wp-root .wp-tk .tk-list …)
+           para vencer o CSS global do Trilium (ex.: #app .note-detail span),
+           que força 17px/14px nos textos do painel. */
+        #wp-root.wp-root .wp-tk .tk-head { padding:6px 12px !important; }
+        #wp-root.wp-root .wp-tk .tk-head .tk-head-title { font-size:12px !important; }
+        #wp-root.wp-root .wp-tk .tk-total { font-size:10px !important; }
+        #wp-root.wp-root .wp-tk .tk-list { padding:6px 8px !important; }
+        #wp-root.wp-root .wp-tk .tk-list .tk-empty { font-size:11px !important; }
+        #wp-root.wp-root .wp-tk .tk-list .tk-note-link { font-size:9px !important; padding:4px 8px !important; }
+        #wp-root.wp-root .wp-tk .tk-list .tk-badge { font-size:8px !important; }
+        #wp-root.wp-root .wp-tk .tk-list .tk-task-text { font-size:11px !important; line-height:1.3 !important; }
+        #wp-root.wp-root .wp-tk .tk-list .tk-tasks .tk-task-row { padding:2px 6px !important; }
+        #wp-root.wp-root .wp-tk .tk-list .tk-day-badge { font-size:8px !important; padding:0 3px !important; }
+        #wp-root.wp-root .wp-tk .tk-list .tk-tasks { margin:0 6px !important; padding:3px 0 5px 8px !important; }
+        #wp-root.wp-root .wp-tk .tk-list .tk-group { margin-bottom:8px !important; }
 
         /* ⚠️ Badge diagnóstico TEMPORÁRIO (remover após confirmar fontes) */
         .wp-diag-badge { position:fixed;bottom:4px;left:4px;z-index:99999;font-size:10px;
