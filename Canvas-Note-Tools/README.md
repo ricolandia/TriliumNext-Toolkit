@@ -63,7 +63,8 @@ diagram stays clean even when the flow has loops).
 
 ```
 # comment
-ID: Label [type]      → defines a node (type: inicio | processo | decisao | fim; default: processo)
+ID: Label [type]      → defines a node. Types: inicio | processo | decisao | fim
+                        (English aliases: start | process | decision | end). Default: processo
 A -> B : label        → connects two nodes (label optional; accepted but NOT drawn)
 ```
 
@@ -114,6 +115,13 @@ Flows with cycles work: back edges are detected and only used for ordering.
 The **?** button opens a compact panel describing every tool in the toolbar
 (icon + name + one-line description) plus the shortcuts (`Esc` closes panels;
 closing the ✏️ editor saves the note).
+
+### Interface language
+
+The whole UI (toolbar tooltips, panels, help, status messages and the DSL
+example) follows Trilium's interface language: **Portuguese** when the app is
+in `pt`/`pt_br`, **English** for every other language. The DSL node types
+accept both the Portuguese and the English names.
 
 ## Original link
 [https://github.com/orgs/TriliumNext/discussions/9668](https://github.com/orgs/TriliumNext/discussions/9668)

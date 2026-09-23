@@ -32,17 +32,18 @@ const CARD_CONFIG = {
 };
 
 const RELATION_TYPES = [
-    { value: 'relatedTo',   label: 'Relacionado'  },
-    { value: 'inspires',    label: 'Inspira'      },
-    { value: 'contradicts', label: 'Contradiz'    },
-    { value: 'supports',    label: 'Sustenta'     },
-    { value: 'precedes',    label: 'Precede'      },
-    { value: 'exemplifies', label: 'Exemplifica'  },
+    { value: 'relatedTo',   labelKey: 'relation.relatedTo'   },
+    { value: 'inspires',    labelKey: 'relation.inspires'    },
+    { value: 'contradicts', labelKey: 'relation.contradicts' },
+    { value: 'supports',    labelKey: 'relation.supports'    },
+    { value: 'precedes',    labelKey: 'relation.precedes'    },
+    { value: 'exemplifies', labelKey: 'relation.exemplifies' },
 ];
 
-const RELATION_OPTIONS_HTML =
-    '<option value="none">Pular (sem relação)</option>' +
-    RELATION_TYPES.map(r => `<option value="${r.value}">${r.label}</option>`).join('');
+function relationOptionsHtml(t) {
+    return '<option value="none">' + t('relations.skip') + '</option>' +
+        RELATION_TYPES.map(r => `<option value="${r.value}">${t(r.labelKey)}</option>`).join('');
+}
 
 const TEXT_TO_RELATION = {
     'inspira':      'inspires',
@@ -133,8 +134,8 @@ const FLOW_CONFIG = {
     },
 };
 
-const FLOW_DEFAULT_SPEC = [
-    '# Exemplo — edite ou apague. Tipos: inicio | processo | decisao | fim',
+const FLOW_DEFAULT_SPEC_PT = [
+    '# Exemplo — edite ou apague. Tipos: inicio | processo | decisao | fim (ou start | process | decision | end)',
     'Início: Recebe pedido [inicio]',
     'Brief: Tem briefing? [decisao]',
     'Orçamento: Montar orçamento [processo]',
@@ -150,9 +151,36 @@ const FLOW_DEFAULT_SPEC = [
     'Proposta -> Fim',
 ].join('\n');
 
+const FLOW_DEFAULT_SPEC_EN = [
+    '# Example — edit or delete. Types: start | process | decision | end (or inicio | processo | decisao | fim)',
+    'Start: Receive request [start]',
+    'Brief: Has a briefing? [decision]',
+    'Quote: Build quote and proposal [process]',
+    'Info: Ask for more information [process]',
+    'Proposal: Send proposal [process]',
+    'End: Approved and delivered [end]',
+    '',
+    'Start -> Brief',
+    'Brief -> Quote',
+    'Brief -> Info',
+    'Info -> Brief',
+    'Quote -> Proposal',
+    'Proposal -> End',
+].join('\n');
+
+/** Exemplo padrão da DSL conforme o idioma (fallback: PT). */
+function flowDefaultSpec(lang) {
+    return lang === 'en' ? FLOW_DEFAULT_SPEC_EN : FLOW_DEFAULT_SPEC_PT;
+}
+
+const FLOW_DEFAULT_SPEC = FLOW_DEFAULT_SPEC_PT;
+
 const FLOW_ID = '[\\p{L}\\p{N}_.\\-]+';
-const FLOW_NODE_RE = new RegExp('^(' + FLOW_ID + ')\\s*:\\s*(.+?)(?:\\s*\\[(inicio|processo|decisao|fim)\\])?\\s*$', 'iu');
+const FLOW_NODE_RE = new RegExp('^(' + FLOW_ID + ')\\s*:\\s*(.+?)(?:\\s*\\[(inicio|processo|decisao|fim|start|process|decision|end)\\])?\\s*$', 'iu');
 const FLOW_EDGE_RE = new RegExp('^(' + FLOW_ID + ')\\s*->\\s*(' + FLOW_ID + ')\\s*(?::\\s*(.+))?$', 'u');
+
+// Sinônimos em inglês para os tipos de nó (mesmos tipos internos)
+const FLOW_TYPE_ALIASES = { start: 'inicio', process: 'processo', decision: 'decisao', end: 'fim' };
 
 function flowRand() { return Math.floor(Math.random() * 999999); }
 
@@ -183,10 +211,12 @@ function flowWrapText(text, maxLen) {
  *   A -> B : rótulo          → ligação (rótulo opcional)
  *   # comentário             → ignorado
  */
-function parseFlowSpec(text) {
+function parseFlowSpec(text, t) {
     const nodes = new Map();
     const edges = [];
     const errors = [];
+    const tr = typeof t === 'function' ? t : null;
+    const msg = (key, fallback, vars) => (tr ? tr(key, vars) : fallback);
 
     (text || '').split('\n').forEach((raw, idx) => {
         const line = raw.trim();
@@ -201,17 +231,21 @@ function parseFlowSpec(text) {
         const node = line.match(FLOW_NODE_RE);
         if (node) {
             const id = node[1];
-            if (nodes.has(id)) { errors.push(`Linha ${idx + 1}: nó "${id}" duplicado.`); return; }
-            nodes.set(id, { id, label: node[2].trim(), type: (node[3] || 'processo').toLowerCase() });
+            if (nodes.has(id)) {
+                errors.push(msg('flow.err.dup', `Linha ${idx + 1}: nó "${id}" duplicado.`, { n: idx + 1, id }));
+                return;
+            }
+            const rawType = (node[3] || 'processo').toLowerCase();
+            nodes.set(id, { id, label: node[2].trim(), type: FLOW_TYPE_ALIASES[rawType] || rawType });
             return;
         }
 
-        errors.push(`Linha ${idx + 1}: não entendi "${line.slice(0, 40)}". Use "ID: Rótulo [tipo]" ou "ID -> ID : rótulo".`);
+        errors.push(msg('flow.err.unknown', `Linha ${idx + 1}: não entendi "${line.slice(0, 40)}". Use "ID: Rótulo [tipo]" ou "ID -> ID : rótulo".`, { n: idx + 1, line: line.slice(0, 40) }));
     });
 
     for (const e of edges) {
-        if (!nodes.has(e.from)) errors.push(`Linha ${e.line}: origem "${e.from}" não foi definida.`);
-        if (!nodes.has(e.to))   errors.push(`Linha ${e.line}: destino "${e.to}" não foi definido.`);
+        if (!nodes.has(e.from)) errors.push(msg('flow.err.from', `Linha ${e.line}: origem "${e.from}" não foi definida.`, { n: e.line, id: e.from }));
+        if (!nodes.has(e.to))   errors.push(msg('flow.err.to', `Linha ${e.line}: destino "${e.to}" não foi definido.`, { n: e.line, id: e.to }));
     }
 
     return {
@@ -499,6 +533,363 @@ function buildFlowElements(nodes, edges, direction = 'TB', origin = { x: 0, y: 0
 }
 // ── FLOW ENGINE (fim) ───────────────────────────────────
 
+// ── I18N (início) ───────────────────────────────────────
+// PT/EN. A UI segue o idioma da interface do Trilium (opção `locale`,
+// a mesma que o Excalidraw usa). Funções puras (sem DOM/api) para teste.
+
+const CLW_I18N = {
+    pt: {
+        /* toolbar (tooltips) */
+        'btn.insert':            'Inserir nota no Canvas',
+        'btn.capture':           'Modo Captura',
+        'btn.newnote':           'Criar nova nota filha',
+        'btn.relations':         'Relações por setas',
+        'btn.edit':              'Editar nota do card',
+        'btn.sync':              'Atualizar cards das notas',
+        'btn.longform':          'Gerar Longform',
+        'btn.flow':              'Gerar fluxo (diagrama)',
+        'btn.tpl':               'Inserir template no canvas',
+        'btn.remove':            'Remover card do Canvas',
+        'btn.help':              'Ajuda — o que faz cada botão',
+
+        /* comum */
+        'common.no_canvas':      'Nenhuma nota Canvas ativa.',
+        'common.error':          '✗ Erro: ',
+
+        /* busca / inserir nota */
+        'search.title':          'Inserir nota no Canvas',
+        'search.placeholder':    'Buscar nota por título…',
+        'search.empty':          'Nenhuma nota encontrada.',
+        'search.searching':      'Buscando…',
+        'search.error':          'Erro na busca: ',
+        'search.inserting':      'Inserindo card…',
+        'search.captured':       '📌 "{title}" capturada',
+        'search.inserted':       'Card "{title}" inserido!',
+
+        /* nova nota */
+        'newnote.title':         'Nova nota filha',
+        'newnote.placeholder':   'Título da nota…',
+        'newnote.create':        'Criar',
+        'newnote.no_title':      'Digite um título para a nova nota.',
+        'newnote.created':       '✅ Nota "{title}" criada e inserida no canvas.',
+        'newnote.error':         'Erro ao criar nota: ',
+
+        /* modo captura */
+        'capture.no_canvas':     'Abra um Canvas para ativar a captura.',
+        'capture.on':            '🎯 Modo Captura ativado — navegue pelas notas.',
+        'capture.off':           '⏹ Modo Captura desativado.',
+        'capture.banner':        'Modo Captura ativo — toda nota clicada entra no canvas',
+
+        /* relações */
+        'relations.title':       'Relações detectadas',
+        'relations.empty':       'Nenhuma seta conectando cards encontrada.',
+        'relations.save':        'Salvar relações',
+        'relations.skip':        'Pular (sem relação)',
+        'relations.none':        'ℹ️ Nenhuma relação selecionada.',
+        'relations.saved':       '✅ {n} relação(ões) salvas.',
+        'relations.error':       'Erro ao salvar relações: ',
+        'relations.reading':     'Lendo canvas…',
+        'relations.no_cards':    'Nenhum card com nota vinculada encontrado no canvas.',
+        'relations.cycle':       '⚠️ Ciclo nas setas — ordenando por posição.',
+        'relation.relatedTo':    'Relacionado',
+        'relation.inspires':     'Inspira',
+        'relation.contradicts':  'Contradiz',
+        'relation.supports':     'Sustenta',
+        'relation.precedes':     'Precede',
+        'relation.exemplifies':  'Exemplifica',
+
+        /* remover card */
+        'remove.title':          'Remover card do canvas',
+        'remove.empty':          'Nenhum card vinculado encontrado.',
+        'remove.btn':            'Remover',
+        'remove.done':           '🗑️ Card removido do canvas.',
+        'remove.not_found':      'ℹ️ Card não encontrado no canvas.',
+        'remove.error':          'Erro ao remover card: ',
+        'cards.list_error':      'Erro ao listar cards: ',
+
+        /* editar card / editor */
+        'edit.title':            'Editar nota do card',
+        'edit.btn':              'Editar',
+        'editor.title':          'Editar nota',
+        'editor.save':           'Salvar',
+        'editor.no_note':        'Nota não encontrada.',
+        'editor.saved':          '✏️ Nota salva e card atualizado.',
+        'editor.error':          'Erro ao salvar: ',
+
+        /* sincronizar */
+        'sync.running':          '⟳ Atualizando cards…',
+        'sync.none':             'ℹ️ Nenhum card vinculado no canvas.',
+        'sync.done':             '⟳ {n} card(s) atualizado(s).',
+        'sync.error':            'Erro ao sincronizar cards: ',
+
+        /* longform */
+        'longform.read_error':   'Erro ao ler canvas: ',
+        'longform.error':        'Erro ao gerar longform: ',
+        'longform.order_arrows': '{arrows} via setas + {rest} por posição',
+        'longform.order_pos':    '{n} por posição (nenhuma seta detectada)',
+
+        /* fluxo */
+        'flow.title':            'Gerar fluxo',
+        'flow.direction':        'Direção',
+        'flow.tb':               'Vertical (TB)',
+        'flow.lr':               'Horizontal (LR)',
+        'flow.title_placeholder':'Título (para criar nota ou salvar template)…',
+        'flow.generate':         'Gerar no canvas',
+        'flow.example':          'Exemplo',
+        'flow.create_note':      'Criar nota',
+        'flow.template':         'Template',
+        'flow.no_nodes':         '⚠️ Nenhum nó definido. Use "ID: Rótulo [tipo]".',
+        'flow.need_title':       '⚠️ Informe o título no campo acima para criar a nota.',
+        'flow.generated':        '✅ {n} elementos ({nodes} nós, {layers} camadas) — sem setas.',
+        'flow.generated_msg':    '🪄 Fluxo gerado no canvas.',
+        'flow.generate_error':   'Erro ao gerar fluxo: ',
+        'flow.note_created':     '✅ Nota "{title}" criada em "{parent}".',
+        'flow.note_created_msg': '🗂️ Nota de fluxo criada.',
+        'flow.note_error':       'Erro ao criar nota: ',
+        'flow.tpl_saved':        '✅ Template "Template - {name}" salvo ({where}).',
+        'flow.tpl_saved_msg':    '🧩 Template de fluxo salvo.',
+        'flow.tpl_error':        'Erro ao salvar template: ',
+        'flow.where_templates':  'pasta dos templates',
+        'flow.where_parent':     'pasta do canvas atual',
+        'flow.canvas_missing':   'Nota canvas não encontrada.',
+        'flow.err.dup':          'Linha {n}: nó "{id}" duplicado.',
+        'flow.err.unknown':      'Linha {n}: não entendi "{line}". Use "ID: Rótulo [tipo]" ou "ID -> ID : rótulo".',
+        'flow.err.from':         'Linha {n}: origem "{id}" não foi definida.',
+        'flow.err.to':           'Linha {n}: destino "{id}" não foi definido.',
+
+        /* templates */
+        'tpl.title':             'Inserir template',
+        'tpl.filter':            'Filtrar templates…',
+        'tpl.empty':             'Nenhum template encontrado.',
+        'tpl.empty_hint':        'Nenhum template encontrado. Crie um canvas e marque com #canvasTemplate.',
+        'tpl.no_match':          'Nenhum template corresponde ao filtro.',
+        'tpl.loading':           'Carregando templates…',
+        'tpl.load_error':        'Erro ao carregar templates.',
+        'tpl.inserting':         'Inserindo template…',
+        'tpl.inserted':          '🧩 Template "{title}" inserido ({n} elementos).',
+        'tpl.insert_error':      'Erro ao inserir template: ',
+        'tpl.missing':           'Template não encontrado.',
+        'tpl.invalid':           'Template inválido.',
+
+        /* ajuda */
+        'help.title':            'Ajuda — o que faz cada botão',
+        'help.foot':             '<b>Esc</b> ou clique fora fecha os painéis.',
+        'help.insert.name':      'Inserir nota',
+        'help.insert.desc':      'Busca e insere a nota como card.',
+        'help.capture.name':     'Modo captura',
+        'help.capture.desc':     'Cada nota clicada entra como card.',
+        'help.newnote.name':     'Nova nota',
+        'help.newnote.desc':     'Cria nota filha e insere como card.',
+        'help.relations.name':   'Relações por setas',
+        'help.relations.desc':   'Detecta setas e salva a relação.',
+        'help.edit.name':        'Editar cards',
+        'help.edit.desc':        'Abre o editor da nota do card.',
+        'help.sync.name':        'Sincronizar cards',
+        'help.sync.desc':        'Atualiza título e resumo dos cards.',
+        'help.longform.name':    'Longform',
+        'help.longform.desc':    'Gera documento na ordem das setas.',
+        'help.flow.name':        'Gerar fluxo',
+        'help.flow.desc':        'DSL em texto → diagrama em camadas; sem setas.',
+        'help.tpl.name':         'Templates',
+        'help.tpl.desc':         'Insere uma nota <b>#canvasTemplate</b>.',
+        'help.remove.name':      'Remover card',
+        'help.remove.desc':      'Lista e remove cards do canvas.',
+    },
+
+    en: {
+        /* toolbar (tooltips) */
+        'btn.insert':            'Insert note into Canvas',
+        'btn.capture':           'Capture mode',
+        'btn.newnote':           'Create new child note',
+        'btn.relations':         'Relations from arrows',
+        'btn.edit':              'Edit card note',
+        'btn.sync':              'Refresh cards from notes',
+        'btn.longform':          'Generate longform',
+        'btn.flow':              'Generate flow (diagram)',
+        'btn.tpl':               'Insert template into canvas',
+        'btn.remove':            'Remove card from Canvas',
+        'btn.help':              'Help — what each button does',
+
+        /* common */
+        'common.no_canvas':      'No active Canvas note.',
+        'common.error':          '✗ Error: ',
+
+        /* search / insert note */
+        'search.title':          'Insert note into Canvas',
+        'search.placeholder':    'Search notes by title…',
+        'search.empty':          'No notes found.',
+        'search.searching':      'Searching…',
+        'search.error':          'Search error: ',
+        'search.inserting':      'Inserting card…',
+        'search.captured':       '📌 "{title}" captured',
+        'search.inserted':       'Card "{title}" inserted!',
+
+        /* new note */
+        'newnote.title':         'New child note',
+        'newnote.placeholder':   'Note title…',
+        'newnote.create':        'Create',
+        'newnote.no_title':      'Type a title for the new note.',
+        'newnote.created':       '✅ Note "{title}" created and inserted into the canvas.',
+        'newnote.error':         'Error creating note: ',
+
+        /* capture mode */
+        'capture.no_canvas':     'Open a Canvas to enable capture.',
+        'capture.on':            '🎯 Capture mode on — browse your notes.',
+        'capture.off':           '⏹ Capture mode off.',
+        'capture.banner':        'Capture mode active — every note you click goes into the canvas',
+
+        /* relations */
+        'relations.title':       'Detected relations',
+        'relations.empty':       'No arrows connecting cards found.',
+        'relations.save':        'Save relations',
+        'relations.skip':        'Skip (no relation)',
+        'relations.none':        'ℹ️ No relation selected.',
+        'relations.saved':       '✅ {n} relation(s) saved.',
+        'relations.error':       'Error saving relations: ',
+        'relations.reading':     'Reading canvas…',
+        'relations.no_cards':    'No card with a linked note found in the canvas.',
+        'relations.cycle':       '⚠️ Cycle in arrows — ordering by position.',
+        'relation.relatedTo':    'Related',
+        'relation.inspires':     'Inspires',
+        'relation.contradicts':  'Contradicts',
+        'relation.supports':     'Supports',
+        'relation.precedes':     'Precedes',
+        'relation.exemplifies':  'Exemplifies',
+
+        /* remove card */
+        'remove.title':          'Remove card from canvas',
+        'remove.empty':          'No linked card found.',
+        'remove.btn':            'Remove',
+        'remove.done':           '🗑️ Card removed from the canvas.',
+        'remove.not_found':      'ℹ️ Card not found in the canvas.',
+        'remove.error':          'Error removing card: ',
+        'cards.list_error':      'Error listing cards: ',
+
+        /* edit card / editor */
+        'edit.title':            'Edit card note',
+        'edit.btn':              'Edit',
+        'editor.title':          'Edit note',
+        'editor.save':           'Save',
+        'editor.no_note':        'Note not found.',
+        'editor.saved':          '✏️ Note saved and card refreshed.',
+        'editor.error':          'Error saving: ',
+
+        /* sync */
+        'sync.running':          '⟳ Updating cards…',
+        'sync.none':             'ℹ️ No linked card in the canvas.',
+        'sync.done':             '⟳ {n} card(s) updated.',
+        'sync.error':            'Error syncing cards: ',
+
+        /* longform */
+        'longform.read_error':   'Error reading canvas: ',
+        'longform.error':        'Error generating longform: ',
+        'longform.order_arrows': '{arrows} via arrows + {rest} by position',
+        'longform.order_pos':    '{n} by position (no arrows detected)',
+
+        /* flow */
+        'flow.title':            'Generate flow',
+        'flow.direction':        'Direction',
+        'flow.tb':               'Vertical (TB)',
+        'flow.lr':               'Horizontal (LR)',
+        'flow.title_placeholder':'Title (to create a note or save a template)…',
+        'flow.generate':         'Draw on canvas',
+        'flow.example':          'Example',
+        'flow.create_note':      'Create note',
+        'flow.template':         'Template',
+        'flow.no_nodes':         '⚠️ No nodes defined. Use "ID: Label [type]".',
+        'flow.need_title':       '⚠️ Enter the title above to create the note.',
+        'flow.generated':        '✅ {n} elements ({nodes} nodes, {layers} layers) — no arrows.',
+        'flow.generated_msg':    '🪄 Flow drawn on the canvas.',
+        'flow.generate_error':   'Error generating flow: ',
+        'flow.note_created':     '✅ Note "{title}" created in "{parent}".',
+        'flow.note_created_msg': '🗂️ Flow note created.',
+        'flow.note_error':       'Error creating note: ',
+        'flow.tpl_saved':        '✅ Template "Template - {name}" saved ({where}).',
+        'flow.tpl_saved_msg':    '🧩 Flow template saved.',
+        'flow.tpl_error':        'Error saving template: ',
+        'flow.where_templates':  'templates folder',
+        'flow.where_parent':     'current canvas folder',
+        'flow.canvas_missing':   'Canvas note not found.',
+        'flow.err.dup':          'Line {n}: duplicate node "{id}".',
+        'flow.err.unknown':      'Line {n}: could not parse "{line}". Use "ID: Label [type]" or "ID -> ID : label".',
+        'flow.err.from':         'Line {n}: source "{id}" was not defined.',
+        'flow.err.to':           'Line {n}: target "{id}" was not defined.',
+
+        /* templates */
+        'tpl.title':             'Insert template',
+        'tpl.filter':            'Filter templates…',
+        'tpl.empty':             'No template found.',
+        'tpl.empty_hint':        'No template found. Create a canvas note and tag it #canvasTemplate.',
+        'tpl.no_match':          'No template matches the filter.',
+        'tpl.loading':           'Loading templates…',
+        'tpl.load_error':        'Error loading templates.',
+        'tpl.inserting':         'Inserting template…',
+        'tpl.inserted':          '🧩 Template "{title}" inserted ({n} elements).',
+        'tpl.insert_error':      'Error inserting template: ',
+        'tpl.missing':           'Template not found.',
+        'tpl.invalid':           'Invalid template.',
+
+        /* help */
+        'help.title':            'Help — what each button does',
+        'help.foot':             '<b>Esc</b> or click outside closes the panels.',
+        'help.insert.name':      'Insert note',
+        'help.insert.desc':      'Searches and inserts the note as a card.',
+        'help.capture.name':     'Capture mode',
+        'help.capture.desc':     'Every note you click becomes a card.',
+        'help.newnote.name':     'New note',
+        'help.newnote.desc':     'Creates a child note and inserts it as a card.',
+        'help.relations.name':   'Relations from arrows',
+        'help.relations.desc':   'Detects arrows and saves the relation.',
+        'help.edit.name':        'Edit cards',
+        'help.edit.desc':        'Opens the editor for the card note.',
+        'help.sync.name':        'Refresh cards',
+        'help.sync.desc':        'Updates card titles and excerpts.',
+        'help.longform.name':    'Longform',
+        'help.longform.desc':    'Builds a document in arrow order.',
+        'help.flow.name':        'Generate flow',
+        'help.flow.desc':        'Text DSL → layered diagram; no arrows.',
+        'help.tpl.name':         'Templates',
+        'help.tpl.desc':         'Inserts a <b>#canvasTemplate</b> note.',
+        'help.remove.name':      'Remove card',
+        'help.remove.desc':      'Lists and removes cards from the canvas.',
+    },
+};
+
+// Ordem das linhas do painel de ajuda (ícone + chaves de nome/descrição)
+const CLW_HELP_ITEMS = [
+    { ic: '🔗', name: 'help.insert.name',    desc: 'help.insert.desc'    },
+    { ic: '🎯', name: 'help.capture.name',   desc: 'help.capture.desc'   },
+    { ic: '📝', name: 'help.newnote.name',   desc: 'help.newnote.desc'   },
+    { ic: '🕸️', name: 'help.relations.name', desc: 'help.relations.desc' },
+    { ic: '✏️', name: 'help.edit.name',      desc: 'help.edit.desc'      },
+    { ic: '⟳',  name: 'help.sync.name',      desc: 'help.sync.desc'      },
+    { ic: '📄', name: 'help.longform.name',  desc: 'help.longform.desc'  },
+    { ic: '🪄', name: 'help.flow.name',      desc: 'help.flow.desc'      },
+    { ic: '🧩', name: 'help.tpl.name',       desc: 'help.tpl.desc'       },
+    { ic: '🗑️', name: 'help.remove.name',    desc: 'help.remove.desc'    },
+];
+
+/** Normaliza o locale do Trilium (ex.: pt_br, en-GB) para um idioma suportado. */
+function clwNormalizeLang(locale) {
+    return String(locale || '').toLowerCase().startsWith('pt') ? 'pt' : 'en';
+}
+
+/** Traduz uma chave. Fallback: idioma → EN → PT → a própria chave. Interpola {vars}. */
+function clwTranslate(lang, key, vars) {
+    const dict = CLW_I18N[lang] || CLW_I18N.en;
+    let s = dict[key];
+    if (s === undefined) s = CLW_I18N.pt[key];
+    if (s === undefined) return key;
+    if (vars) {
+        for (const k of Object.keys(vars)) s = s.split('{' + k + '}').join(String(vars[k]));
+    }
+    return s;
+}
+// ── I18N (fim) ──────────────────────────────────────────
+
+// Cache do locale detectado via backend (uma chamada por carregamento da página)
+let CLW_LANG_CACHE = null;
+
 // ────────────────────────────────────────────────────────
 class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     get position()     { return 100; }
@@ -507,10 +898,14 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
     _captureMode         = false;
     _captureCanvasNoteId = null;
+    _lang                = null;
+    _templates           = null;
+    _templatesLoaded     = false;
 
     /* ── Ciclo de vida ─────────────────────────────────── */
     doRender() {
         this.$widget = $('<div style="display:none;height:0;overflow:hidden;">');
+        if (!this._lang) this._lang = clwNormalizeLang(navigator.language);
         if (!document.getElementById('clw-root')) {
             this._injectFloat();
         }
@@ -534,9 +929,54 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             createFlowNote:       ()                   => this._createFlowNote(),
             saveFlowTemplate:     ()                   => this._saveFlowTemplate(),
         };
+        // Ajusta o idioma pela opção `locale` do Trilium (a mesma que o Excalidraw usa)
+        this._refineLang();
         // Restaura modo captura se estava ativo antes de um hot-reload
         setTimeout(() => this._restoreCaptureState(), 200);
         return this.$widget;
+    }
+
+    /* ── Idioma ────────────────────────────────────────── */
+    _t(key, vars) { return clwTranslate(this._lang, key, vars); }
+
+    /** Rótulos que os callbacks de backend precisam exibir (não têm acesso ao i18n). */
+    _backendLabels() {
+        return {
+            canvasMissing:  this._t('flow.canvas_missing'),
+            tplMissing:     this._t('tpl.missing'),
+            tplInvalid:     this._t('tpl.invalid'),
+            whereParent:    this._t('flow.where_parent'),
+            whereTemplates: this._t('flow.where_templates'),
+        };
+    }
+
+    async _refineLang() {
+        try {
+            if (CLW_LANG_CACHE === null) {
+                CLW_LANG_CACHE = await api.runOnBackend(() => {
+                    const opt = api.getOption('locale');
+                    return opt ? opt.value : null;
+                });
+            }
+            const lang = clwNormalizeLang(CLW_LANG_CACHE || navigator.language);
+            if (lang === this._lang) return;
+            this._lang = lang;
+            // Reinjeta a UI no idioma correto (os painéis estão fechados neste momento)
+            const old = this._el('clw-root');
+            if (old) old.remove();
+            this._injectFloat();
+            this._syncVisibility();
+            this._restoreCaptureState();
+        } catch (err) {
+            console.warn('[CanvasLinker] locale detection failed:', err);
+        }
+    }
+
+    _syncVisibility() {
+        const root = this._el('clw-root');
+        if (!root) return;
+        const note = api.getActiveContextNote ? api.getActiveContextNote() : null;
+        root.style.display = (note && note.type === 'canvas') ? 'flex' : 'none';
     }
 
     /* ── Helpers de DOM ────────────────────────────────── */
@@ -547,29 +987,31 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
     /* ── UI: Injeção da estrutura flutuante ────────────── */
     _injectFloat() {
+        if (document.getElementById('clw-root')) return;
+        const t = (k, v) => this._t(k, v);
         const html = /* html */`
         <div id="clw-root">
             <!-- Painel de busca -->
             <div id="clw-panel" class="clw-panel" style="width:340px">
                 <div class="clw-panel-header">
                     <span class="clw-panel-icon">🔗</span>
-                    <span class="clw-panel-title">Inserir nota no Canvas</span>
+                    <span class="clw-panel-title">${t('search.title')}</span>
                 </div>
                 <input id="clw-search" class="clw-input" type="text"
-                    placeholder="Buscar nota por título…"
+                    placeholder="${t('search.placeholder')}"
                     autocomplete="off" spellcheck="false" />
                 <div id="clw-results" class="clw-scroll"></div>
-                <div id="clw-status" class="clw-status">Nenhuma nota encontrada.</div>
+                <div id="clw-status" class="clw-status">${t('search.empty')}</div>
             </div>
 
             <!-- Painel de nova nota -->
             <div id="clw-newnote-float" class="clw-panel" style="width:340px">
-                <div class="clw-panel-title">Nova nota filha</div>
+                <div class="clw-panel-title">${t('newnote.title')}</div>
                 <div class="clw-row">
                     <input id="clw-newnote-title" class="clw-input" type="text"
-                        placeholder="Título da nota…"
+                        placeholder="${t('newnote.placeholder')}"
                         autocomplete="off" spellcheck="false" />
-                    <button id="clw-newnote-confirm" class="clw-btn-primary">Criar</button>
+                    <button id="clw-newnote-confirm" class="clw-btn-primary">${t('newnote.create')}</button>
                 </div>
             </div>
 
@@ -577,15 +1019,15 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             <div id="clw-relmap-panel" class="clw-panel clw-panel--green" style="width:340px">
                 <div class="clw-panel-header">
                     <span class="clw-panel-icon">🕸️</span>
-                    <span class="clw-panel-title">Relações detectadas</span>
+                    <span class="clw-panel-title">${t('relations.title')}</span>
                     <button id="clw-relmap-close" class="clw-panel-close">✕</button>
                 </div>
                 <div id="clw-relmap-list" class="clw-scroll clw-rel-list"></div>
                 <div id="clw-relmap-empty" class="clw-status">
-                    Nenhuma seta conectando cards encontrada.
+                    ${t('relations.empty')}
                 </div>
                 <button id="clw-relmap-save" class="clw-btn-primary clw-btn--green clw-btn-block">
-                    Salvar relações
+                    ${t('relations.save')}
                 </button>
             </div>
 
@@ -593,52 +1035,52 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             <div id="clw-remove-panel" class="clw-panel clw-panel--danger" style="width:300px">
                 <div class="clw-panel-header">
                     <span class="clw-panel-icon">🗑️</span>
-                    <span class="clw-panel-title">Remover card do canvas</span>
+                    <span class="clw-panel-title">${t('remove.title')}</span>
                     <button id="clw-remove-close" class="clw-panel-close">✕</button>
                 </div>
                 <div id="clw-remove-results" class="clw-scroll" style="max-height:280px"></div>
-                <div id="clw-remove-empty" class="clw-status">Nenhum card vinculado encontrado.</div>
+                <div id="clw-remove-empty" class="clw-status">${t('remove.empty')}</div>
             </div>
 
             <!-- Painel de edição de card -->
             <div id="clw-edit-panel" class="clw-panel clw-panel--edit" style="width:300px">
                 <div class="clw-panel-header">
                     <span class="clw-panel-icon">✏️</span>
-                    <span class="clw-panel-title">Editar nota do card</span>
+                    <span class="clw-panel-title">${t('edit.title')}</span>
                     <button id="clw-edit-close" class="clw-panel-close">✕</button>
                 </div>
                 <div id="clw-edit-results" class="clw-scroll" style="max-height:280px"></div>
-                <div id="clw-edit-empty" class="clw-status">Nenhum card vinculado encontrado.</div>
+                <div id="clw-edit-empty" class="clw-status">${t('remove.empty')}</div>
             </div>
 
             <!-- Painel gerador de fluxos -->
             <div id="clw-flow-panel" class="clw-panel clw-panel--flow" style="width:560px">
                 <div class="clw-panel-header">
                     <span class="clw-panel-icon">🪄</span>
-                    <span class="clw-panel-title">Gerar fluxo</span>
+                    <span class="clw-panel-title">${t('flow.title')}</span>
                     <button id="clw-flow-close" class="clw-panel-close">✕</button>
                 </div>
                 <textarea id="clw-flow-spec" class="clw-textarea" rows="14" spellcheck="false"
-                    placeholder="Início: Recebe pedido [inicio]&#10;Brief: Tem briefing? [decisao]&#10;&#10;Início -> Brief&#10;Brief -> Orçamento"></textarea>
+                    placeholder="${escapeHtml(flowDefaultSpec(this._lang).split('\n').slice(1, 6).join('\n'))}"></textarea>
                 <div class="clw-row" style="margin-top:10px">
-                    <label class="clw-flow-label">Direção</label>
+                    <label class="clw-flow-label">${t('flow.direction')}</label>
                     <select id="clw-flow-dir" class="clw-rel-select" style="margin-top:0">
-                        <option value="TB">Vertical (TB)</option>
-                        <option value="LR">Horizontal (LR)</option>
+                        <option value="TB">${t('flow.tb')}</option>
+                        <option value="LR">${t('flow.lr')}</option>
                     </select>
                 </div>
                 <div class="clw-row" style="margin-top:8px">
                     <input id="clw-flow-title" class="clw-input" type="text"
-                        placeholder="Título (para criar nota ou salvar template)…"
+                        placeholder="${t('flow.title_placeholder')}"
                         autocomplete="off" spellcheck="false" />
                 </div>
                 <div class="clw-row" style="margin-top:8px; gap:7px">
-                    <button id="clw-flow-generate" class="clw-btn-primary" style="flex:1">Gerar no canvas</button>
+                    <button id="clw-flow-generate" class="clw-btn-primary" style="flex:1">${t('flow.generate')}</button>
                 </div>
                 <div class="clw-row" style="margin-top:8px; gap:7px">
-                    <button id="clw-flow-example" class="clw-btn-ghost" style="flex:1">Exemplo</button>
-                    <button id="clw-flow-savenote" class="clw-btn-ghost" style="flex:1">Criar nota</button>
-                    <button id="clw-flow-savetpl" class="clw-btn-ghost" style="flex:1">Template</button>
+                    <button id="clw-flow-example" class="clw-btn-ghost" style="flex:1">${t('flow.example')}</button>
+                    <button id="clw-flow-savenote" class="clw-btn-ghost" style="flex:1">${t('flow.create_note')}</button>
+                    <button id="clw-flow-savetpl" class="clw-btn-ghost" style="flex:1">${t('flow.template')}</button>
                 </div>
                 <div id="clw-flow-status" class="clw-status"></div>
             </div>
@@ -647,66 +1089,31 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             <div id="clw-tpl-panel" class="clw-panel" style="width:380px">
                 <div class="clw-panel-header">
                     <span class="clw-panel-icon">🧩</span>
-                    <span class="clw-panel-title">Inserir template</span>
+                    <span class="clw-panel-title">${t('tpl.title')}</span>
                     <button id="clw-tpl-close" class="clw-panel-close">✕</button>
                 </div>
                 <input id="clw-tpl-filter" class="clw-input" type="text"
-                    placeholder="Filtrar templates…" autocomplete="off" spellcheck="false" />
+                    placeholder="${t('tpl.filter')}" autocomplete="off" spellcheck="false" />
                 <div id="clw-tpl-list" class="clw-scroll" style="max-height:320px"></div>
-                <div id="clw-tpl-status" class="clw-status">Nenhum template encontrado.</div>
+                <div id="clw-tpl-status" class="clw-status">${t('tpl.empty')}</div>
             </div>
 
             <!-- Painel de ajuda -->
             <div id="clw-help-panel" class="clw-panel" style="width:550px">
                 <div class="clw-panel-header">
                     <span class="clw-panel-icon">❓</span>
-                    <span class="clw-panel-title">Ajuda — o que faz cada botão</span>
+                    <span class="clw-panel-title">${t('help.title')}</span>
                     <button id="clw-help-close" class="clw-panel-close">✕</button>
                 </div>
                 <div class="clw-help-list clw-scroll">
-                    <div class="clw-help-row"><span class="clw-help-ic">🔗</span><div>
-                        <div class="clw-help-name">Inserir nota</div>
-                        <div class="clw-help-desc">Busca e insere a nota como card.</div>
-                    </div></div>
-                    <div class="clw-help-row"><span class="clw-help-ic">🎯</span><div>
-                        <div class="clw-help-name">Modo captura</div>
-                        <div class="clw-help-desc">Cada nota clicada entra como card.</div>
-                    </div></div>
-                    <div class="clw-help-row"><span class="clw-help-ic">📝</span><div>
-                        <div class="clw-help-name">Nova nota</div>
-                        <div class="clw-help-desc">Cria nota filha e insere como card.</div>
-                    </div></div>
-                    <div class="clw-help-row"><span class="clw-help-ic">🕸️</span><div>
-                        <div class="clw-help-name">Relações por setas</div>
-                        <div class="clw-help-desc">Detecta setas e salva a relação.</div>
-                    </div></div>
-                    <div class="clw-help-row"><span class="clw-help-ic">✏️</span><div>
-                        <div class="clw-help-name">Editar cards</div>
-                        <div class="clw-help-desc">Abre o editor da nota do card.</div>
-                    </div></div>
-                    <div class="clw-help-row"><span class="clw-help-ic">⟳</span><div>
-                        <div class="clw-help-name">Sincronizar cards</div>
-                        <div class="clw-help-desc">Atualiza título e resumo dos cards.</div>
-                    </div></div>
-                    <div class="clw-help-row"><span class="clw-help-ic">📄</span><div>
-                        <div class="clw-help-name">Longform</div>
-                        <div class="clw-help-desc">Gera documento na ordem das setas.</div>
-                    </div></div>
-                    <div class="clw-help-row"><span class="clw-help-ic">🪄</span><div>
-                        <div class="clw-help-name">Gerar fluxo</div>
-                        <div class="clw-help-desc">DSL em texto → diagrama em camadas; sem setas.</div>
-                    </div></div>
-                    <div class="clw-help-row"><span class="clw-help-ic">🧩</span><div>
-                        <div class="clw-help-name">Templates</div>
-                        <div class="clw-help-desc">Insere uma nota <b>#canvasTemplate</b>.</div>
-                    </div></div>
-                    <div class="clw-help-row"><span class="clw-help-ic">🗑️</span><div>
-                        <div class="clw-help-name">Remover card</div>
-                        <div class="clw-help-desc">Lista e remove cards do canvas.</div>
-                    </div></div>
+                    ${CLW_HELP_ITEMS.map(it => `
+                    <div class="clw-help-row"><span class="clw-help-ic">${it.ic}</span><div>
+                        <div class="clw-help-name">${t(it.name)}</div>
+                        <div class="clw-help-desc">${t(it.desc)}</div>
+                    </div></div>`).join('')}
                 </div>
                 <div class="clw-help-foot">
-                    <b>Esc</b> ou clique fora fecha os painéis.
+                    ${t('help.foot')}
                 </div>
             </div>
 
@@ -715,15 +1122,15 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 <div class="clw-editor-box">
                     <div class="clw-editor-header">
                         <span class="clw-panel-icon">✏️</span>
-                        <span class="clw-editor-title">Editar nota</span>
+                        <span class="clw-editor-title">${t('editor.title')}</span>
                         <button id="clw-editor-close" class="clw-panel-close">✕</button>
                     </div>
                     <input id="clw-editor-note-title" class="clw-input" type="text"
-                        placeholder="Título da nota…" autocomplete="off" spellcheck="false" />
+                        placeholder="${t('newnote.placeholder')}" autocomplete="off" spellcheck="false" />
                     <div id="clw-editor-content" class="clw-editor-content"
                         contenteditable="true" spellcheck="false"></div>
                     <div class="clw-editor-actions">
-                        <button id="clw-editor-save" class="clw-btn-primary">Salvar</button>
+                        <button id="clw-editor-save" class="clw-btn-primary">${t('editor.save')}</button>
                     </div>
                 </div>
             </div>
@@ -731,30 +1138,31 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             <!-- Banner captura -->
             <div id="clw-capture-banner" class="clw-banner">
                 <span class="clw-banner-icon">🎯</span>
-                <span>Modo Captura ativo &mdash; toda nota clicada entra no canvas</span>
+                <span>${t('capture.banner')}</span>
             </div>
 
             <!-- Toolbar de botões -->
             <div class="clw-toolbar">
-                <button id="clw-btn"          class="clw-round-btn" title="Inserir nota no Canvas">🔗</button>
-                <button id="clw-btn-capture"  class="clw-round-btn" title="Modo Captura">🎯</button>
-                <button id="clw-btn-newnote"  class="clw-round-btn" title="Criar nova nota filha">📝</button>
-                <button id="clw-btn-saverel"  class="clw-round-btn" title="Relações por setas">🕸️</button>
-                <button id="clw-btn-edit"     class="clw-round-btn" title="Editar nota do card">✏️</button>
-                <button id="clw-btn-sync"     class="clw-round-btn" title="Atualizar cards das notas">⟳</button>
-                <button id="clw-btn-longform" class="clw-round-btn" title="Gerar Longform">📄</button>
-                <button id="clw-btn-flow"     class="clw-round-btn" title="Gerar fluxo (diagrama)">🪄</button>
-                <button id="clw-btn-tpl"      class="clw-round-btn" title="Inserir template no canvas">🧩</button>
-                <button id="clw-btn-remove"   class="clw-round-btn clw-round-btn--danger" title="Remover card do Canvas">🗑️</button>
-                <button id="clw-btn-help"     class="clw-round-btn clw-round-btn--help" title="Ajuda — o que faz cada botão">?</button>
+                <button id="clw-btn"          class="clw-round-btn" title="${t('btn.insert')}">🔗</button>
+                <button id="clw-btn-capture"  class="clw-round-btn" title="${t('btn.capture')}">🎯</button>
+                <button id="clw-btn-newnote"  class="clw-round-btn" title="${t('btn.newnote')}">📝</button>
+                <button id="clw-btn-saverel"  class="clw-round-btn" title="${t('btn.relations')}">🕸️</button>
+                <button id="clw-btn-edit"     class="clw-round-btn" title="${t('btn.edit')}">✏️</button>
+                <button id="clw-btn-sync"     class="clw-round-btn" title="${t('btn.sync')}">⟳</button>
+                <button id="clw-btn-longform" class="clw-round-btn" title="${t('btn.longform')}">📄</button>
+                <button id="clw-btn-flow"     class="clw-round-btn" title="${t('btn.flow')}">🪄</button>
+                <button id="clw-btn-tpl"      class="clw-round-btn" title="${t('btn.tpl')}">🧩</button>
+                <button id="clw-btn-remove"   class="clw-round-btn clw-round-btn--danger" title="${t('btn.remove')}">🗑️</button>
+                <button id="clw-btn-help"     class="clw-round-btn clw-round-btn--help" title="${t('btn.help')}">?</button>
             </div>
-        </div>
-        `;
+        </div>`;
 
         document.body.insertAdjacentHTML('beforeend', html);
 
-        // Injeta CSS como stylesheet para melhor organização e performance
+        if (!document.getElementById('clw-style')) {
         const style = document.createElement('style');
+        style.id = 'clw-style';
+
         style.id = 'clw-style';
         style.textContent = /* css */`
 /* ═══════════════════ CLW — CSS ═══════════════════ */
@@ -1181,6 +1589,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 .clw-help-foot b { opacity:1; font-weight:700; }
         `;
         document.head.appendChild(style);
+        }
 
         // ── Event listeners ──
         this._el('clw-btn').addEventListener('click', () => this._togglePanel());
@@ -1212,7 +1621,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         this._el('clw-flow-savetpl').addEventListener('click', () => window._clw.saveFlowTemplate());
         this._el('clw-flow-example').addEventListener('click', () => {
             const spec = this._el('clw-flow-spec');
-            if (spec) spec.value = FLOW_DEFAULT_SPEC;
+            if (spec) spec.value = flowDefaultSpec(this._lang);
             this._flowStatus('');
         });
 
@@ -1292,21 +1701,21 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     /* ── MODO CAPTURA ──────────────────────────────────── */
     _toggleCapture() {
         if (!this._captureMode) {
-            if (!this.noteId) { api.showError('Abra um Canvas para ativar a captura.'); return; }
+            if (!this.noteId) { api.showError(this._t('capture.no_canvas')); return; }
             this._captureMode         = true;
             this._captureCanvasNoteId = this.noteId;
             this._el('clw-btn-capture').classList.add('clw-capture-active');
             this._show('clw-capture-banner');
             // Persiste o ID do canvas ativo para sobreviver a hot-reloads
             try { sessionStorage.setItem('clw_capture_canvas', this.noteId); } catch (_) {}
-            api.showMessage('🎯 Modo Captura ativado — navegue pelas notas.');
+            api.showMessage(this._t('capture.on'));
         } else {
             this._captureMode         = false;
             this._captureCanvasNoteId = null;
             this._el('clw-btn-capture').classList.remove('clw-capture-active');
             this._hide('clw-capture-banner');
             try { sessionStorage.removeItem('clw_capture_canvas'); } catch (_) {}
-            api.showMessage('⏹ Modo Captura desativado.');
+            api.showMessage(this._t('capture.off'));
         }
     }
 
@@ -1326,11 +1735,11 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     /* ── CRIAR NOVA NOTA FILHA ─────────────────────────── */
     async _createNote() {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
 
         const titleInput = this._el('clw-newnote-title');
         const title = titleInput?.value.trim() || '';
-        if (!title) { api.showError('Digite um título para a nova nota.'); titleInput?.focus(); return; }
+        if (!title) { api.showError(this._t('newnote.no_title')); titleInput?.focus(); return; }
 
         try {
             const newNoteId = await api.runOnBackend((canvasNoteId, title) => {
@@ -1344,10 +1753,10 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             if (titleInput) titleInput.value = '';
             this._hide('clw-newnote-float');
             await this._insertCard(newNoteId, title, '');
-            api.showMessage(`✅ Nota "${title}" criada e inserida no canvas.`);
+            api.showMessage(this._t('newnote.created', { title }));
         } catch (err) {
             console.error('[CanvasLinker] createNote error:', err);
-            api.showError('Erro ao criar nota: ' + err.message);
+            api.showError(this._t('newnote.error') + err.message);
         }
     }
 
@@ -1358,7 +1767,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
      */
     async _openRemovePanel() {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
 
         const $results = this._el('clw-remove-results');
         const $empty   = this._el('clw-remove-empty');
@@ -1375,9 +1784,9 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
         try {
             // Lê todos os cards (rect + link) do canvas
-            const cards = await api.runOnBackend((canvasNoteId) => {
+            const cards = await api.runOnBackend((canvasNoteId, L) => {
                 const note = api.getNote(canvasNoteId);
-                if (!note) throw new Error('Nota canvas não encontrada.');
+                if (!note) throw new Error(L.canvasMissing);
                 let data;
                 try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { data = {}; }
                 return (data.elements || [])
@@ -1387,7 +1796,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                         const linked = api.getNote(noteId);
                         return { noteId, title: linked?.title || noteId };
                     });
-            }, [canvasNoteId]);
+            }, [canvasNoteId, this._backendLabels()]);
 
             if (!cards || cards.length === 0) {
                 $empty.style.display = 'block';
@@ -1419,7 +1828,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
         } catch (err) {
             console.error('[CanvasLinker] openRemovePanel error:', err);
-            api.showError('Erro ao listar cards: ' + err.message);
+            api.showError(this._t('cards.list_error') + err.message);
             $panel.style.display = 'none';
         }
     }
@@ -1430,9 +1839,9 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
      */
     async _doRemoveCard(canvasNoteId, targetNoteId) {
         try {
-            const removed = await api.runOnBackend((canvasNoteId, targetNoteId) => {
+            const removed = await api.runOnBackend((canvasNoteId, targetNoteId, L) => {
                 const canvasNote = api.getNote(canvasNoteId);
-                if (!canvasNote) throw new Error('Nota canvas não encontrada.');
+                if (!canvasNote) throw new Error(L.canvasMissing);
                 let data;
                 try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
                 const elements = data.elements || [];
@@ -1453,23 +1862,23 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 }
                 if (count > 0) canvasNote.setContent(JSON.stringify(data));
                 return count;
-            }, [canvasNoteId, targetNoteId]);
+            }, [canvasNoteId, targetNoteId, this._backendLabels()]);
 
             if (removed > 0) {
-                api.showMessage('🗑️ Card removido do canvas.');
+                api.showMessage(this._t('remove.done'));
             } else {
-                api.showMessage('ℹ️ Card não encontrado no canvas.');
+                api.showMessage(this._t('remove.not_found'));
             }
         } catch (err) {
             console.error('[CanvasLinker] doRemoveCard error:', err);
-            api.showError('Erro ao remover card: ' + err.message);
+            api.showError(this._t('remove.error') + err.message);
         }
     }
 
     /* ── PAINEL DE EDIÇÃO ────────────────────────────── */
     async _openEditPanel() {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
 
         const $results = this._el('clw-edit-results');
         const $empty   = this._el('clw-edit-empty');
@@ -1485,9 +1894,9 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         this._hide('clw-remove-panel');
 
         try {
-            const cards = await api.runOnBackend((canvasNoteId) => {
+            const cards = await api.runOnBackend((canvasNoteId, L) => {
                 const note = api.getNote(canvasNoteId);
-                if (!note) throw new Error('Nota canvas não encontrada.');
+                if (!note) throw new Error(L.canvasMissing);
                 let data;
                 try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { data = {}; }
                 return (data.elements || [])
@@ -1497,7 +1906,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                         const linked = api.getNote(noteId);
                         return { noteId, title: linked?.title || noteId };
                     });
-            }, [canvasNoteId]);
+            }, [canvasNoteId, this._backendLabels()]);
 
             if (!cards || cards.length === 0) {
                 $empty.style.display = 'block';
@@ -1522,7 +1931,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
         } catch (err) {
             console.error('[CanvasLinker] openEditPanel error:', err);
-            api.showError('Erro ao listar cards: ' + err.message);
+            api.showError(this._t('cards.list_error') + err.message);
             $panel.style.display = 'none';
         }
     }
@@ -1534,7 +1943,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             return { title: n.title, content: n.getContent() || '' };
         }, [noteId]);
 
-        if (!note) { api.showError('Nota não encontrada.'); return; }
+        if (!note) { api.showError(this._t('editor.no_note')); return; }
 
         this._editorCanvasId = canvasNoteId;
         this._editorNoteId   = noteId;
@@ -1577,10 +1986,10 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             await this._updateCardText(canvasNoteId, noteId);
 
             this._el('clw-editor-float').style.display = 'none';
-            api.showMessage('✏️ Nota salva e card atualizado.');
+            api.showMessage(this._t('editor.saved'));
         } catch (err) {
             console.error('[CanvasLinker] saveEditor error:', err);
-            api.showError('Erro ao salvar: ' + err.message);
+            api.showError(this._t('editor.error') + err.message);
         } finally {
             $save.disabled = false;
         }
@@ -1693,9 +2102,9 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
     async _syncCards() {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
 
-        api.showMessage('⟳ Atualizando cards…');
+        api.showMessage(this._t('sync.running'));
 
         try {
             const cards = await api.runOnBackend((canvasNoteId) => {
@@ -1709,7 +2118,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             }, [canvasNoteId]);
 
             if (!cards || cards.length === 0) {
-                api.showMessage('ℹ️ Nenhum card vinculado no canvas.');
+                api.showMessage(this._t('sync.none'));
                 return;
             }
 
@@ -1718,17 +2127,17 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 found += await this._updateCardText(canvasNoteId, noteId);
             }
 
-            api.showMessage(`⟳ ${found} card(s) atualizado(s).`);
+            api.showMessage(this._t('sync.done', { n: found }));
         } catch (err) {
             console.error('[CanvasLinker] syncCards error:', err);
-            api.showError('Erro ao sincronizar cards: ' + err.message);
+            api.showError(this._t('sync.error') + err.message);
         }
     }
 
     /* ── PAINEL DE RELAÇÕES ────────────────────────────── */
     async _openRelationsPanel() {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
 
         const $list  = this._el('clw-relmap-list');
         const $empty = this._el('clw-relmap-empty');
@@ -1741,9 +2150,9 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         $panel.style.display = 'block';
 
         try {
-            const { pairs } = await api.runOnBackend((canvasNoteId) => {
+            const { pairs } = await api.runOnBackend((canvasNoteId, L) => {
                 const note = api.getNote(canvasNoteId);
-                if (!note) throw new Error('Nota canvas não encontrada.');
+                if (!note) throw new Error(L.canvasMissing);
                 let data;
                 try { data = JSON.parse(note.getContent() || '{}'); }
                 catch (_) { data = {}; }
@@ -1817,14 +2226,14 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                     }
                 });
                 return { pairs };
-            }, [canvasNoteId]);
+            }, [canvasNoteId, this._backendLabels()]);
 
             if (!pairs || pairs.length === 0) {
                 $empty.style.display = 'block';
                 return;
             }
 
-            const standardOptions = RELATION_OPTIONS_HTML;
+            const standardOptions = relationOptionsHtml((k, v) => this._t(k, v));
 
             const fragment = document.createDocumentFragment();
             pairs.forEach((pair, i) => {
@@ -1848,7 +2257,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                         selectedValue = direct.value;
                     } else {
                         // 2. Match por label traduzida (ex: "Inspira" → inspira)
-                        const byLabel = RELATION_TYPES.find(r => r.label.toLowerCase() === lower);
+                        const byLabel = RELATION_TYPES.find(r => this._t(r.labelKey).toLowerCase() === lower);
                         if (byLabel) {
                             selectedValue = byLabel.value;
                         } else {
@@ -1893,14 +2302,14 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             $save.style.display = 'block';
         } catch (err) {
             console.error('[CanvasLinker] openRelationsPanel error:', err);
-            api.showError('Erro ao ler canvas: ' + err.message);
+            api.showError(this._t('longform.read_error') + err.message);
             $panel.style.display = 'none';
         }
     }
 
     async _confirmSaveRelations() {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
 
         const rows = this._els('.clw-rel-row', this._el('clw-relmap-list'));
         if (rows.length === 0) return;
@@ -1928,7 +2337,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
         if (relations.length === 0) {
             this._hide('clw-relmap-panel');
-            api.showMessage('ℹ️ Nenhuma relação selecionada.');
+            api.showMessage(this._t('relations.none'));
             return;
         }
 
@@ -1969,30 +2378,30 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             }, [canvasNoteId, relations]);
 
             this._hide('clw-relmap-panel');
-            api.showMessage(`✅ ${saved} relação(ões) salvas.`);
+            api.showMessage(this._t('relations.saved', { n: saved }));
         } catch (err) {
             console.error('[CanvasLinker] confirmSaveRelations error:', err);
-            api.showError('Erro ao salvar relações: ' + err.message);
+            api.showError(this._t('relations.error') + err.message);
         }
     }
 
     /* ── GERADOR DE LONGFORM ───────────────────────────── */
     async _generateLongform() {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
-        api.showMessage('Lendo canvas…');
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
+        api.showMessage(this._t('relations.reading'));
 
         try {
-            const { elements, canvasTitle } = await api.runOnBackend((canvasNoteId) => {
+            const { elements, canvasTitle } = await api.runOnBackend((canvasNoteId, L) => {
                 const note = api.getNote(canvasNoteId);
-                if (!note) throw new Error('Nota canvas não encontrada.');
+                if (!note) throw new Error(L.canvasMissing);
                 let data;
                 try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { data = {}; }
                 return {
                     elements:    (data.elements || []).filter(e => !e.isDeleted),
                     canvasTitle: note.title
                 };
-            }, [canvasNoteId]);
+            }, [canvasNoteId, this._backendLabels()]);
 
             const cardMap = {};
             const cardPos = {};
@@ -2005,7 +2414,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
             const totalCards = Object.keys(cardMap).length;
             if (totalCards === 0) {
-                api.showError('Nenhum card com nota vinculada encontrado no canvas.');
+                api.showError(this._t('relations.no_cards'));
                 return;
             }
 
@@ -2048,7 +2457,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                     .filter(id => inDegree[id] === 0 && adjList[id].length > 0);
                 if (queue.length === 0) {
                     console.warn('[CanvasLinker] Ciclo detectado — usando ordem por posição.');
-                    api.showMessage('⚠️ Ciclo nas setas — ordenando por posição.');
+                    api.showMessage(this._t('relations.cycle'));
                 } else {
                     while (queue.length > 0) {
                         const current = queue.shift();
@@ -2074,8 +2483,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             const noteIds    = finalOrder.map(elId => cardMap[elId]);
 
             const orderSource = arrowCount > 0 && ordered.length > 0
-                ? `${ordered.length} via setas + ${remaining.length} por posição`
-                : `${noteIds.length} por posição (nenhuma seta detectada)`;
+                ? this._t('longform.order_arrows', { arrows: ordered.length, rest: remaining.length })
+                : this._t('longform.order_pos', { n: noteIds.length });
 
             const newNoteId = await api.runOnBackend((canvasNoteId, noteIds, canvasTitle) => {
                 let content = '';
@@ -2100,7 +2509,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             setTimeout(() => api.activateNote(newNoteId), 300);
         } catch (err) {
             console.error('[CanvasLinker] longform error:', err);
-            api.showError('Erro ao gerar longform: ' + err.message);
+            api.showError(this._t('longform.error') + err.message);
         }
     }
 
@@ -2122,7 +2531,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
         panel.style.display = 'block';
         const spec = this._el('clw-flow-spec');
-        if (spec && !spec.value.trim()) spec.value = FLOW_DEFAULT_SPEC;
+        if (spec && !spec.value.trim()) spec.value = flowDefaultSpec(this._lang);
         this._flowStatus('');
     }
 
@@ -2178,7 +2587,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     async _loadTemplates() {
         const list = this._el('clw-tpl-list');
         if (list) list.innerHTML = '';
-        this._tplStatus('Carregando templates…');
+        this._tplStatus(this._t('tpl.loading'));
         try {
             this._templates = await api.runOnBackend(() => api.searchForNotes('#canvasTemplate')
                 .map(note => ({ noteId: note.noteId, title: note.title || '(sem título)' }))
@@ -2187,7 +2596,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             this._renderTemplates();
         } catch (err) {
             console.error('[CanvasLinker] loadTemplates error:', err);
-            this._tplStatus('Erro ao carregar templates.', true);
+            this._tplStatus(this._t('tpl.load_error'), true);
         }
     }
 
@@ -2203,8 +2612,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         list.innerHTML = '';
         if (!items.length) {
             this._tplStatus(all.length
-                ? 'Nenhum template corresponde ao filtro.'
-                : 'Nenhum template encontrado. Crie um canvas e marque com #canvasTemplate.');
+                ? this._t('tpl.no_match')
+                : this._t('tpl.empty_hint'));
             return;
         }
         this._tplStatus('');
@@ -2212,7 +2621,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             const item = document.createElement('div');
             item.className = 'clw-tpl-item';
             item.innerHTML = '<span class="clw-tpl-item-ic">🧩</span>' + escapeHtml(tpl.title);
-            item.title = 'Inserir template no canvas';
+            item.title = this._t('btn.tpl');
             item.addEventListener('click', () => this._insertTemplate(tpl.noteId, tpl.title));
             list.appendChild(item);
         }
@@ -2220,14 +2629,14 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
     async _insertTemplate(templateNoteId, templateTitle) {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
-        this._tplStatus('Inserindo template…');
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
+        this._tplStatus(this._t('tpl.inserting'));
         try {
-            const count = await api.runOnBackend((canvasNoteId, templateNoteId, margin) => {
+            const count = await api.runOnBackend((canvasNoteId, templateNoteId, margin, L) => {
                 const canvasNote = api.getNote(canvasNoteId);
-                if (!canvasNote) throw new Error('Canvas atual não encontrado.');
+                if (!canvasNote) throw new Error(L.canvasMissing);
                 const templateNote = api.getNote(templateNoteId);
-                if (!templateNote) throw new Error('Template não encontrado.');
+                if (!templateNote) throw new Error(L.tplMissing);
 
                 let canvasData;
                 try { canvasData = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { canvasData = {}; }
@@ -2236,7 +2645,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 if (!canvasData.elements) canvasData.elements = [];
 
                 let templateData;
-                try { templateData = JSON.parse(templateNote.getContent() || '{}'); } catch (_) { throw new Error('Template inválido.'); }
+                try { templateData = JSON.parse(templateNote.getContent() || '{}'); } catch (_) { throw new Error(L.tplInvalid); }
                 const src = (templateData.elements || []).filter(e => e && !e.isDeleted);
 
                 // posiciona à direita do conteúdo existente (convenção do gerador de fluxos)
@@ -2278,15 +2687,15 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 canvasData.elements.push(...clones);
                 canvasNote.setContent(JSON.stringify(canvasData));
                 return clones.length;
-            }, [canvasNoteId, templateNoteId, FLOW_CONFIG.marginX]);
+            }, [canvasNoteId, templateNoteId, FLOW_CONFIG.marginX, this._backendLabels()]);
 
             this._hide('clw-tpl-panel');
-            api.showMessage(`🧩 Template "${templateTitle}" inserido (${count} elementos).`);
+            api.showMessage(this._t('tpl.inserted', { title: templateTitle, n: count }));
             await api.activateNote(canvasNoteId);
         } catch (err) {
             console.error('[CanvasLinker] insertTemplate error:', err);
-            this._tplStatus('✗ Erro: ' + err.message, true);
-            api.showError('Erro ao inserir template: ' + err.message);
+            this._tplStatus(this._t('common.error') + err.message, true);
+            api.showError(this._t('tpl.insert_error') + err.message);
         }
     }
 
@@ -2301,13 +2710,13 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     _flowSpec() {
         const spec = this._el('clw-flow-spec')?.value || '';
         const direction = this._el('clw-flow-dir')?.value === 'LR' ? 'LR' : 'TB';
-        const parsed = parseFlowSpec(spec);
+        const parsed = parseFlowSpec(spec, (k, v) => this._t(k, v));
         if (parsed.errors.length) {
             this._flowStatus('⚠️ ' + parsed.errors.slice(0, 3).join(' '), true);
             return null;
         }
         if (!parsed.nodes.length) {
-            this._flowStatus('⚠️ Nenhum nó definido. Use "ID: Rótulo [tipo]".', true);
+            this._flowStatus(this._t('flow.no_nodes'), true);
             return null;
         }
         return { ...parsed, direction };
@@ -2327,7 +2736,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
     async _generateFlowToCanvas() {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
 
         const parsed = this._flowSpec();
         if (!parsed) return;
@@ -2335,9 +2744,9 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         try {
             const { elements, layers } = this._flowScene(parsed);
 
-            const count = await api.runOnBackend((canvasNoteId, newEls, margin) => {
+            const count = await api.runOnBackend((canvasNoteId, newEls, margin, L) => {
                 const canvasNote = api.getNote(canvasNoteId);
-                if (!canvasNote) throw new Error('Nota canvas não encontrada.');
+                if (!canvasNote) throw new Error(L.canvasMissing);
                 let data;
                 try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
                 if (!data.type)     data.type     = 'excalidraw';
@@ -2358,24 +2767,24 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 data.elements.push(...newEls);
                 canvasNote.setContent(JSON.stringify(data));
                 return newEls.length;
-            }, [canvasNoteId, elements, FLOW_CONFIG.marginX]);
+            }, [canvasNoteId, elements, FLOW_CONFIG.marginX, this._backendLabels()]);
 
-            this._flowStatus(`✅ ${count} elementos (${parsed.nodes.length} nós, ${layers} camadas) — sem setas.`);
-            api.showMessage('🪄 Fluxo gerado no canvas.');
+            this._flowStatus(this._t('flow.generated', { n: count, nodes: parsed.nodes.length, layers }));
+            api.showMessage(this._t('flow.generated_msg'));
             await api.activateNote(canvasNoteId);
         } catch (err) {
             console.error('[CanvasLinker] generateFlow error:', err);
-            this._flowStatus('✗ Erro: ' + err.message, true);
-            api.showError('Erro ao gerar fluxo: ' + err.message);
+            this._flowStatus(this._t('common.error') + err.message, true);
+            api.showError(this._t('flow.generate_error') + err.message);
         }
     }
 
     async _createFlowNote() {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
 
         const title = this._el('clw-flow-title')?.value.trim();
-        if (!title) { this._flowStatus('⚠️ Informe o título no campo acima para criar a nota.', true); return; }
+        if (!title) { this._flowStatus(this._t('flow.need_title'), true); return; }
 
         const parsed = this._flowSpec();
         if (!parsed) return;
@@ -2383,10 +2792,10 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         try {
             const { scene } = this._flowScene(parsed);
 
-            const info = await api.runOnBackend((canvasNoteId, title, scene) => {
+            const info = await api.runOnBackend((canvasNoteId, title, scene, L) => {
                 const canvasNote = api.getNote(canvasNoteId);
                 let parentId = canvasNote?.parentNoteIds?.[0];
-                let parentTitle = 'pasta do canvas atual';
+                let parentTitle = L.whereParent;
                 const found = api.searchForNotes('Fluxos')
                     .find(n => (n.title || '').trim().toLowerCase() === 'fluxos');
                 if (found) { parentId = found.noteId; parentTitle = found.title; }
@@ -2395,21 +2804,21 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                     content: scene, type: 'canvas', mime: 'application/json',
                 });
                 return { noteId: res.note.noteId, parentTitle };
-            }, [canvasNoteId, title, scene]);
+            }, [canvasNoteId, title, scene, this._backendLabels()]);
 
-            this._flowStatus(`✅ Nota "${title}" criada em "${info.parentTitle}".`);
-            api.showMessage('🗂️ Nota de fluxo criada.');
+            this._flowStatus(this._t('flow.note_created', { title, parent: info.parentTitle }));
+            api.showMessage(this._t('flow.note_created_msg'));
             setTimeout(() => api.activateNote(info.noteId), 250);
         } catch (err) {
             console.error('[CanvasLinker] createFlowNote error:', err);
-            this._flowStatus('✗ Erro: ' + err.message, true);
-            api.showError('Erro ao criar nota: ' + err.message);
+            this._flowStatus(this._t('common.error') + err.message, true);
+            api.showError(this._t('newnote.error') + err.message);
         }
     }
 
     async _saveFlowTemplate() {
         const canvasNoteId = this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
 
         const name = this._el('clw-flow-title')?.value.trim() || 'Fluxo';
 
@@ -2419,14 +2828,14 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         try {
             const { scene } = this._flowScene(parsed);
 
-            const info = await api.runOnBackend((canvasNoteId, name, scene) => {
+            const info = await api.runOnBackend((canvasNoteId, name, scene, L) => {
                 const canvasNote = api.getNote(canvasNoteId);
                 let parentId = canvasNote?.parentNoteIds?.[0];
-                let where = 'pasta do canvas atual';
+                let where = L.whereParent;
                 const tpls = api.searchForNotes('#canvasTemplate');
                 if (tpls && tpls.length > 0) {
                     parentId = tpls[0].parentNoteIds?.[0] || parentId;
-                    where = 'pasta dos templates';
+                    where = L.whereTemplates;
                 }
                 const res = api.createNewNote({
                     parentNoteId: parentId, title: 'Template - ' + name,
@@ -2435,15 +2844,15 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 const note = api.getNote(res.note.noteId);
                 note.addLabel('canvasTemplate', '');
                 return { noteId: res.note.noteId, where };
-            }, [canvasNoteId, name, scene]);
+            }, [canvasNoteId, name, scene, this._backendLabels()]);
 
-            this._flowStatus(`✅ Template "Template - ${name}" salvo (${info.where}).`);
-            api.showMessage('🧩 Template de fluxo salvo.');
+            this._flowStatus(this._t('flow.tpl_saved', { name, where: info.where }));
+            api.showMessage(this._t('flow.tpl_saved_msg'));
             setTimeout(() => api.activateNote(info.noteId), 250);
         } catch (err) {
             console.error('[CanvasLinker] saveFlowTemplate error:', err);
-            this._flowStatus('✗ Erro: ' + err.message, true);
-            api.showError('Erro ao salvar template: ' + err.message);
+            this._flowStatus(this._t('common.error') + err.message, true);
+            api.showError(this._t('flow.tpl_error') + err.message);
         }
     }
 
@@ -2458,7 +2867,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             return;
         }
 
-        $status.textContent = 'Buscando…';
+        $status.textContent = this._t('search.searching');
         $status.style.display = 'block';
 
         try {
@@ -2484,7 +2893,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
             $status.style.display = 'none';
             if (!notes || notes.length === 0) {
-                $status.textContent = 'Nenhuma nota encontrada.';
+                $status.textContent = this._t('search.empty');
                 $status.style.display = 'block';
                 return;
             }
@@ -2514,7 +2923,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             });
             $results.appendChild(fragment);
         } catch (err) {
-            $status.textContent = 'Erro na busca: ' + err.message;
+            $status.textContent = this._t('search.error') + err.message;
             $status.style.display = 'block';
             console.error('[CanvasLinker] search error', err);
         }
@@ -2523,11 +2932,11 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     /* ── INSERÇÃO DE CARDS ──────────────────────────────── */
     async _insertCard(noteId, title, excerpt) {
         const canvasNoteId = this._captureMode ? this._captureCanvasNoteId : this.noteId;
-        if (!canvasNoteId) { api.showError('Nenhuma nota Canvas ativa.'); return; }
+        if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
 
         const $status = this._el('clw-status');
         if ($status) {
-            $status.textContent = 'Inserindo card…';
+            $status.textContent = this._t('search.inserting');
             $status.style.display = 'block';
             const results = this._el('clw-results');
             if (results) results.innerHTML = '';
@@ -2537,7 +2946,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             // Usa helper centralizado — elimina duplicação com _onSearch
             const cleanConfig = getCleanPatterns();
 
-            await api.runOnBackend((canvasNoteId, linkedNoteId, title, excerpt, cfg, cleanPatterns) => {
+            await api.runOnBackend((canvasNoteId, linkedNoteId, title, excerpt, cfg, cleanPatterns, L) => {
                 // Reconstrói regexes
                 const patterns = cleanPatterns.map(([src, flags, repl]) => [new RegExp(src, flags), repl]);
 
@@ -2587,7 +2996,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 if (excerpt) { excerpt = wrapText(excerpt, 40); }
 
                 const canvasNote = api.getNote(canvasNoteId);
-                if (!canvasNote) throw new Error('Nota canvas não encontrada: ' + canvasNoteId);
+                if (!canvasNote) throw new Error(L.canvasMissing + ' (' + canvasNoteId + ')');
 
                 let data;
                 try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
@@ -2671,19 +3080,19 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 }
 
                 canvasNote.setContent(JSON.stringify(data));
-            }, [canvasNoteId, noteId, title, excerpt || '', CARD_CONFIG, cleanConfig]);
+            }, [canvasNoteId, noteId, title, excerpt || '', CARD_CONFIG, cleanConfig, this._backendLabels()]);
 
             if (this._captureMode) {
-                api.showMessage(`📌 "${title}" capturada`);
+                api.showMessage(this._t('search.captured', { title }));
             } else {
                 this._hide('clw-panel');
-                api.showMessage(`Card "${title}" inserido!`);
+                api.showMessage(this._t('search.inserted', { title }));
                 await api.activateNote(canvasNoteId);
             }
         } catch (err) {
             console.error('[CanvasLinker] insert error', err);
             if ($status) {
-                $status.textContent = '✗ Erro: ' + err.message;
+                $status.textContent = this._t('common.error') + err.message;
                 $status.style.display = 'block';
             }
             api.showError('CanvasLinker: ' + err.message);

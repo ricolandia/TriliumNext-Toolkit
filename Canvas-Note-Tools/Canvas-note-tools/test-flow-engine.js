@@ -11,7 +11,7 @@ if (start < 0 || end < 0) { console.error('Marcadores do FLOW ENGINE não encont
 const section = src.slice(start, end);
 
 const engine = new Function(section + `
-return { FLOW_CONFIG, FLOW_DEFAULT_SPEC, parseFlowSpec, layoutFlow, buildFlowElements, flowNodeSize, flowBackEdges, flowZIndex };
+return { FLOW_CONFIG, FLOW_DEFAULT_SPEC, flowDefaultSpec, parseFlowSpec, layoutFlow, buildFlowElements, flowNodeSize, flowBackEdges, flowZIndex };
 `)();
 
 let fails = 0;
@@ -139,5 +139,52 @@ fs.writeFileSync('/tmp/opencode/exemplo-fluxo-v8.excalidraw', JSON.stringify({
   appState: { gridModeEnabled: true, viewBackgroundColor: '#f8fafc' }, files: {},
 }, null, 1));
 console.log('\nExemplo exportado: /tmp/opencode/exemplo-fluxo-v8.excalidraw');
+// 9. I18N (PT/EN)
+const i18nStart = src.indexOf('// ── I18N (início)');
+const i18nEnd   = src.indexOf('// ── I18N (fim)');
+if (i18nStart < 0 || i18nEnd < 0) { console.error('Marcadores do I18N não encontrados'); process.exit(1); }
+const i18n = new Function(src.slice(i18nStart, i18nEnd) + `
+return { CLW_I18N, CLW_HELP_ITEMS, clwNormalizeLang, clwTranslate };
+`)();
+
+const ptKeys = Object.keys(i18n.CLW_I18N.pt).sort();
+const enKeys = Object.keys(i18n.CLW_I18N.en).sort();
+const missingEn = ptKeys.filter(k => !enKeys.includes(k));
+const missingPt = enKeys.filter(k => !ptKeys.includes(k));
+check('i18n: chaves PT = EN', missingEn.length === 0 && missingPt.length === 0,
+  `faltam em EN: [${missingEn.slice(0, 4)}] · faltam em PT: [${missingPt.slice(0, 4)}]`);
+check('i18n: dicionário completo', ptKeys.length >= 80, `chaves=${ptKeys.length}`);
+
+check('i18n: normalize pt_br → pt', i18n.clwNormalizeLang('pt_br') === 'pt');
+check('i18n: normalize pt → pt', i18n.clwNormalizeLang('pt') === 'pt');
+check('i18n: normalize PT-BR → pt', i18n.clwNormalizeLang('PT-BR') === 'pt');
+check('i18n: normalize en-GB → en', i18n.clwNormalizeLang('en-GB') === 'en');
+check('i18n: normalize es → en', i18n.clwNormalizeLang('es') === 'en');
+check('i18n: normalize vazio → en', i18n.clwNormalizeLang('') === 'en');
+
+check('i18n: traduz chave PT', i18n.clwTranslate('pt', 'flow.generate') === 'Gerar no canvas');
+check('i18n: traduz chave EN', i18n.clwTranslate('en', 'flow.generate') === 'Draw on canvas');
+check('i18n: interpolação de variáveis', i18n.clwTranslate('pt', 'sync.done', { n: 3 }) === '⟳ 3 card(s) atualizado(s).');
+check('i18n: idioma desconhecido cai no EN', i18n.clwTranslate('xx', 'flow.generate') === 'Draw on canvas');
+check('i18n: chave só em PT cai no PT', i18n.clwTranslate('en', '__chave_que_nao_existe__') === '__chave_que_nao_existe__');
+check('i18n: chave inexistente devolve a própria chave', i18n.clwTranslate('pt', 'nao.existe') === 'nao.existe');
+check('i18n: linhas da ajuda têm chaves válidas',
+  i18n.CLW_HELP_ITEMS.every(it => i18n.CLW_I18N.pt[it.name] && i18n.CLW_I18N.pt[it.desc]
+                               && i18n.CLW_I18N.en[it.name] && i18n.CLW_I18N.en[it.desc]));
+
+// 10. Parser traduzido + sinônimos EN dos tipos
+const enT = (k, v) => i18n.clwTranslate('en', k, v);
+const pEn = engine.parseFlowSpec('A: One\nA -> B\nrubbish', enT);
+check('i18n: erros do parser em EN', pEn.errors.length === 2 && pEn.errors.every(e => e.startsWith('Line ')),
+  pEn.errors.join(' | '));
+const alias = engine.parseFlowSpec('A: One [start]\nB: Two [decision]\nC: Three [end]\nA -> B\nB -> C');
+check('DSL: sinônimos EN (start/decision/end)', alias.errors.length === 0
+  && alias.nodes.find(n => n.id === 'A')?.type === 'inicio'
+  && alias.nodes.find(n => n.id === 'B')?.type === 'decisao'
+  && alias.nodes.find(n => n.id === 'C')?.type === 'fim',
+  JSON.stringify(alias.nodes.map(n => n.id + ':' + n.type)));
+check('DSL: exemplo EN tem Start', engine.flowDefaultSpec('en').includes('Start: Receive request'));
+check('DSL: exemplo PT continua em PT', engine.flowDefaultSpec('pt').includes('Início: Recebe pedido'));
+
 console.log(fails === 0 ? '\n🎉 Todos os testes passaram.' : `\n${fails} teste(s) falharam.`);
 process.exit(fails === 0 ? 0 : 1);
