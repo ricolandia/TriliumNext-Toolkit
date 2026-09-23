@@ -7,7 +7,7 @@ This repository serves as a centralized hub for all these projects.
 
 **Note:** This project is mirrored on my personal **Forgejo server**. You can also access the repository by clicking below:
 
-[![Forgejo MIRROR](https://img.shields.io/badge/Mirror-Forgejo-orange?logo=gitea)](https://repo.rizomatico.org/ricograca/TriliumNext-Toolkit)
+[![Forgejo MIRROR](https://img.shields.io/badge/Mirror-Forgejo-orange?logo=gitea)](https://repo.rizomatico.org/ricolandia/TriliumNext-Toolkit)
 
 ---
 
@@ -27,21 +27,22 @@ This repository serves as a centralized hub for all these projects.
 ## 🛠️ Collection Index
 
 ### Productivity & Workflow
-* **[Weekly Planner & Open Tasks Panel](./Weekly-Planner)** - A drag-and-drop task board integrated with a global open tasks searcher.
+* **[Weekly Planner & Open Tasks Panel](./Weekly-Planner)** - A drag-and-drop task board integrated with a global open tasks searcher, with Week / Month / Gantt views.
 * **[Daily Note Navigator](./Daily-Note-Navigator)** - Navigate daily journal notes with keyboard arrows, monthly jumps, and cache.
+* **[Daily Note Map](./Daily-Note-Map)** - A visual map of everything you edited on a day: the journal note at the center, edited notes orbiting it with real relation links.
 * **[Minimalist Pomodoro + Time Tracker](./Minimalist-Pomodoro)** - A monochromatic Pomodoro timer widget with per-note time tracking and report generation.
 * **[Kanboard Sync](./Kanboard-Integration)** - Bidirectional Kanboard integration with a visual dashboard and inline task creation.
 * **[Mastodon Sender](./Mastodon-Sender)** - Compose and post toots directly from Trilium, with visibility control and current note support.
 
 ### Canvas & Note Organization
-* **[Canvas Note Tools](./Canvas-Note-Tools)** - Insert notes as interactive cards, create on the fly, and synthesize knowledge directly on the canvas.
-* **[Canvas Template Loader Widget](./Canvas-Template-Loader)** - Insert reusable Excalidraw templates into any canvas with a single click.
+* **[Canvas Note Tools](./Canvas-Note-Tools)** - Insert notes as interactive cards, edit them in place, generate layered flowcharts from a tiny text DSL (🪄), insert `#canvasTemplate` notes (🧩) and get built-in help (?) — UI follows Trilium's interface language (PT/EN).
+* **[Canvas Template Loader Widget](./Canvas-Template-Loader)** - *(merged into Canvas Note Tools v8 — kept for reference only)* Insert reusable Excalidraw templates into any canvas with a single click.
 * **[Canvas Templates Pack](./Canvas-Templates)** - A collection of ready-to-use frameworks (OKR, GTD, Feynman, SCAMPER, etc.) for visual thinking.
 
 ### Writing & Creative Tools
-* **[Word Counter + Daily Goal](./Word-Counter)** - A compact right-pane widget tracking your daily writing progress.
+* **[Word Counter + Daily Goal](./Word-Counter)** - A compact right-pane widget tracking your daily (and weekly) writing progress.
 * **[Custom Scripts for Writers](./Writers-Tools)** - Includes a Longform Compiler (Grid View) and a Fountain Screenplay Renderer.
-* **[AI Chat inside Trilium](./AI-Chat)** - A no-code approach to interacting with AI directly within your notes.
+* **[AI Chat inside Trilium](./AI-Chat)** - A no-code approach to interacting with AI directly within your notes (any OpenAI-compatible provider).
 
 ### UI
 * **[CSS Tweaks: Polished UI](./UI-Tweaks)** - Polishing the UI for better readability and elegance.
@@ -54,17 +55,18 @@ This repository serves as a centralized hub for all these projects.
 
 ### Backup & External Scripts
 
-* **[Incremental Markdown Backup](./Incremental-Markdown-Backup)** - A lightweight Python script that uses the ETAPI to incrementally back up your notes as individual, folder-organized `.md` files (only downloading what has changed).
+* **[Incremental Markdown Backup](./Incremental-Markdown-Backup)** - A lightweight Python script that uses the ETAPI to incrementally back up your notes as individual, folder-organized `.md` files (only downloading what has changed), with optional PDFs and attachment files.
 
 ### Collaboration & Sharing
-* **[Shared Notes P2P](./Shared-Notes)** - A secure, serverless peer-to-peer sharing and commenting system to exchange notes between different Trilium instances without exposing your ETAPI token.
+* **[Shared Notes P2P](./Shared-Notes)** - A secure, serverless peer-to-peer sharing and commenting system to exchange notes between different Trilium instances without exposing your ETAPI token (multi-reply threads, versioned snapshots, reply notifications).
 
 ---
 
 ## 🌐 Language / Idioma
 
-**Note on language:** Since I am from Brazil, the interface and text within all these tools are currently in **Brazilian Portuguese (PT-BR)**. 
-However, you can easily translate them to English or your preferred language by simply opening the code files inside Trilium and replacing the text strings.
+**Note on language:** Most tools in this collection are in **Brazilian Portuguese (PT-BR)**, and you can translate them by editing the text strings inside Trilium.
+
+**Canvas Note Tools is bilingual:** its whole UI (tooltips, panels, help, status messages and the DSL example) follows Trilium's interface language — **Portuguese** when the app is in `pt`/`pt_br`, **English** for any other language.
 
 
 ---
