@@ -1151,32 +1151,32 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
 /* ── Ajuda ── */
 .clw-round-btn--help { font-weight:700; font-size:17px; }
-#clw-help-panel .clw-panel-icon  { font-size:24px; }
-#clw-help-panel .clw-panel-title { font-size:15px; }
-#clw-help-panel .clw-panel-close { font-size:22px; }
+#clw-help-panel .clw-panel-icon  { font-size:18px; }
+#clw-help-panel .clw-panel-title { font-size:13px; }
+#clw-help-panel .clw-panel-close { font-size:18px; }
 .clw-help-list {
-    max-height:min(660px,72vh);
-    display:flex; flex-direction:column; gap:2px; margin-top:2px;
+    max-height:min(690px,70vh);
+    display:flex; flex-direction:column; gap:1px; margin-top:2px;
     -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
     mask-image:linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
 }
 .clw-help-row {
-    display:flex; gap:14px; align-items:flex-start;
-    padding:8px 12px; border-radius:8px;
+    display:flex; gap:12px; align-items:flex-start;
+    padding:6px 11px; border-radius:8px;
     animation:clwFadeIn 0.15s ease both;
 }
 .clw-help-row:nth-child(even) { background:rgba(203,166,247,0.035); }
-.clw-help-ic { font-size:34px; line-height:1.1; margin-top:2px; width:44px; text-align:center; flex-shrink:0; }
-.clw-help-name { font-size:24px; font-weight:700; color:var(--main-text-color,#cdd6f4); }
+.clw-help-ic { font-size:26px; line-height:1.1; margin-top:1px; width:30px; text-align:center; flex-shrink:0; }
+.clw-help-name { font-size:17px; font-weight:700; color:var(--main-text-color,#cdd6f4); }
 .clw-help-desc {
-    font-size:22px; color:var(--main-text-color,#cdd6f4);
-    opacity:1; line-height:1.4; margin-top:4px;
+    font-size:16px; color:var(--main-text-color,#cdd6f4);
+    opacity:1; line-height:1.4; margin-top:3px;
 }
 .clw-help-desc b { color:var(--main-text-color,#cdd6f4); font-weight:700; }
 .clw-help-foot {
-    margin-top:12px; padding-top:10px;
+    margin-top:10px; padding-top:9px;
     border-top:1px solid var(--main-border-color,#45475a);
-    font-size:20px; color:var(--main-text-color,#cdd6f4); opacity:.9; line-height:1.45;
+    font-size:15px; color:var(--main-text-color,#cdd6f4); opacity:.9; line-height:1.45;
 }
 .clw-help-foot b { opacity:1; font-weight:700; }
         `;
