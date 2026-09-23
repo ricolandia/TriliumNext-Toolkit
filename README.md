@@ -41,7 +41,7 @@ This repository serves as a centralized hub for all these projects.
 
 ### Writing & Creative Tools
 * **[Word Counter + Daily Goal](./Word-Counter)** - A compact right-pane widget tracking your daily (and weekly) writing progress.
-* **[Custom Scripts for Writers](./Writers-Tools)** - Includes a Longform Compiler (Grid View) and a Fountain Screenplay Renderer.
+* **[Custom Scripts for Writers](./Writers-Tools)** - Includes a Longform Compiler (Grid View) and a Fountain Screenplay Renderer with WGA-style page estimate, scene/character tracking and Print/PDF export.
 * **[AI Chat inside Trilium](./AI-Chat)** - A no-code approach to interacting with AI directly within your notes (any OpenAI-compatible provider).
 
 ### UI

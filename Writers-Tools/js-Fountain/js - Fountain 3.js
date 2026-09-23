@@ -2,10 +2,13 @@
 // VISOR FOUNTAIN — TriliumNext Notes
 // Estrutura esperada:
 //   📄 Visor (esta nota — tipo renderNote)
-//     └── 📝 Rascunho (filha — tipo text ou code)
+//     └── 📝 Rascunho (filha — tipo text ou code/plain)
 //
-// Abra Rascunho e Visor em split view.
-// Pressione F5 no Visor para atualizar após editar o Rascunho.
+// Abra Rascunho e Visor em split view e use ⟳ Atualizar (ou F5)
+// no Visor depois de editar o Rascunho.
+// Com várias candidatas, o seletor na barra define o rascunho e
+// grava a escolha no label #fountainDraft do Visor (também vale
+// marcar a própria nota de rascunho com #fountainDraft).
 // ============================================================
 
 
@@ -17,7 +20,8 @@ const Fountain = (function () {
         scene_heading:         /^((?:\*{0,3}_?)?(?:(?:int|ext|est|i\/e)[. ]).+)|^(?:\.(?!\.+))(.+)/i,
         scene_number:          / *#(.+)# */,
         transition:            /^((?:FADE (?:TO BLACK|OUT)|CUT TO BLACK)\.|.+ TO\:)|^(?:> *)(.+)/,
-        dialogue:              /^([A-Z*_]+[0-9A-Z (._\-')]*)(\^?)?(?:\n(?!\n+))([\s\S]+)/,
+        // \p{Lu} (com /u) reconhece nomes acentuados: JOÃO, ANTÔNIO, LUÍSA…
+        dialogue:              /^([\p{Lu}*_]+[0-9\p{Lu} (._\-')]*)(\^?)?(?:\n(?!\n+))([\s\S]+)/u,
         parenthetical:         /^(\(.+\))$/,
         centered:              /^(?:> *)(.+)(?: *<)(\n.+)*/g,
         section:               /^(#+)(?: *)(.*)/,
@@ -40,32 +44,36 @@ const Fountain = (function () {
         whitespacer:           /^\t+|^ {3,}/gm,
     };
 
-    const INLINE_ORDER = [
-        'underline','italic','bold','bold_italic',
-        'italic_underline','bold_underline','bold_italic_underline'
-    ];
+    // .test() em loop com regex /g sofre de lastIndex residual — variante sem /g
+    const reTitlePageTest = /^((?:title|credit|author[s]?|source|notes|draft date|date|contact|copyright)\:)/im;
 
-    const inlineReplace = {
-        note:                 '<!-- $1 -->',
-        line_break:           '<br />',
-        bold_italic_underline:'<span class="bold italic underline">$2</span>',
-        bold_underline:       '<span class="bold underline">$2</span>',
-        italic_underline:     '<span class="italic underline">$2</span>',
-        bold_italic:          '<span class="bold italic">$2</span>',
-        bold:                 '<span class="bold">$2</span>',
-        italic:               '<span class="italic">$2</span>',
-        underline:            '<span class="underline">$2</span>',
-    };
+    function escaparHtml(texto) {
+        return String(texto == null ? '' : texto)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    // Ênfase inline — marcador mais longo primeiro, para **negrito** não ser
+    // capturado pela regra de *itálico* (bug do port antigo)
+    const ENFASES = [
+        [/\*\*\*(?=\S)([^*\n]+?)(?<=\S)\*\*\*/g,  'bold italic'],
+        [/_\*\*(?=\S)([^*_\n]+?)(?<=\S)\*\*_/g,  'bold underline'],
+        [/\*_(?=\S)([^*_\n]+?)(?<=\S)_\*/g,      'italic underline'],
+        [/\*\*(?=\S)([^*\n]+?)(?<=\S)\*\*/g,     'bold'],
+        [/\*(?=\S)([^*\n]+?)(?<=\S)\*/g,         'italic'],
+        [/_(?=\S)([^_\n]+?)(?<=\S)_/g,           'underline'],
+    ];
 
     function lexer(text) {
         if (!text) return text;
         text = text
-            .replace(regex.note_inline, inlineReplace.note)
+            .replace(regex.note_inline, '<!-- $1 -->')
             .replace(/\\\*/g, '[STAR]')
             .replace(/\\_/g,  '[UL]')
-            .replace(/\n/g,   inlineReplace.line_break);
-        for (const key of INLINE_ORDER) {
-            if (regex[key].test(text)) text = text.replace(regex[key], inlineReplace[key]);
+            .replace(/\n/g,   '<br />');
+        for (const [re, classe] of ENFASES) {
+            text = text.replace(re, (m, conteudo) => `<span class="${classe}">${conteudo}</span>`);
         }
         return text.replace(/\[STAR\]/g, '*').replace(/\[UL\]/g, '_').trim();
     }
@@ -86,7 +94,7 @@ const Fountain = (function () {
             let match;
 
             // Title page
-            if (regex.title_page.test(line)) {
+            if (reTitlePageTest.test(line)) {
                 const pairs = line
                     .replace(regex.title_page, '\n$1')
                     .split(regex.splitter)
@@ -191,7 +199,9 @@ const Fountain = (function () {
 
         for (let i = tokens.length - 1; i >= 0; i--) {
             const t = tokens[i];
-            if (t.text !== undefined) t.text = lexer(t.text);
+            // escapar ANTES do lexer: a sintaxe (>, <, etc.) já foi interpretada
+            // acima; o que sobrou é conteúdo literal
+            if (t.text !== undefined) t.text = lexer(escaparHtml(t.text));
 
             switch (t.type) {
                 // Title page
@@ -253,7 +263,7 @@ const Fountain = (function () {
                     scriptHtml.push(`<p class="centered">${t.text}</p>`);
                     break;
                 case 'page_break':
-                    scriptHtml.push('<hr />');
+                    scriptHtml.push('<div class="page-break"></div>');
                     break;
                 case 'line_break':
                     scriptHtml.push('<br />');
@@ -271,49 +281,65 @@ const Fountain = (function () {
         };
     }
 
-    return { parse };
+    return { parse, escaparHtml };
 })();
 
 
 // ── 2. CSS ────────────────────────────────────────────────────────────────────
 const CSS = `
-  * { box-sizing: border-box; }
+  /* Tudo escopado em #fv-root: o CSS não pode afetar o app, mesmo que o
+     Trilium não envolva o estilo em @scope (versões antigas) */
+  #fv-root, #fv-root * { box-sizing: border-box; }
 
   #fv-root {
     min-height: 100vh;
     padding: 32px 16px 64px;
   }
 
-  #fv-toolbar {
-    max-width: 740px;
+  #fv-root #fv-toolbar {
+    max-width: 980px;
     margin: 0 auto 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
   }
+  #fv-root #fv-toolbar-esq { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  #fv-root #fv-toolbar-dir { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-  #fv-aviso-f5 {
+  #fv-root #fv-aviso-f5 {
     font-family: monospace;
-    font-size: 11px;
-    opacity: 0.45;
+    font-size: 12px;
+    opacity: 0.5;
     user-select: none;
   }
 
-  #fv-btn-download {
-    padding: 7px 16px;
+  #fv-root .fv-btn {
+    padding: 7px 14px;
     border-radius: 5px;
     border: 1px solid var(--main-border-color);
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: bold;
     background: var(--button-background-color);
     color: var(--button-text-color);
     transition: filter 0.15s;
   }
-  #fv-btn-download:hover { filter: brightness(1.15); }
+  #fv-root .fv-btn:hover { filter: brightness(1.15); }
+
+  #fv-root #fv-select-rascunho {
+    max-width: 240px;
+    padding: 6px 8px;
+    border-radius: 5px;
+    border: 1px solid var(--main-border-color);
+    background: var(--button-background-color);
+    color: var(--button-text-color);
+    font-size: 12px;
+  }
 
   /* ── Layout: sidebar + página ── */
-  #fv-body {
+  #fv-root #fv-body {
     display: flex;
     align-items: flex-start;
     gap: 20px;
@@ -322,8 +348,8 @@ const CSS = `
   }
 
   /* ── Sidebar ── */
-  #fv-sidebar {
-    width: 200px;
+  #fv-root #fv-sidebar {
+    width: 240px;
     flex-shrink: 0;
     position: sticky;
     top: 16px;
@@ -333,74 +359,82 @@ const CSS = `
     overflow: hidden;
   }
 
-  #fv-sidebar-header {
+  #fv-root .fv-section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 9px 12px;
     border-bottom: 1px solid var(--main-border-color);
     font-family: monospace;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: bold;
-    opacity: 0.7;
+    opacity: 0.75;
     cursor: pointer;
     user-select: none;
   }
-  #fv-sidebar-header:hover { opacity: 1; }
-  #fv-sidebar-toggle { font-size: 10px; }
+  #fv-root .fv-section-header:hover { opacity: 1; }
+  #fv-root .fv-section-header + .fv-list { border-bottom: 1px solid var(--main-border-color); }
+  #fv-root .fv-toggle { font-size: 11px; }
 
-  #fv-sidebar-list {
+  #fv-root .fv-list {
     list-style: none;
     margin: 0;
     padding: 6px 0;
-    max-height: 75vh;
+    max-height: 38vh;
     overflow-y: auto;
   }
-  #fv-sidebar-list.collapsed { display: none; }
+  #fv-root .fv-list.collapsed { display: none; }
 
-  #fv-sidebar-list li a {
-    display: block;
-    padding: 5px 12px;
+  #fv-root .fv-list li a,
+  #fv-root .fv-list li .fv-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
     font-family: monospace;
-    font-size: 10px;
+    font-size: 12px;
     color: var(--text-color);
     text-decoration: none;
-    opacity: 0.65;
+    opacity: 0.75;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     transition: opacity 0.15s, background 0.15s;
   }
-  #fv-sidebar-list li a:hover {
+  #fv-root .fv-list li a:hover,
+  #fv-root .fv-list li .fv-item:hover {
     opacity: 1;
     background: var(--hover-item-background-color, rgba(128,128,128,0.1));
   }
-  #fv-sidebar-list li a.ativa {
+  #fv-root .fv-list li a.ativa {
     opacity: 1;
     font-weight: bold;
     border-left: 2px solid var(--main-accent-color, #888);
     padding-left: 10px;
   }
+  #fv-root .fv-num { opacity: 0.55; flex-shrink: 0; }
+  #fv-root .fv-char-nome { overflow: hidden; text-overflow: ellipsis; }
+  #fv-root .fv-char-count { margin-left: auto; opacity: 0.6; flex-shrink: 0; }
 
   /* ── Stats ── */
-  #fv-stats {
+  #fv-root #fv-stats {
     max-width: 980px;
-    margin: 0 auto 12px;
+    margin: 0 auto 14px;
     display: flex;
-    gap: 20px;
+    flex-wrap: wrap;
+    gap: 10px 22px;
     font-family: monospace;
-    font-size: 11px;
-    opacity: 0.55;
+    font-size: 13px;
+    opacity: 0.7;
     user-select: none;
   }
-  #fv-stats span b { opacity: 0.9; font-weight: bold; }
+  #fv-root #fv-stats span b { opacity: 1; font-weight: bold; }
 
   /* ── Toolbar e page: limitados pela sidebar ── */
-  #fv-toolbar { max-width: 980px; }
-  #fv-page    { flex: 1; min-width: 0; margin: 0; }
+  #fv-root #fv-page { flex: 1; min-width: 0; margin: 0; }
 
   /* Página do roteiro */
-  #fv-page {
+  #fv-root #fv-page {
     font-family: 'Courier Prime', 'Courier New', Courier, monospace;
     font-size: 12pt;
     line-height: 1.2;
@@ -414,36 +448,37 @@ const CSS = `
   }
 
   /* ── Title page ── */
-  #fv-page h1             { text-align: center; font-size: 14pt; margin: 0 0 0.25em; }
-  #fv-page .credit        { text-align: center; margin: 0.1em 0; }
-  #fv-page .authors       { text-align: center; margin: 0.1em 0; }
-  #fv-page .source        { text-align: center; margin: 0.1em 0; }
-  #fv-page .date,
-  #fv-page .draft-date    { text-align: center; margin: 0.5em 0 0; }
-  #fv-page .contact       { margin-top: 4em; font-size: 10pt; }
-  #fv-page .notes,
-  #fv-page .copyright     { text-align: center; font-size: 10pt; margin: 0.25em 0; }
+  #fv-root #fv-page h1             { text-align: center; font-size: 14pt; margin: 0 0 0.25em; }
+  #fv-root #fv-page .credit        { text-align: center; margin: 0.1em 0; }
+  #fv-root #fv-page .authors       { text-align: center; margin: 0.1em 0; }
+  #fv-root #fv-page .source        { text-align: center; margin: 0.1em 0; }
+  #fv-root #fv-page .date,
+  #fv-root #fv-page .draft-date    { text-align: center; margin: 0.5em 0 0; }
+  #fv-root #fv-page .contact       { margin-top: 4em; font-size: 10pt; }
+  #fv-root #fv-page .notes,
+  #fv-root #fv-page .copyright     { text-align: center; font-size: 10pt; margin: 0.25em 0; }
 
   /* Separador title page / script */
-  #fv-page hr {
+  #fv-root #fv-page hr {
     border: none;
     border-top: 1px solid var(--main-border-color);
     margin: 3em 0;
   }
 
   /* ── Scene heading ── */
-  #fv-page h3 {
+  #fv-root #fv-page h3 {
     font-size: 12pt;
     font-weight: bold;
     text-transform: uppercase;
     margin: 2.5em 0 0.25em;
+    scroll-margin-top: 16px;
   }
 
   /* ── Action ── */
-  #fv-page p.action { margin: 1em 0; }
+  #fv-root #fv-page p.action { margin: 1em 0; }
 
   /* ── Transition ── */
-  #fv-page h2 {
+  #fv-root #fv-page h2 {
     font-size: 12pt;
     font-weight: normal;
     text-transform: uppercase;
@@ -452,10 +487,10 @@ const CSS = `
   }
 
   /* ── Dialogue wrapper ── */
-  #fv-page .dialogue { margin: 1em 0; }
+  #fv-root #fv-page .dialogue { margin: 1em 0; }
 
   /* ── Character name ── */
-  #fv-page .dialogue h4 {
+  #fv-root #fv-page .dialogue h4 {
     font-size: 12pt;
     font-weight: normal;
     text-transform: uppercase;
@@ -463,41 +498,109 @@ const CSS = `
   }
 
   /* ── Parenthetical ── */
-  #fv-page .dialogue p.parenthetical {
+  #fv-root #fv-page .dialogue p.parenthetical {
     margin: 0 33% 0 31%;
   }
 
   /* ── Dialogue line ── */
-  #fv-page .dialogue p:not(.parenthetical) {
+  #fv-root #fv-page .dialogue p:not(.parenthetical) {
     margin: 0.1em 20% 0.5em 20%;
   }
 
   /* ── Dual dialogue ── */
-  #fv-page .dual-dialogue {
+  #fv-root #fv-page .dual-dialogue {
     display: flex;
     gap: 2%;
     margin: 1em 0;
   }
-  #fv-page .dual-dialogue .dialogue        { flex: 1; margin: 0; }
-  #fv-page .dual-dialogue .dialogue h4     { margin-left: 0; }
-  #fv-page .dual-dialogue .dialogue p:not(.parenthetical) { margin-left: 0; margin-right: 0; }
-  #fv-page .dual-dialogue .dialogue p.parenthetical       { margin-left: 0; margin-right: 5%; }
+  #fv-root #fv-page .dual-dialogue .dialogue        { flex: 1; margin: 0; }
+  #fv-root #fv-page .dual-dialogue .dialogue h4     { margin-left: 0; }
+  #fv-root #fv-page .dual-dialogue .dialogue p:not(.parenthetical) { margin-left: 0; margin-right: 0; }
+  #fv-root #fv-page .dual-dialogue .dialogue p.parenthetical       { margin-left: 0; margin-right: 5%; }
 
   /* ── Centered ── */
-  #fv-page p.centered { text-align: center; margin: 1em 0; }
+  #fv-root #fv-page p.centered { text-align: center; margin: 1em 0; }
 
   /* ── Section / Synopsis ── */
-  #fv-page p.section  { color: var(--muted-text-color, #888); font-style: italic; margin: 1.5em 0 0.25em; }
-  #fv-page p.synopsis { color: var(--muted-text-color, #888); font-style: italic; margin-left: 8%; }
+  #fv-root #fv-page p.section  { color: var(--muted-text-color, #888); font-style: italic; margin: 1.5em 0 0.25em; }
+  #fv-root #fv-page p.synopsis { color: var(--muted-text-color, #888); font-style: italic; margin-left: 8%; }
+
+  /* ── Quebra de página do Fountain (===) ── */
+  #fv-root #fv-page .page-break {
+    border-top: 1px dashed var(--main-border-color);
+    margin: 2.5em 0;
+  }
 
   /* ── Ênfase inline ── */
-  #fv-page .bold       { font-weight: bold; }
-  #fv-page .italic     { font-style: italic; }
-  #fv-page .underline  { text-decoration: underline; }
+  #fv-root #fv-page .bold       { font-weight: bold; }
+  #fv-root #fv-page .italic     { font-style: italic; }
+  #fv-root #fv-page .underline  { text-decoration: underline; }
+
+  /* ── Impressão direta (Ctrl+P) ── */
+  @media print {
+    #fv-root #fv-toolbar, #fv-root #fv-stats, #fv-root #fv-sidebar { display: none !important; }
+    #fv-root { padding: 0; }
+    #fv-root #fv-body { display: block; max-width: none; }
+    #fv-root #fv-page { border: none; box-shadow: none; padding: 0; max-width: none; }
+    #fv-root #fv-page h3 { page-break-after: avoid; }
+    #fv-root #fv-page .dialogue, #fv-root #fv-page .dual-dialogue { page-break-inside: avoid; }
+    #fv-root #fv-page .page-break { border: none; margin: 0; page-break-before: always; }
+  }
+`;
+
+
+// CSS autossuficiente para a janela de impressão/PDF (sem variáveis do Trilium)
+const CSS_IMPRESSAO = `
+  @page { size: A4; margin: 2.2cm 2.4cm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+    font-size: 12pt;
+    line-height: 1.2;
+    color: #000;
+    background: #fff;
+    margin: 0;
+  }
+  h1             { text-align: center; font-size: 14pt; margin: 0 0 0.25em; }
+  .credit, .authors, .source { text-align: center; margin: 0.1em 0; }
+  .date, .draft-date { text-align: center; margin: 0.5em 0 0; }
+  .contact       { margin-top: 4em; font-size: 10pt; }
+  .notes, .copyright { text-align: center; font-size: 10pt; margin: 0.25em 0; }
+  hr { border: none; border-top: 1px solid #000; margin: 3em 0; }
+  h3 {
+    font-size: 12pt; font-weight: bold; text-transform: uppercase;
+    margin: 2.5em 0 0.25em; page-break-after: avoid;
+  }
+  p.action { margin: 1em 0; }
+  h2 {
+    font-size: 12pt; font-weight: normal; text-transform: uppercase;
+    text-align: right; margin: 2em 0;
+  }
+  .dialogue { margin: 1em 0; page-break-inside: avoid; }
+  .dialogue h4 { font-size: 12pt; font-weight: normal; text-transform: uppercase; margin: 0 0 0 37%; }
+  .dialogue p.parenthetical { margin: 0 33% 0 31%; }
+  .dialogue p:not(.parenthetical) { margin: 0.1em 20% 0.5em 20%; }
+  .dual-dialogue { display: flex; gap: 2%; margin: 1em 0; page-break-inside: avoid; }
+  .dual-dialogue .dialogue { flex: 1; margin: 0; }
+  .dual-dialogue .dialogue h4 { margin-left: 0; }
+  .dual-dialogue .dialogue p:not(.parenthetical) { margin-left: 0; margin-right: 0; }
+  .dual-dialogue .dialogue p.parenthetical { margin-left: 0; margin-right: 5%; }
+  p.centered { text-align: center; margin: 1em 0; }
+  p.section  { color: #555; font-style: italic; margin: 1.5em 0 0.25em; }
+  p.synopsis { color: #555; font-style: italic; margin-left: 8%; }
+  .page-break { border: none; margin: 0; height: 0; page-break-before: always; }
+  .bold { font-weight: bold; }
+  .italic { font-style: italic; }
+  .underline { text-decoration: underline; }
 `;
 
 
 // ── 3. HELPERS ────────────────────────────────────────────────────────────────
+
+const escaparHtml = Fountain.escaparHtml;
+
+/** Desktop (Electron): impressão de iframe não funciona — lá usamos o PDF direto */
+const ehElectron = typeof window !== 'undefined' && !!window.electronApi;
 
 /** Converte HTML do Trilium em texto plano preservando quebras de parágrafo */
 function htmlParaTexto(html) {
@@ -525,99 +628,578 @@ function nomeSeguro(titulo) {
         .replace(/^_+|_+$/g, '');
 }
 
+/** Aviso nativo do Trilium (silencioso em versões antigas) */
+function avisar(mensagem) {
+    try { api.showMessage(mensagem); } catch (e) { /* opcional */ }
+}
 
-// ── 4. ESTATÍSTICAS ───────────────────────────────────────────────────────────
-
-/**
- * Recebe os tokens do Fountain.parse e devolve um objeto com contagens.
- * Estimativa de páginas: padrão WGA = ~55 linhas de texto por página.
- * Usamos contagem de cenas + palavras de ação como proxy confiável.
- */
-function calcularStats(textoCru, tokens) {
-    // Cenas: tokens do tipo scene_heading
-    const cenas = tokens.filter(t => t.type === 'scene_heading').length;
-
-    // Palavras: só texto de action + dialogue (ignora didascálias e títulos)
-    const tiposTexto = new Set(['action', 'dialogue', 'parenthetical']);
-    const palavras = tokens
-        .filter(t => tiposTexto.has(t.type) && t.text)
-        .reduce((acc, t) => {
-            const limpo = t.text.replace(/<[^>]+>/g, '').trim();
-            return acc + (limpo ? limpo.split(/\s+/).length : 0);
-        }, 0);
-
-    // Personagens únicos com fala
-    const personagens = new Set(
-        tokens
-            .filter(t => t.type === 'character' && t.text)
-            .map(t => t.text.replace(/<[^>]+>/g, '').trim().toUpperCase())
-    ).size;
-
-    // Páginas estimadas: ~200 palavras por página é uma estimativa razoável
-    // para a mistura de ação + diálogo de um roteiro padrão
-    const paginas = Math.max(1, Math.round(palavras / 200));
-
-    // Lista de cenas para o índice (texto limpo)
-    const cenasList = tokens
-        .filter(t => t.type === 'scene_heading' && t.text)
-        .map(t => t.text.replace(/<[^>]+>/g, '').trim());
-
-    return { cenas, palavras, personagens, paginas, cenasList };
+/** Nota candidata a rascunho: texto ou código (menos as notas de script) */
+function ehRascunho(note) {
+    const mime = (note.mime || '').toLowerCase();
+    if (mime.includes('javascript') || mime.includes('css')) return false;
+    return note.type === 'text' || note.type === 'code' || mime === 'text/plain';
 }
 
 
-// ── 5. RENDERIZAÇÃO ───────────────────────────────────────────────────────────
+// ── 4. ESTATÍSTICAS ───────────────────────────────────────────────────────────
+
+/** Os tokens saem do parser em ordem reversa — devolve em ordem de leitura */
+function tokensEmOrdem(tokens) {
+    const ordem = [];
+    for (let i = tokens.length - 1; i >= 0; i--) ordem.push(tokens[i]);
+    return ordem;
+}
+
+function contarPalavras(texto) {
+    const limpo = String(texto || '').trim();
+    return limpo ? limpo.split(/\s+/).length : 0;
+}
+
+/**
+ * Estatísticas a partir dos tokens do Fountain.parse.
+ * Páginas: estimativa por linhas (padrão WGA: ~55 linhas/página em Courier 12pt).
+ * Duração: ~1 minuto por página.
+ */
+function calcularStats(tokens) {
+    const limpar = (t) => (t.text || '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .trim();
+
+    const LPP = 55;
+    let linhas = 0;
+    let palavras = 0;
+    let palavrasDialogo = 0;
+
+    const cenasList = [];
+    const falas = new Map();
+    let personagemAtual = null;
+
+    for (const t of tokensEmOrdem(tokens)) {
+        const texto = limpar(t);
+
+        switch (t.type) {
+            case 'scene_heading':
+                cenasList.push(texto);
+                linhas += 2;
+                break;
+
+            case 'character':
+                personagemAtual = texto.toUpperCase();
+                if (!falas.has(personagemAtual)) falas.set(personagemAtual, 0);
+                linhas += 1;
+                break;
+
+            case 'dialogue': {
+                const n = contarPalavras(texto);
+                palavras += n;
+                palavrasDialogo += n;
+                linhas += Math.max(1, Math.ceil(texto.length / 35));
+                if (personagemAtual) {
+                    falas.set(personagemAtual, (falas.get(personagemAtual) || 0) + 1);
+                }
+                break;
+            }
+
+            case 'parenthetical': {
+                const n = contarPalavras(texto);
+                palavras += n;
+                palavrasDialogo += n;
+                linhas += 1;
+                break;
+            }
+
+            case 'action': {
+                const n = contarPalavras(texto);
+                palavras += n;
+                linhas += Math.max(1, Math.ceil(texto.length / 60)) + 0.5;
+                break;
+            }
+
+            case 'transition': linhas += 1.5; break;
+            case 'centered':   linhas += 1;   break;
+
+            case 'page_break':
+                linhas = Math.ceil(linhas / LPP) * LPP;
+                break;
+
+            default: break; // section, synopsis, note, title page…
+        }
+    }
+
+    const paginas = Math.max(1, Math.round(linhas / LPP));
+
+    const ranking = [...falas.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt-BR'));
+
+    return {
+        cenas: cenasList.length,
+        palavras,
+        personagens: ranking.length,
+        paginas,
+        duracao: paginas, // ~1 min por página
+        pctDialogo: palavras > 0 ? Math.round((palavrasDialogo / palavras) * 100) : 0,
+        cenasList,
+        ranking,
+    };
+}
+
+
+// ── 5. SIDEBAR (scrollspy + seções) ──────────────────────────────────────────
+
+const estadoSidebar = { cenas: true, personagens: true };
+let observerCenas = null;
+
+function marcarCenaAtiva(id) {
+    const raiz = api.$container[0];
+    if (!raiz) return;
+    raiz.querySelectorAll('.fv-list a.ativa').forEach((a) => a.classList.remove('ativa'));
+    const link = raiz.querySelector(`.fv-list a[href="#${id}"]`);
+    if (link) link.classList.add('ativa');
+}
+
+function configurarScrollSpy() {
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const raiz = api.$container[0];
+    if (!raiz) return;
+
+    const titulos = Array.from(raiz.querySelectorAll('#fv-page h3[id]'));
+    if (!titulos.length) return;
+
+    // Descobre o contêiner rolável da nota (Trilium rola dentro de um painel)
+    let scroller = null;
+    for (let p = raiz.parentElement; p && p !== document.body; p = p.parentElement) {
+        const estilo = getComputedStyle(p);
+        if (/(auto|scroll)/.test(estilo.overflowY) && p.scrollHeight > p.clientHeight + 4) {
+            scroller = p;
+            break;
+        }
+    }
+
+    observerCenas = new IntersectionObserver((entradas) => {
+        for (const entrada of entradas) {
+            if (entrada.isIntersecting) { marcarCenaAtiva(entrada.target.id); break; }
+        }
+    }, { root: scroller, rootMargin: '0px 0px -75% 0px', threshold: 0 });
+
+    titulos.forEach((t) => observerCenas.observe(t));
+}
+
+
+// ── 6. IMPRESSÃO / PDF ────────────────────────────────────────────────────────
+
+function imprimirRoteiro(titulo, htmlRoteiro) {
+    const doc = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>${escaparHtml(titulo)}</title>
+<style>${CSS_IMPRESSAO}</style>
+</head>
+<body>${htmlRoteiro}</body>
+</html>`;
+
+    // iframe fora da tela, mas com tamanho real (iframe 0×0 pode paginar em branco)
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.style.cssText = 'position:fixed;top:0;left:-10000px;width:794px;height:1123px;border:0;';
+
+    let removido = false;
+    const remover = () => {
+        if (removido) return;
+        removido = true;
+        try { iframe.remove(); } catch (e) { /* já removido */ }
+    };
+
+    iframe.onload = () => {
+        try {
+            const win = iframe.contentWindow;
+            if (!win) throw new Error('iframe sem janela');
+
+            // Só remove DEPOIS que o diálogo fecha — remover cedo gera PDF em branco
+            win.onafterprint = () => setTimeout(remover, 1000);
+
+            win.focus();
+            win.print();
+
+            // Rede de segurança: se onafterprint não disparar, limpa em 10 min
+            setTimeout(remover, 10 * 60 * 1000);
+        } catch (e) {
+            remover();
+            avisar('Não foi possível abrir a impressão.');
+        }
+    };
+
+    document.body.appendChild(iframe);
+    iframe.srcdoc = doc;
+}
+
+
+// ── 7. GERADOR DE PDF (sem bibliotecas) ──────────────────────────────────────
+// PDF 1.4 mínimo com a fonte Courier (padrão do formato, WinAnsiEncoding).
+// Gera o arquivo direto no renderer — sem diálogo de impressão e sem impressora,
+// então funciona também no desktop (Electron), onde a impressão de iframe falha.
+
+const PDF_PAGINA = { largura: 595.28, altura: 841.89 }; // A4 em pontos
+const PDF_MARGEM = 72;                                   // 1 polegada
+const PDF_FONTE = 12;
+const PDF_ALTURA_LINHA = 12;
+const PDF_LINHAS_PAGINA = Math.floor((PDF_PAGINA.altura - 2 * PDF_MARGEM) / PDF_ALTURA_LINHA); // 58
+const PDF_LARGURA_CHAR = 0.6;                            // Courier: 600/1000 em
+
+const PDF_TIPOS_TITULO = new Set([
+    'title', 'credit', 'author', 'authors', 'source',
+    'draft_date', 'date', 'contact', 'notes', 'copyright',
+]);
+
+// Unicode → WinAnsi (fora da faixa Latin-1, que é idêntica)
+const PDF_WINANSI = {
+    '\u20AC': 0x80, '\u201A': 0x82, '\u0192': 0x83, '\u201E': 0x84,
+    '\u2026': 0x85, '\u2020': 0x86, '\u2021': 0x87, '\u02C6': 0x88,
+    '\u2030': 0x89, '\u0160': 0x8A, '\u2039': 0x8B, '\u0152': 0x8C,
+    '\u017D': 0x8E, '\u2018': 0x91, '\u2019': 0x92, '\u201C': 0x93,
+    '\u201D': 0x94, '\u2022': 0x95, '\u2013': 0x96, '\u2014': 0x97,
+    '\u02DC': 0x98, '\u2122': 0x99, '\u0161': 0x9A, '\u203A': 0x9B,
+    '\u0153': 0x9C, '\u017E': 0x9E, '\u0178': 0x9F,
+};
+
+function pdfWinAnsi(texto) {
+    let saida = '';
+    for (const ch of String(texto == null ? '' : texto)) {
+        const cp = ch.codePointAt(0);
+        if (cp >= 32 && cp <= 126) { saida += ch; continue; }
+        if (PDF_WINANSI[ch] !== undefined) { saida += String.fromCharCode(PDF_WINANSI[ch]); continue; }
+        if (cp >= 0xA0 && cp <= 0xFF) { saida += ch; continue; }
+        saida += '?';
+    }
+    return saida;
+}
+
+function pdfEscapar(texto) {
+    return pdfWinAnsi(texto).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+}
+
+function pdfLargura(texto, tamanho) {
+    return String(texto).length * tamanho * PDF_LARGURA_CHAR;
+}
+
+function pdfQuebrar(texto, maxChars) {
+    const palavras = String(texto || '').split(/\s+/).filter(Boolean);
+    const linhas = [];
+    let atual = '';
+    const fechar = () => { if (atual) { linhas.push(atual); atual = ''; } };
+
+    for (let palavra of palavras) {
+        while (palavra.length > maxChars) {
+            fechar();
+            linhas.push(palavra.slice(0, maxChars));
+            palavra = palavra.slice(maxChars);
+        }
+        if (!atual) { atual = palavra; continue; }
+        if (atual.length + 1 + palavra.length <= maxChars) atual += ' ' + palavra;
+        else { fechar(); atual = palavra; }
+    }
+    fechar();
+    return linhas.length ? linhas : [''];
+}
+
+function pdfLimparToken(t) {
+    return (t.text || '')
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+/** Tokens → páginas de operações de texto {texto, x, y, tamanho} */
+function pdfGerar(tokens) {
+    const ordem = tokensEmOrdem(tokens);
+    const larguraUtil = PDF_PAGINA.largura - 2 * PDF_MARGEM;
+    const maxChars = (frac) => Math.max(8, Math.floor((larguraUtil * frac) / (PDF_FONTE * PDF_LARGURA_CHAR)));
+
+    const paginas = [];
+    let pagina = [];
+    const fecharPagina = () => { if (pagina.length) { paginas.push(pagina); pagina = []; } };
+    const addTexto = (texto, x, y, tamanho) => {
+        if (texto) pagina.push({ texto, x, y, tamanho: tamanho || PDF_FONTE });
+    };
+
+    // ── Capa (title page) ──
+    const capa = ordem.filter((t) => PDF_TIPOS_TITULO.has(t.type));
+    if (capa.length) {
+        const paginaCapa = [];
+        const centro = (texto, tamanho) => (PDF_PAGINA.largura - pdfLargura(texto, tamanho)) / 2;
+        let y = PDF_PAGINA.altura - 200;
+
+        for (const t of capa) {
+            if (t.type === 'contact') continue;
+            const texto = pdfLimparToken(t);
+            if (!texto) continue;
+            const tamanho = t.type === 'title' ? 14 : (t.type === 'notes' || t.type === 'copyright' ? 10 : 12);
+            for (const linha of pdfQuebrar(texto, maxChars(0.9))) {
+                paginaCapa.push({ texto: linha, x: centro(linha, tamanho), y, tamanho });
+                y -= tamanho + 6;
+            }
+            y -= 4;
+        }
+
+        let yContato = PDF_MARGEM + 120;
+        for (const t of capa.filter((x) => x.type === 'contact')) {
+            const texto = pdfLimparToken(t);
+            if (!texto) continue;
+            for (const linha of pdfQuebrar(texto, maxChars(0.6))) {
+                paginaCapa.push({ texto: linha, x: PDF_MARGEM, y: yContato, tamanho: 10 });
+                yContato -= 14;
+            }
+        }
+
+        paginas.push(paginaCapa);
+    }
+
+    // ── Roteiro ──
+    const inicioRoteiro = paginas.length;
+    let linha = 0;
+    const proximaLinha = () => {
+        if (linha >= PDF_LINHAS_PAGINA) { fecharPagina(); linha = 0; }
+        const y = PDF_PAGINA.altura - PDF_MARGEM - PDF_FONTE - linha * PDF_ALTURA_LINHA;
+        linha++;
+        return y;
+    };
+    const pular = (n) => { for (let i = 0; i < n; i++) proximaLinha(); };
+    const escrever = (linhas, x) => { for (const l of linhas) addTexto(l, x, proximaLinha()); };
+
+    const xDialogo = PDF_MARGEM + larguraUtil * 0.20;
+    const xParentetico = PDF_MARGEM + larguraUtil * 0.31;
+    const xPersonagem = PDF_MARGEM + larguraUtil * 0.37;
+
+    for (const t of ordem) {
+        if (PDF_TIPOS_TITULO.has(t.type)) continue;
+        const texto = pdfLimparToken(t);
+
+        switch (t.type) {
+            case 'scene_heading':
+                if (linha > 0) pular(1);
+                escrever(pdfQuebrar(texto.toUpperCase(), maxChars(1)), PDF_MARGEM);
+                pular(1);
+                break;
+
+            case 'action':
+                if (linha > 0) pular(1);
+                escrever(pdfQuebrar(texto, maxChars(1)), PDF_MARGEM);
+                pular(1);
+                break;
+
+            case 'character':
+                pular(1);
+                escrever(pdfQuebrar(texto.toUpperCase(), maxChars(0.63)), xPersonagem);
+                break;
+
+            case 'parenthetical':
+                escrever(pdfQuebrar(texto, maxChars(0.36)), xParentetico);
+                break;
+
+            case 'dialogue':
+                escrever(pdfQuebrar(texto, maxChars(0.60)), xDialogo);
+                pular(1);
+                break;
+
+            case 'transition': {
+                if (linha > 0) pular(1);
+                for (const l of pdfQuebrar(texto.toUpperCase(), maxChars(1))) {
+                    addTexto(l, PDF_PAGINA.largura - PDF_MARGEM - pdfLargura(l, PDF_FONTE), proximaLinha());
+                }
+                pular(1);
+                break;
+            }
+
+            case 'centered': {
+                if (linha > 0) pular(1);
+                for (const l of pdfQuebrar(texto, maxChars(1))) {
+                    addTexto(l, (PDF_PAGINA.largura - pdfLargura(l, PDF_FONTE)) / 2, proximaLinha());
+                }
+                pular(1);
+                break;
+            }
+
+            case 'page_break':
+                fecharPagina();
+                linha = 0;
+                break;
+
+            default:
+                break; // section, synopsis, note, line_break…
+        }
+    }
+    fecharPagina();
+
+    // ── Números de página (a partir da primeira do roteiro) ──
+    for (let i = inicioRoteiro; i < paginas.length; i++) {
+        const numero = `${i - inicioRoteiro + 1}.`;
+        paginas[i].push({
+            texto: numero,
+            x: PDF_PAGINA.largura - PDF_MARGEM - pdfLargura(numero, PDF_FONTE),
+            y: PDF_PAGINA.altura - 36,
+            tamanho: PDF_FONTE,
+        });
+    }
+
+    return paginas;
+}
+
+/** Páginas de operações → bytes de um arquivo PDF */
+function pdfMontar(paginas) {
+    const paraBytes = (texto) => {
+        const arr = new Uint8Array(texto.length);
+        for (let i = 0; i < texto.length; i++) arr[i] = texto.charCodeAt(i) & 0xFF;
+        return arr;
+    };
+    const juntar = (partes) => {
+        let total = 0;
+        for (const p of partes) total += p.length;
+        const saida = new Uint8Array(total);
+        let offset = 0;
+        for (const p of partes) { saida.set(p, offset); offset += p.length; }
+        return saida;
+    };
+
+    const objetos = [];
+    objetos.push(null, null, paraBytes('<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>'));
+
+    const idsPaginas = [];
+    for (const ops of paginas) {
+        let conteudo = '';
+        for (const op of ops) {
+            if (!op.texto) continue;
+            conteudo += `BT /F1 ${op.tamanho} Tf ${op.x.toFixed(2)} ${op.y.toFixed(2)} Td (${pdfEscapar(op.texto)}) Tj ET\n`;
+        }
+        const conteudoBytes = paraBytes(conteudo);
+        const idConteudo = objetos.length + 1;
+        objetos.push(juntar([paraBytes(`<< /Length ${conteudoBytes.length} >>\nstream\n`), conteudoBytes, paraBytes('\nendstream')]));
+
+        const idPagina = objetos.length + 1;
+        objetos.push(paraBytes(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_PAGINA.largura.toFixed(2)} ${PDF_PAGINA.altura.toFixed(2)}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${idConteudo} 0 R >>`));
+        idsPaginas.push(idPagina);
+    }
+
+    objetos[0] = paraBytes('<< /Type /Catalog /Pages 2 0 R >>');
+    objetos[1] = paraBytes(`<< /Type /Pages /Kids [${idsPaginas.map((id) => `${id} 0 R`).join(' ')}] /Count ${idsPaginas.length} >>`);
+
+    const partes = [paraBytes('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n')];
+    const offsets = [];
+    let posicao = partes[0].length;
+
+    for (let i = 0; i < objetos.length; i++) {
+        const cabecalho = paraBytes(`${i + 1} 0 obj\n`);
+        const rodape = paraBytes('\nendobj\n');
+        offsets.push(posicao);
+        partes.push(cabecalho, objetos[i], rodape);
+        posicao += cabecalho.length + objetos[i].length + rodape.length;
+    }
+
+    const inicioXref = posicao;
+    let xref = `xref\n0 ${objetos.length + 1}\n0000000000 65535 f \n`;
+    for (const offset of offsets) xref += `${String(offset).padStart(10, '0')} 00000 n \n`;
+    partes.push(paraBytes(xref));
+    partes.push(paraBytes(`trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R >>\nstartxref\n${inicioXref}\n%%EOF\n`));
+
+    return juntar(partes);
+}
+
+
+// ── 8. RENDERIZAÇÃO ───────────────────────────────────────────────────────────
 async function renderizar() {
     try {
+        if (observerCenas) { observerCenas.disconnect(); observerCenas = null; }
+
         const notaMae  = api.originEntity;
         const filhas   = await notaMae.getChildNotes();
+        const candidatas = filhas.filter(ehRascunho);
 
-        // Primeira filha de texto/código = o Rascunho
-        const rascunho = filhas.find(n =>
-            n.type === 'text' || n.type === 'code' || n.mime === 'text/plain'
-        );
+        const idSalvo = notaMae.getLabelValue('fountainDraft');
+        const rascunho = candidatas.find((n) => n.noteId === idSalvo)
+            || candidatas.find((n) => n.hasLabel('fountainDraft'))
+            || candidatas[0];
 
         if (!rascunho) {
             api.$container.html(`
-                <div style="padding:24px;font-family:monospace;color:var(--text-color)">
-                    ⚠ Nenhuma nota de rascunho encontrada.<br><br>
-                    Crie uma nota filha do tipo <b>text</b> ou <b>code</b> dentro desta nota.
+                <div style="padding:24px;font-family:monospace;color:var(--text-color);line-height:1.8">
+                    ⚠ Nenhuma nota de rascunho encontrada.<br>
+                    Crie uma nota filha do tipo <b>text</b> ou <b>code</b> dentro desta nota.<br>
+                    <span style="opacity:.6">Dica: com várias notas, use o label <b>#fountainDraft</b> na nota desejada.</span>
                 </div>
             `);
             return;
         }
 
-        const complemento  = await rascunho.getNoteComplement();
-        const textoCru     = htmlParaTexto(complemento.content || '');
-        const resultado    = Fountain.parse(textoCru, true); // true = retorna tokens
-        const nomeArquivo  = nomeSeguro(notaMae.title || rascunho.title);
-        const stats        = calcularStats(textoCru, resultado.tokens || []);
+        const complemento = await rascunho.getNoteComplement();
+        const ehHtml = rascunho.type === 'text' || (rascunho.mime || '').includes('html');
+        const textoCru = ehHtml
+            ? htmlParaTexto(complemento.content || '')
+            : String(complemento.content || '');
+
+        const resultado   = Fountain.parse(textoCru, true); // true = retorna tokens
+        const nomeArquivo = nomeSeguro(notaMae.title || rascunho.title);
+        const stats       = calcularStats(resultado.tokens || []);
+
+        const seletorRascunho = candidatas.length > 1 ? `
+            <select id="fv-select-rascunho" title="Escolher a nota de rascunho">
+                ${candidatas.map((n) => `
+                    <option value="${n.noteId}"${n.noteId === rascunho.noteId ? ' selected' : ''}>
+                        ${escaparHtml(n.title)}
+                    </option>`).join('')}
+            </select>` : '';
+
+        const listaCenas = stats.cenasList.map((c, i) => `
+            <li><a href="#cena-${i}" data-cena="${i}">
+                <span class="fv-num">${String(i + 1).padStart(2, '0')}</span>${escaparHtml(c)}
+            </a></li>`).join('');
+
+        const listaPersonagens = stats.ranking.map(([nome, n]) => `
+            <li><span class="fv-item" title="${escaparHtml(nome)}">
+                <span class="fv-char-nome">${escaparHtml(nome)}</span>
+                <span class="fv-char-count">${n}</span>
+            </span></li>`).join('');
 
         api.$container.html(`
             <style>${CSS}</style>
             <div id="fv-root">
                 <div id="fv-toolbar">
-                    <span id="fv-aviso-f5">⟳ F5 para atualizar</span>
-                    <div>
-                        <button id="fv-btn-download">📥 Salvar .fountain</button>
+                    <div id="fv-toolbar-esq">
+                        <span id="fv-aviso-f5">⟳ F5 também atualiza</span>
+                        ${seletorRascunho}
+                    </div>
+                    <div id="fv-toolbar-dir">
+                        <button id="fv-btn-refresh" class="fv-btn" title="Recarregar o rascunho">⟳ Atualizar</button>
+                        <button id="fv-btn-pdf" class="fv-btn" title="Baixar o roteiro em PDF (A4, Courier)">📄 PDF</button>
+                        ${ehElectron ? '' : '<button id="fv-btn-print" class="fv-btn" title="Abrir a impressão do navegador">🖨 Imprimir</button>'}
+                        <button id="fv-btn-download" class="fv-btn" title="Baixar o texto Fountain">📥 .fountain</button>
                     </div>
                 </div>
                 <div id="fv-stats">
-                    <span>📄 <b>${stats.paginas}</b> pág. estimada${stats.paginas !== 1 ? 's' : ''}</span>
-                    <span>🎬 <b>${stats.cenas}</b> cena${stats.cenas !== 1 ? 's' : ''}</span>
-                    <span>💬 <b>${stats.personagens}</b> personage${stats.personagens !== 1 ? 'ns' : 'm'}</span>
+                    <span title="Estimativa por linhas (padrão WGA: ~55 linhas/página)">📄 <b>${stats.paginas}</b> pág.</span>
+                    <span>⏱ ~<b>${stats.duracao}</b> min</span>
+                    <span>🎬 <b>${stats.cenas}</b> cenas</span>
+                    <span>💬 <b>${stats.personagens}</b> personagens</span>
+                    <span>🗣 <b>${stats.pctDialogo}%</b> diálogo</span>
                     <span>📝 <b>${stats.palavras.toLocaleString('pt-BR')}</b> palavras</span>
                 </div>
                 <div id="fv-body">
                     <nav id="fv-sidebar">
-                        <div id="fv-sidebar-header">
+                        <div class="fv-section-header" data-alvo="cenas">
                             🎬 CENAS
-                            <span id="fv-sidebar-toggle">▼</span>
+                            <span class="fv-toggle">${estadoSidebar.cenas ? '▼' : '▶'}</span>
                         </div>
-                        <ul id="fv-sidebar-list">
-                            ${stats.cenasList.map((c, i) =>
-                                `<li><a href="#cena-${i}" data-idx="${i}">${c}</a></li>`
-                            ).join('')}
+                        <ul class="fv-list${estadoSidebar.cenas ? '' : ' collapsed'}" id="fv-list-cenas">
+                            ${listaCenas}
+                        </ul>
+                        <div class="fv-section-header" data-alvo="personagens">
+                            👥 PERSONAGENS
+                            <span class="fv-toggle">${estadoSidebar.personagens ? '▼' : '▶'}</span>
+                        </div>
+                        <ul class="fv-list${estadoSidebar.personagens ? '' : ' collapsed'}" id="fv-list-personagens">
+                            ${listaPersonagens}
                         </ul>
                     </nav>
                     <div id="fv-page">
@@ -630,6 +1212,32 @@ async function renderizar() {
             </div>
         `);
 
+        // ── Ações da barra ──
+        api.$container.find('#fv-btn-refresh').on('click', () => renderizar());
+
+        api.$container.find('#fv-btn-pdf').on('click', () => {
+            try {
+                const bytes = pdfMontar(pdfGerar(resultado.tokens || []));
+                const blob = new Blob([bytes], { type: 'application/pdf' });
+                const url  = URL.createObjectURL(blob);
+                const a    = document.createElement('a');
+                a.href     = url;
+                a.download = nomeArquivo + '.pdf';
+                a.click();
+                URL.revokeObjectURL(url);
+                avisar('PDF gerado.');
+            } catch (e) {
+                avisar('Não foi possível gerar o PDF.');
+            }
+        });
+
+        api.$container.find('#fv-btn-print').on('click', () => {
+            const corpo = (resultado.html.title_page
+                ? resultado.html.title_page + '\n<hr />'
+                : '') + resultado.html.script;
+            imprimirRoteiro(resultado.title || notaMae.title || rascunho.title, corpo);
+        });
+
         api.$container.find('#fv-btn-download').on('click', () => {
             const blob = new Blob([textoCru], { type: 'text/plain;charset=utf-8' });
             const url  = URL.createObjectURL(blob);
@@ -640,10 +1248,43 @@ async function renderizar() {
             URL.revokeObjectURL(url);
         });
 
+        // ── Seletor de rascunho ──
+        api.$container.find('#fv-select-rascunho').on('change', async function () {
+            const id = $(this).val();
+            try {
+                await api.runOnBackend((notaId, rascunhoId) => {
+                    api.getNote(notaId).setLabel('fountainDraft', rascunhoId);
+                }, [notaMae.noteId, id]);
+                renderizar();
+            } catch (e) {
+                avisar('Não foi possível salvar a escolha do rascunho.');
+            }
+        });
+
+        // ── Sidebar: recolher/expandir seções ──
+        api.$container.find('.fv-section-header').on('click', function () {
+            const alvo = $(this).data('alvo');
+            const aberto = !estadoSidebar[alvo];
+            estadoSidebar[alvo] = aberto;
+            api.$container.find('#fv-list-' + alvo).toggleClass('collapsed', !aberto);
+            $(this).find('.fv-toggle').text(aberto ? '▼' : '▶');
+        });
+
+        // ── Sidebar: navegação pelas cenas ──
+        api.$container.find('.fv-list a[href^="#cena-"]').on('click', function (e) {
+            e.preventDefault();
+            const id = $(this).attr('href').slice(1);
+            const alvo = api.$container[0].querySelector('#' + id);
+            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            marcarCenaAtiva(id);
+        });
+
+        configurarScrollSpy();
+
     } catch (err) {
         api.$container.html(
             `<div style="padding:24px;color:red;font-family:monospace">
-                Erro: ${err.message}
+                Erro: ${escaparHtml(err.message)}
              </div>`
         );
     }
