@@ -12,6 +12,8 @@ A custom Canvas workflow for TriliumNext focused on visual thinking, writing flo
 * **🕸️ Smart Relations:** Detects arrow connections between cards. Auto-detects relation types from text written on arrows (`inspira`, `contradiz`, etc.) and updates labels on save.
 * **🗑️ Remove Cards:** List all linked cards and remove individual ones directly from the canvas.
 * **📄 Longform Synthesis:** Generate comprehensive documents by combining canvas cards in arrow-based order (topological sort).
+* **🪄 Flow Generator:** Turn a tiny text DSL (nodes + arrows) into a clean Excalidraw flowchart with auto layered layout (vertical or horizontal). The DSL arrows define the layers and the order — **no arrows are drawn**, so the result stays tidy even with loops (`A -> B`, `B -> A`). Draw it into the current canvas, create it as a new canvas note, or save it as a `#canvasTemplate`.
+* **🧩 Template Inserter:** List every canvas note tagged `#canvasTemplate` and insert any of them into the current canvas (element ids, arrow bindings, bound texts and frames are remapped, so nothing breaks).
 * **⌨️ Keyboard:** Press `Escape` to dismiss any open panel. Click outside panels to close them.
 * **⚡ Local & Fast:** Lightweight, fully local, clean floating UI with glass-morphism design.
 
@@ -35,6 +37,9 @@ Open any Canvas note. Use the floating toolbar:
 | ⟳ | Sync all cards from their linked notes |
 | 🗑️ | List and remove cards from the canvas |
 | 📄 | Generate longform document from card order |
+| 🪄 | Generate a flowchart from a text DSL (nodes + arrows) |
+| 🧩 | Insert a `#canvasTemplate` into the canvas |
+| ? | Open the help panel (what each button does) |
 
 ### Floating Editor (✏️)
 
@@ -47,6 +52,68 @@ Open any Canvas note. Use the floating toolbar:
 
 Regenerates the title and excerpt of **every** card directly from its linked note. Use this when you edited notes outside the canvas (opening them normally) and want the cards up to date. It always updates (no diff) and keeps card positions intact.
 
+### Flow Generator (🪄)
+
+Write a small text spec and generate a ready-to-edit Excalidraw flowchart
+(rounded boxes, decision diamonds, layered layout with no arrows —
+the DSL connections are used only to compute the layers/order, so the
+diagram stays clean even when the flow has loops).
+
+**Spec format**
+
+```
+# comment
+ID: Label [type]      → defines a node (type: inicio | processo | decisao | fim; default: processo)
+A -> B : label        → connects two nodes (label optional; accepted but NOT drawn)
+```
+
+Example:
+
+```
+Início: Recebe pedido [inicio]
+Brief: Tem briefing? [decisao]
+Orçamento: Montar orçamento [processo]
+Info: Pedir mais informações [processo]
+Proposta: Enviar proposta [processo]
+Fim: Aprovado e entregue [fim]
+
+Início -> Brief
+Brief -> Orçamento
+Brief -> Info
+Info -> Brief
+Orçamento -> Proposta
+Proposta -> Fim
+```
+
+**Buttons**
+
+| Button | Action |
+|---|---|
+| **Gerar no canvas** | Draws the flow beside the existing content of the current canvas (auto offset) |
+| **Criar nota** | Creates a new canvas note (uses the title field). Parent defaults to a note titled `Fluxos`; falls back to the current canvas' parent |
+| **Template** | Saves the flow as a `#canvasTemplate` note, in the same folder as your other templates |
+| **Exemplo** | Fills the spec box with a ready example |
+
+Direction (vertical/horizontal) is selectable. Node IDs may contain accented
+letters, digits, `.`, `_` and `-` (tested with names like `Início`, `Orçamento`).
+Flows with cycles work: back edges are detected and only used for ordering.
+
+### Templates (🧩)
+
+1. Create a normal **Canvas** note and design anything you want to reuse
+   (GTD board, SWOT, OKR, storyboard grid…).
+2. Add the label **`#canvasTemplate`** to the note — the title becomes the
+   template name.
+3. In any canvas, click **🧩** → pick the template. It is inserted to the
+   right of the current content with all references remapped
+   (arrow bindings, bound texts, frames), ready to edit.
+4. Flows saved with **Template** in the Flow Generator appear here too.
+
+### Help (?)
+
+The **?** button opens a compact panel describing every tool in the toolbar
+(icon + name + one-line description) plus the shortcuts (`Esc` closes panels;
+closing the ✏️ editor saves the note).
 
 ## Original link
 [https://github.com/orgs/TriliumNext/discussions/9668](https://github.com/orgs/TriliumNext/discussions/9668)

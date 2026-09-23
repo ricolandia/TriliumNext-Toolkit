@@ -1,5 +1,11 @@
 # Canvas Template Loader Widget
 
+> ⚠️ **INCORPORADO ao Canvas Note Tools (v8, set/2026).** Este plugin foi
+> fundido no [Canvas Note Tools](../Canvas-Note-Tools/README.md) — botão 🧩 na
+> toolbar, com remapeamento correto de ids/referências na inserção. A nota
+> "Canvas Templater" pode ser removida do Trilium (a pasta fica só como
+> histórico/referência).
+
 A lightweight template system for Trilium Canvas. Insert complete visual frameworks directly into your Excalidraw canvases with a single click.
 
 ## Features
