@@ -2632,7 +2632,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         if (!canvasNoteId) { api.showError(this._t('common.no_canvas')); return; }
         this._tplStatus(this._t('tpl.inserting'));
         try {
-            const count = await api.runOnBackend((canvasNoteId, templateNoteId, margin, L) => {
+            const count = await api.runOnBackend(/* CLW-BE-TPL-START */ (canvasNoteId, templateNoteId, margin, L) => {
                 const canvasNote = api.getNote(canvasNoteId);
                 if (!canvasNote) throw new Error(L.canvasMissing);
                 const templateNote = api.getNote(templateNoteId);
@@ -2687,7 +2687,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 canvasData.elements.push(...clones);
                 canvasNote.setContent(JSON.stringify(canvasData));
                 return clones.length;
-            }, [canvasNoteId, templateNoteId, FLOW_CONFIG.marginX, this._backendLabels()]);
+            }, /* CLW-BE-TPL-END */ [canvasNoteId, templateNoteId, FLOW_CONFIG.marginX, this._backendLabels()]);
 
             this._hide('clw-tpl-panel');
             api.showMessage(this._t('tpl.inserted', { title: templateTitle, n: count }));
@@ -2744,7 +2744,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         try {
             const { elements, layers } = this._flowScene(parsed);
 
-            const count = await api.runOnBackend((canvasNoteId, newEls, margin, L) => {
+            const count = await api.runOnBackend(/* CLW-BE-FLOW-START */ (canvasNoteId, newEls, margin, L) => {
                 const canvasNote = api.getNote(canvasNoteId);
                 if (!canvasNote) throw new Error(L.canvasMissing);
                 let data;
@@ -2767,7 +2767,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 data.elements.push(...newEls);
                 canvasNote.setContent(JSON.stringify(data));
                 return newEls.length;
-            }, [canvasNoteId, elements, FLOW_CONFIG.marginX, this._backendLabels()]);
+            }, /* CLW-BE-FLOW-END */ [canvasNoteId, elements, FLOW_CONFIG.marginX, this._backendLabels()]);
 
             this._flowStatus(this._t('flow.generated', { n: count, nodes: parsed.nodes.length, layers }));
             api.showMessage(this._t('flow.generated_msg'));
@@ -2946,7 +2946,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             // Usa helper centralizado — elimina duplicação com _onSearch
             const cleanConfig = getCleanPatterns();
 
-            await api.runOnBackend((canvasNoteId, linkedNoteId, title, excerpt, cfg, cleanPatterns, L) => {
+            await api.runOnBackend(/* CLW-BE-INSERT-START */ (canvasNoteId, linkedNoteId, title, excerpt, cfg, cleanPatterns, L) => {
                 // Reconstrói regexes
                 const patterns = cleanPatterns.map(([src, flags, repl]) => [new RegExp(src, flags), repl]);
 
@@ -3080,7 +3080,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 }
 
                 canvasNote.setContent(JSON.stringify(data));
-            }, [canvasNoteId, noteId, title, excerpt || '', CARD_CONFIG, cleanConfig, this._backendLabels()]);
+            }, /* CLW-BE-INSERT-END */ [canvasNoteId, noteId, title, excerpt || '', CARD_CONFIG, cleanConfig, this._backendLabels()]);
 
             if (this._captureMode) {
                 api.showMessage(this._t('search.captured', { title }));
