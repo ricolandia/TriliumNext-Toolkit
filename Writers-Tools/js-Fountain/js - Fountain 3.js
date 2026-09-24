@@ -445,6 +445,7 @@ const CSS = `
     color: var(--text-color);
     border: 1px solid var(--main-border-color);
     box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    overflow-wrap: break-word;
   }
 
   /* ── Title page ── */
@@ -545,6 +546,34 @@ const CSS = `
     #fv-root #fv-page h3 { page-break-after: avoid; }
     #fv-root #fv-page .dialogue, #fv-root #fv-page .dual-dialogue { page-break-inside: avoid; }
     #fv-root #fv-page .page-break { border: none; margin: 0; page-break-before: always; }
+  }
+
+  /* ── Mobile / telas estreitas ── */
+  @media (max-width: 700px) {
+    #fv-root { padding: 12px 8px 32px; }
+
+    #fv-root #fv-toolbar { gap: 8px; margin-bottom: 10px; }
+    #fv-root #fv-aviso-f5 { display: none; }
+    #fv-root #fv-toolbar-esq { width: 100%; }
+    #fv-root #fv-select-rascunho { max-width: none; width: 100%; }
+    #fv-root #fv-toolbar-dir { width: 100%; gap: 6px; }
+    #fv-root .fv-btn { flex: 1 1 auto; padding: 9px 8px; font-size: 12px; text-align: center; }
+    #fv-root #fv-btn-print { display: none; } /* no mobile, o caminho é o 📄 PDF */
+
+    #fv-root #fv-stats { gap: 6px 14px; font-size: 12px; margin-bottom: 10px; }
+
+    /* roteiro primeiro; índice (cenas/personagens) depois */
+    #fv-root #fv-body { flex-direction: column; gap: 12px; }
+    #fv-root #fv-page { order: 1; width: 100%; max-width: none; padding: 28px 18px; font-size: 11pt; }
+    #fv-root #fv-sidebar { order: 2; position: static; width: 100%; }
+    #fv-root .fv-list { max-height: 32vh; }
+
+    /* menos recuo para o diálogo caber na largura do celular */
+    #fv-root #fv-page h3 { margin: 1.8em 0 0.25em; }
+    #fv-root #fv-page .dialogue h4 { margin-left: 12%; }
+    #fv-root #fv-page .dialogue p.parenthetical { margin: 0 12% 0 10%; }
+    #fv-root #fv-page .dialogue p:not(.parenthetical) { margin: 0.1em 4% 0.5em 4%; }
+    #fv-root #fv-page .dual-dialogue { display: block; }
   }
 `;
 

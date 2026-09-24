@@ -81,6 +81,16 @@ const CSS = `
     opacity: 0.55;
     line-height: 1.8;
   }
+
+  /* ── Mobile / telas estreitas ── */
+  @media (max-width: 600px) {
+    #lg-root .lg-header { padding: 12px; gap: 8px; }
+    #lg-root .lg-info { font-size: 11px; }
+    #lg-root .lg-actions { width: 100%; gap: 6px; }
+    #lg-root .lg-btn { flex: 1; padding: 9px 8px; font-size: 13px; }
+    #lg-root .lg-grid { padding: 12px; gap: 12px; grid-template-columns: 1fr; }
+    #lg-root .lg-card { padding: 12px; }
+  }
 `;
 
 
