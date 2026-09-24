@@ -322,7 +322,7 @@ const CSS = `
     cursor: pointer;
     font-size: 13px;
     font-weight: bold;
-    background: var(--button-background-color);
+    background: var(--button-background-color, var(--accented-background-color, #f0f0f0));
     color: var(--button-text-color);
     transition: filter 0.15s;
   }
@@ -333,7 +333,7 @@ const CSS = `
     padding: 6px 8px;
     border-radius: 5px;
     border: 1px solid var(--main-border-color);
-    background: var(--button-background-color);
+    background: var(--button-background-color, var(--accented-background-color, #f0f0f0));
     color: var(--button-text-color);
     font-size: 12px;
   }
@@ -393,7 +393,7 @@ const CSS = `
     padding: 6px 12px;
     font-family: monospace;
     font-size: 12px;
-    color: var(--text-color);
+    color: var(--main-text-color);
     text-decoration: none;
     opacity: 0.75;
     white-space: nowrap;
@@ -409,7 +409,7 @@ const CSS = `
   #fv-root .fv-list li a.ativa {
     opacity: 1;
     font-weight: bold;
-    border-left: 2px solid var(--main-accent-color, #888);
+    border-left: 2px solid var(--main-accent-color, var(--active-item-background-color, #888));
     padding-left: 10px;
   }
   #fv-root .fv-num { opacity: 0.55; flex-shrink: 0; }
@@ -442,7 +442,7 @@ const CSS = `
     margin: 0 auto;
     padding: 72px 96px;
     background: var(--main-background-color);
-    color: var(--text-color);
+    color: var(--main-text-color);
     border: 1px solid var(--main-border-color);
     box-shadow: 0 2px 12px rgba(0,0,0,0.12);
     overflow-wrap: break-word;
@@ -660,6 +660,69 @@ function nomeSeguro(titulo) {
 /** Aviso nativo do Trilium (silencioso em versões antigas) */
 function avisar(mensagem) {
     try { api.showMessage(mensagem); } catch (e) { /* opcional */ }
+}
+
+/** Bytes → base64 (em blocos, para não estourar a pilha em arquivos maiores) */
+function bytesParaBase64(bytes) {
+    let binario = '';
+    const bloco = 0x8000;
+    for (let i = 0; i < bytes.length; i += bloco) {
+        binario += String.fromCharCode.apply(null, bytes.subarray(i, i + bloco));
+    }
+    return btoa(binario);
+}
+
+/** Texto UTF-8 → base64 */
+function textoParaBase64(texto) {
+    return btoa(unescape(encodeURIComponent(texto)));
+}
+
+/** Anchor com data URL — é o caminho que o próprio Trilium usa (blob URL é bloqueado no Electron) */
+function baixarDataUrl(nome, dataUrl) {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
+/** Plugin nativo via bridge do Capacitor (Plugins[X] só tem o core; o resto vem de registerPlugin) */
+function pluginCapacitor(nome) {
+    const cap = typeof window !== 'undefined' ? window.Capacitor : null;
+    if (!cap) return null;
+    return (cap.Plugins && cap.Plugins[nome])
+        || (typeof cap.registerPlugin === 'function' ? cap.registerPlugin(nome) : null);
+}
+
+/**
+ * Baixa um arquivo nos 3 ambientes:
+ * - app mobile (Capacitor): Filesystem + Share (o WebView descarta downloads nativos);
+ * - desktop/web: anchor com data URL.
+ * `base64` é usado só no caminho nativo; `dataUrl` é o fallback universal.
+ */
+function baixarArquivo(nome, dataUrl, base64) {
+    const cap = typeof window !== 'undefined' ? window.Capacitor : null;
+    const nativo = !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
+
+    if (nativo) {
+        const fs = pluginCapacitor('Filesystem');
+        const share = pluginCapacitor('Share');
+        if (fs && share) {
+            (async () => {
+                const res = await fs.writeFile({
+                    path: nome,
+                    data: base64,
+                    directory: 'CACHE',
+                    recursive: true,
+                });
+                await share.share({ title: nome, files: [res.uri] });
+            })().catch(() => baixarDataUrl(nome, dataUrl));
+            return;
+        }
+    }
+
+    baixarDataUrl(nome, dataUrl);
 }
 
 /** Nota candidata a rascunho: texto ou código (menos as notas de script) */
@@ -1153,7 +1216,7 @@ async function renderizar() {
 
         if (!rascunho) {
             api.$container.html(`
-                <div style="padding:24px;font-family:monospace;color:var(--text-color);line-height:1.8">
+                <div style="padding:24px;font-family:monospace;color:var(--main-text-color);line-height:1.8">
                     ⚠ Nenhuma nota de rascunho encontrada.<br>
                     Crie uma nota filha do tipo <b>text</b> ou <b>code</b> dentro desta nota.<br>
                     <span style="opacity:.6">Dica: com várias notas, use o label <b>#fountainDraft</b> na nota desejada.</span>
@@ -1247,13 +1310,8 @@ async function renderizar() {
         api.$container.find('#fv-btn-pdf').on('click', () => {
             try {
                 const bytes = pdfMontar(pdfGerar(resultado.tokens || []));
-                const blob = new Blob([bytes], { type: 'application/pdf' });
-                const url  = URL.createObjectURL(blob);
-                const a    = document.createElement('a');
-                a.href     = url;
-                a.download = nomeArquivo + '.pdf';
-                a.click();
-                URL.revokeObjectURL(url);
+                const base64 = bytesParaBase64(bytes);
+                baixarArquivo(nomeArquivo + '.pdf', 'data:application/pdf;base64,' + base64, base64);
                 avisar('PDF gerado.');
             } catch (e) {
                 avisar('Não foi possível gerar o PDF.');
@@ -1268,13 +1326,8 @@ async function renderizar() {
         });
 
         api.$container.find('#fv-btn-download').on('click', () => {
-            const blob = new Blob([textoCru], { type: 'text/plain;charset=utf-8' });
-            const url  = URL.createObjectURL(blob);
-            const a    = document.createElement('a');
-            a.href     = url;
-            a.download = nomeArquivo + '.fountain';
-            a.click();
-            URL.revokeObjectURL(url);
+            const base64 = textoParaBase64(textoCru);
+            baixarArquivo(nomeArquivo + '.fountain', 'data:text/plain;charset=utf-8;base64,' + base64, base64);
         });
 
         // ── Seletor de rascunho ──
