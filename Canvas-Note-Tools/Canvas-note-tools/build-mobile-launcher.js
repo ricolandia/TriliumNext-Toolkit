@@ -40,8 +40,28 @@ function backend(nome) {
 const engine = blocoPorLinhas('// ── Constantes', '// ── FLOW ENGINE (fim)');
 const i18n = blocoPorLinhas('// ── I18N (início)', '// ── I18N (fim)');
 
+// backend (marcador no v8) → constante no arquivo gerado
+const BACKENDS = {
+    'INSERT':      'CLW_BE_INSERT',
+    'TPL':         'CLW_BE_TPL',
+    'FLOW':        'CLW_BE_FLOW',
+    'CARDS':       'CLW_BE_CARDS',
+    'NEWNOTE':     'CLW_BE_NEWNOTE',
+    'SYNC':        'CLW_BE_SYNC',
+    'EDITOR-LOAD': 'CLW_BE_EDITOR_LOAD',
+    'EDITOR-SAVE': 'CLW_BE_EDITOR_SAVE',
+    'REMOVE':      'CLW_BE_REMOVE',
+    'REL-PAIRS':   'CLW_BE_REL_PAIRS',
+    'REL-SAVE':    'CLW_BE_REL_SAVE',
+    'LONGFORM':    'CLW_BE_LONGFORM',
+};
+
+const constantes = Object.entries(BACKENDS)
+    .map(([marcador, nome]) => `const ${nome} = ${backend(marcador)};`)
+    .join('\n\n');
+
 const saida = `// ============================================================
-// CANVAS MOBILE (v9 MVP) — GERADO AUTOMATICAMENTE
+// CANVAS MOBILE (v9) — GERADO AUTOMATICAMENTE
 // NÃO EDITE ESTE ARQUIVO: edite mobile-launcher.src.js (UI/ações) ou
 // "Canvas tools v8.js" (engine/i18n/backends) e rode: bun build-mobile-launcher.js
 // Gerado em: ${new Date().toISOString()}
@@ -51,14 +71,10 @@ ${engine}
 
 ${i18n}
 
-const CLW_BE_INSERT = ${backend('INSERT')};
-
-const CLW_BE_TPL = ${backend('TPL')};
-
-const CLW_BE_FLOW = ${backend('FLOW')};
+${constantes}
 
 ${src}
 `;
 
 fs.writeFileSync(OUT, saida);
-console.log(`mobile-launcher.js gerado: ${saida.length} bytes (${saida.split('\n').length} linhas)`);
+console.log(`mobile-launcher.js gerado: ${saida.length} bytes (${saida.split('\n').length} linhas), ${Object.keys(BACKENDS).length} backends`);

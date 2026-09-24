@@ -24,6 +24,20 @@ A custom Canvas workflow for TriliumNext focused on visual thinking, writing flo
 3. Paste the full code or import the `.zip` release.
 4. Reload TriliumNext (`F5`).
 
+## Mobile & launcher (v9)
+
+The floating toolbar is a desktop/web widget: the **mobile layout has no widget panes**, so it cannot appear there. The same engine and backends are also available as a **launcher dialog**, which works on desktop, web and the mobile app:
+
+1. Import the generated script `Canvas-note-tools/mobile-launcher.js` as a `JS Frontend` note.
+2. Create a note of type `launcher` with:
+   * label `#launcherType=script`
+   * relation `~script` → the script note
+3. Place the launcher note in the launcher bar (desktop: the *Visible launchers* subtree; mobile: *Mobile visible launchers*).
+
+The dialog offers: 🪄 Flow (DSL) · 🧩 Templates · 🔗 Insert note · 📝 New child note · ⟳ Sync cards · 📄 Longform · ✏️ Edit card · 🗑️ Remove card · 🕸️ Relations. Capture mode (🎯) stays desktop-only: it works by browsing the tree and clicking notes, which does not map to a dialog.
+
+> **Single source of truth:** `mobile-launcher.src.js` (UI) plus the engine, i18n and backend functions extracted from `Canvas tools v8.js` (markers `CLW-BE-*`) → regenerate with `bun build-mobile-launcher.js`; test with `bun test-mobile-launcher.js` and `bun test-flow-engine.js`.
+
 ## Usage
 Open any Canvas note. Use the floating toolbar:
 

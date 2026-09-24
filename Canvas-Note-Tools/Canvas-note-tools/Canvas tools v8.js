@@ -531,6 +531,71 @@ function buildFlowElements(nodes, edges, direction = 'TB', origin = { x: 0, y: 0
     const height = isFinite(bbox.minY) ? bbox.maxY - bbox.minY : 0;
     return { elements: els, width, height, layers };
 }
+/**
+ * Ordena os cards do canvas: segue as setas quando existem (ordem topológica) e
+ * completa pela posição (y, x). Puro (sem api/DOM).
+ * Devolve { noteIds, arrowCount, ordenados, restantes }.
+ */
+function clwOrdenarCards(elements, cardMap, cardPos) {
+    const groupToCard = {};
+    Object.keys(cardMap).forEach((rectId) => {
+        const el = elements.find((e) => e.id === rectId);
+        if (el?.groupIds) el.groupIds.forEach((gid) => { groupToCard[gid] = rectId; });
+    });
+
+    const resolveToCard = (elId) => {
+        if (cardMap[elId]) return elId;
+        const el = elements.find((e) => e.id === elId);
+        if (el?.groupIds) {
+            for (const gid of el.groupIds) { if (groupToCard[gid]) return groupToCard[gid]; }
+        }
+        return null;
+    };
+
+    const adjList  = {};
+    const inDegree = {};
+    Object.keys(cardMap).forEach((id) => { adjList[id] = []; inDegree[id] = 0; });
+
+    let arrowCount = 0;
+    elements.forEach((el) => {
+        if (el.type === 'arrow' && el.startBinding?.elementId && el.endBinding?.elementId) {
+            const from = resolveToCard(el.startBinding.elementId);
+            const to   = resolveToCard(el.endBinding.elementId);
+            if (from && to && from !== to) { adjList[from].push(to); inDegree[to]++; arrowCount++; }
+        }
+    });
+
+    const ordered = [];
+    const visited = new Set();
+    if (arrowCount > 0) {
+        const queue = Object.keys(cardMap).filter((id) => inDegree[id] === 0 && adjList[id].length > 0);
+        while (queue.length > 0) {
+            const current = queue.shift();
+            if (visited.has(current)) continue;
+            visited.add(current);
+            ordered.push(current);
+            for (const neighbor of adjList[current]) {
+                inDegree[neighbor]--;
+                if (inDegree[neighbor] === 0) queue.push(neighbor);
+            }
+        }
+    }
+
+    const remaining = Object.keys(cardMap)
+        .filter((id) => !visited.has(id))
+        .sort((a, b) => {
+            const dy = cardPos[a].y - cardPos[b].y;
+            return dy !== 0 ? dy : cardPos[a].x - cardPos[b].x;
+        });
+
+    const finalOrder = [...ordered, ...remaining];
+    return {
+        noteIds: finalOrder.map((elId) => cardMap[elId]),
+        arrowCount,
+        ordenados: ordered.length,
+        restantes: remaining.length,
+    };
+}
 // ── FLOW ENGINE (fim) ───────────────────────────────────
 
 // ── I18N (início) ───────────────────────────────────────
@@ -1742,13 +1807,13 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         if (!title) { api.showError(this._t('newnote.no_title')); titleInput?.focus(); return; }
 
         try {
-            const newNoteId = await api.runOnBackend((canvasNoteId, title) => {
+            const newNoteId = await api.runOnBackend(/* CLW-BE-NEWNOTE-START */ (canvasNoteId, title) => {
                 const result = api.createNewNote({
                     parentNoteId: canvasNoteId, title,
                     content: '', type: 'text',
                 });
                 return result.note.noteId;
-            }, [canvasNoteId, title]);
+            }, /* CLW-BE-NEWNOTE-END */ [canvasNoteId, title]);
 
             if (titleInput) titleInput.value = '';
             this._hide('clw-newnote-float');
@@ -1784,7 +1849,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
         try {
             // Lê todos os cards (rect + link) do canvas
-            const cards = await api.runOnBackend((canvasNoteId, L) => {
+            const cards = await api.runOnBackend(/* CLW-BE-CARDS-START */ (canvasNoteId, L) => {
                 const note = api.getNote(canvasNoteId);
                 if (!note) throw new Error(L.canvasMissing);
                 let data;
@@ -1796,7 +1861,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                         const linked = api.getNote(noteId);
                         return { noteId, title: linked?.title || noteId };
                     });
-            }, [canvasNoteId, this._backendLabels()]);
+            }, /* CLW-BE-CARDS-END */ [canvasNoteId, this._backendLabels()]);
 
             if (!cards || cards.length === 0) {
                 $empty.style.display = 'block';
@@ -1839,7 +1904,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
      */
     async _doRemoveCard(canvasNoteId, targetNoteId) {
         try {
-            const removed = await api.runOnBackend((canvasNoteId, targetNoteId, L) => {
+            const removed = await api.runOnBackend(/* CLW-BE-REMOVE-START */ (canvasNoteId, targetNoteId, L) => {
                 const canvasNote = api.getNote(canvasNoteId);
                 if (!canvasNote) throw new Error(L.canvasMissing);
                 let data;
@@ -1862,7 +1927,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 }
                 if (count > 0) canvasNote.setContent(JSON.stringify(data));
                 return count;
-            }, [canvasNoteId, targetNoteId, this._backendLabels()]);
+            }, /* CLW-BE-REMOVE-END */ [canvasNoteId, targetNoteId, this._backendLabels()]);
 
             if (removed > 0) {
                 api.showMessage(this._t('remove.done'));
@@ -1937,11 +2002,11 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     }
 
     async _openEditor(canvasNoteId, noteId, currentTitle) {
-        const note = await api.runOnBackend((noteId) => {
+        const note = await api.runOnBackend(/* CLW-BE-EDITOR-LOAD-START */ (noteId) => {
             const n = api.getNote(noteId);
             if (!n) return null;
             return { title: n.title, content: n.getContent() || '' };
-        }, [noteId]);
+        }, /* CLW-BE-EDITOR-LOAD-END */ [noteId]);
 
         if (!note) { api.showError(this._t('editor.no_note')); return; }
 
@@ -1976,12 +2041,12 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         $save.disabled = true;
 
         try {
-            await api.runOnBackend((noteId, title, content) => {
+            await api.runOnBackend(/* CLW-BE-EDITOR-SAVE-START */ (noteId, title, content) => {
                 const n = api.getNote(noteId);
                 if (!n) return;
                 n.title = title;
                 n.setContent(content);
-            }, [noteId, newTitle, newContent]);
+            }, /* CLW-BE-EDITOR-SAVE-END */ [noteId, newTitle, newContent]);
 
             await this._updateCardText(canvasNoteId, noteId);
 
@@ -2002,7 +2067,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
      */
     async _updateCardText(canvasNoteId, noteId) {
         const cleanConfig = getCleanPatterns();
-        return await api.runOnBackend((canvasNoteId, noteId, cfg, cleanPatterns) => {
+        return await api.runOnBackend(/* CLW-BE-SYNC-START */ (canvasNoteId, noteId, cfg, cleanPatterns) => {
             const patterns = cleanPatterns.map(([src, flags, repl]) => [new RegExp(src, flags), repl]);
 
             function clean(raw, max) {
@@ -2097,7 +2162,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
             if (count > 0) canvasNote.setContent(JSON.stringify(data));
             return 1;
-        }, [canvasNoteId, noteId, CARD_CONFIG, cleanConfig]);
+        }, /* CLW-BE-SYNC-END */ [canvasNoteId, noteId, CARD_CONFIG, cleanConfig]);
     }
 
     async _syncCards() {
@@ -2150,7 +2215,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         $panel.style.display = 'block';
 
         try {
-            const { pairs } = await api.runOnBackend((canvasNoteId, L) => {
+            const { pairs } = await api.runOnBackend(/* CLW-BE-REL-PAIRS-START */ (canvasNoteId, L) => {
                 const note = api.getNote(canvasNoteId);
                 if (!note) throw new Error(L.canvasMissing);
                 let data;
@@ -2226,7 +2291,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                     }
                 });
                 return { pairs };
-            }, [canvasNoteId, this._backendLabels()]);
+            }, /* CLW-BE-REL-PAIRS-END */ [canvasNoteId, this._backendLabels()]);
 
             if (!pairs || pairs.length === 0) {
                 $empty.style.display = 'block';
@@ -2342,7 +2407,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         }
 
         try {
-            const saved = await api.runOnBackend((canvasNoteId, relations) => {
+            const saved = await api.runOnBackend(/* CLW-BE-REL-SAVE-START */ (canvasNoteId, relations) => {
                 let count = 0;
                 for (const { fromNoteId, toNoteId, relType } of relations) {
                     try {
@@ -2375,7 +2440,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 }
 
                 return count;
-            }, [canvasNoteId, relations]);
+            }, /* CLW-BE-REL-SAVE-END */ [canvasNoteId, relations]);
 
             this._hide('clw-relmap-panel');
             api.showMessage(this._t('relations.saved', { n: saved }));
@@ -2418,75 +2483,17 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 return;
             }
 
-            const groupToCard = {};
-            Object.keys(cardMap).forEach(rectId => {
-                const el = elements.find(e => e.id === rectId);
-                if (el?.groupIds) el.groupIds.forEach(gid => { groupToCard[gid] = rectId; });
-            });
-
-            const resolveToCard = (elId) => {
-                if (cardMap[elId]) return elId;
-                const el = elements.find(e => e.id === elId);
-                if (el?.groupIds) {
-                    for (const gid of el.groupIds) { if (groupToCard[gid]) return groupToCard[gid]; }
-                }
-                return null;
-            };
-
-            const adjList  = {};
-            const inDegree = {};
-            Object.keys(cardMap).forEach(id => { adjList[id] = []; inDegree[id] = 0; });
-
-            let arrowCount = 0;
-            elements.forEach(el => {
-                if (el.type === 'arrow' && el.startBinding?.elementId && el.endBinding?.elementId) {
-                    const from = resolveToCard(el.startBinding.elementId);
-                    const to   = resolveToCard(el.endBinding.elementId);
-                    if (from && to && from !== to) {
-                        adjList[from].push(to); inDegree[to]++; arrowCount++;
-                    }
-                }
-            });
-
-            console.log(`[CanvasLinker] Longform: ${totalCards} cards, ${arrowCount} setas.`);
-
-            const ordered = [];
-            const visited = new Set();
-            if (arrowCount > 0) {
-                const queue = Object.keys(cardMap)
-                    .filter(id => inDegree[id] === 0 && adjList[id].length > 0);
-                if (queue.length === 0) {
-                    console.warn('[CanvasLinker] Ciclo detectado — usando ordem por posição.');
-                    api.showMessage(this._t('relations.cycle'));
-                } else {
-                    while (queue.length > 0) {
-                        const current = queue.shift();
-                        if (visited.has(current)) continue;
-                        visited.add(current);
-                        ordered.push(current);
-                        for (const neighbor of adjList[current]) {
-                            inDegree[neighbor]--;
-                            if (inDegree[neighbor] === 0) queue.push(neighbor);
-                        }
-                    }
-                }
+            const { noteIds, arrowCount, ordenados, restantes } = clwOrdenarCards(elements, cardMap, cardPos);
+            if (arrowCount > 0 && ordenados === 0) {
+                console.warn('[CanvasLinker] Ciclo detectado — usando ordem por posição.');
+                api.showMessage(this._t('relations.cycle'));
             }
 
-            const remaining = Object.keys(cardMap)
-                .filter(id => !visited.has(id))
-                .sort((a, b) => {
-                    const dy = cardPos[a].y - cardPos[b].y;
-                    return dy !== 0 ? dy : cardPos[a].x - cardPos[b].x;
-                });
-
-            const finalOrder = [...ordered, ...remaining];
-            const noteIds    = finalOrder.map(elId => cardMap[elId]);
-
-            const orderSource = arrowCount > 0 && ordered.length > 0
-                ? this._t('longform.order_arrows', { arrows: ordered.length, rest: remaining.length })
+            const orderSource = arrowCount > 0 && ordenados > 0
+                ? this._t('longform.order_arrows', { arrows: ordenados, rest: restantes })
                 : this._t('longform.order_pos', { n: noteIds.length });
 
-            const newNoteId = await api.runOnBackend((canvasNoteId, noteIds, canvasTitle) => {
+            const newNoteId = await api.runOnBackend(/* CLW-BE-LONGFORM-START */ (canvasNoteId, noteIds, canvasTitle) => {
                 let content = '';
                 for (const nid of noteIds) {
                     const note = api.getNote(nid);
@@ -2503,7 +2510,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                     content, type: 'text'
                 });
                 return result.note.noteId;
-            }, [canvasNoteId, noteIds, canvasTitle]);
+            }, /* CLW-BE-LONGFORM-END */ [canvasNoteId, noteIds, canvasTitle]);
 
             api.showMessage(`✅ Longform: ${orderSource}`);
             setTimeout(() => api.activateNote(newNoteId), 300);
