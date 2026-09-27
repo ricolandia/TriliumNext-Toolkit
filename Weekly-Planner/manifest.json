@@ -15,7 +15,7 @@
       "title": "planner-data",
       "type": "code",
       "mime": "application/json",
-      "content": "[]"
+      "content": "{}"
     }
   ],
   "relations": [
@@ -23,6 +23,7 @@
   ],
   "labels": [
     { "note": "js planejador", "name": "readOnly", "value": "" },
+    { "note": "planner-data", "name": "data", "value": "" },
     { "note": "planner-data", "name": "plannerdata", "value": "" },
     { "note": "planner-data", "name": "readOnly", "value": "" }
   ]
