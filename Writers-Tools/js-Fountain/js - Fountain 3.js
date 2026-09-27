@@ -14,6 +14,41 @@
 
 // ── 1. BIBLIOTECA FOUNTAIN ────────────────────────────────────────────────────
 const Fountain = (function () {
+// Hoista <style> de qualquer HTML injetado para o <head> — render notes podem
+// ignorar style inline (o layout não pode depender do tema, ex.: Folio).
+(function () {
+    if (typeof document === 'undefined' || typeof $ === 'undefined' || !$.fn) return;
+    const getStyleEl = () => {
+        let el = document.getElementById('fv-styles');
+        if (!el) {
+            el = document.createElement('style');
+            el.id = 'fv-styles';
+            document.head.appendChild(el);
+        }
+        return el;
+    };
+    const hoist = (html) => {
+        const str = String(html);
+        if (!str.includes('<style>')) return str;
+        const styleEl = getStyleEl();
+        const re = /<style>([\s\S]*?)<\/style>/g;
+        let m;
+        while ((m = re.exec(str)) !== null) styleEl.textContent += '\n' + m[1];
+        return str.replace(re, '');
+    };
+    const origHtml = $.fn.html;
+    const origAppend = $.fn.append;
+    $.fn.html = function (arg) {
+        if (typeof arg === 'string' && arg.includes('<style>')) arg = hoist(arg);
+        return origHtml.apply(this, [arg]);
+    };
+    $.fn.append = function (arg) {
+        if (typeof arg === 'string' && arg.includes('<style>')) arg = hoist(arg);
+        return origAppend.apply(this, [arg]);
+    };
+})();
+
+
 
     const regex = {
         title_page:            /^((?:title|credit|author[s]?|source|notes|draft date|date|contact|copyright)\:)/gim,
