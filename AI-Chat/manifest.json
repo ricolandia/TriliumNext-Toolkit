@@ -22,6 +22,6 @@
   ],
   "labels": [
     { "note": "AI Code", "name": "readOnly", "value": "" },
-    { "note": "AI Chat Config", "name": "sharedNotesConfig", "value": "" }
+    { "note": "AI Chat Config", "name": "aiChatConfig", "value": "" }
   ]
 }

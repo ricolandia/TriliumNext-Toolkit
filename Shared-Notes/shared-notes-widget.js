@@ -7,14 +7,17 @@
 //
 // DEPENDÊNCIA — nota com label #sharedNotesConfig contendo:
 //   #myName     = Seu Nome
-//   #myEndpoint = https://seutrilium.com   (User A; B pode omitir)
+//   #myEndpoint = https://seutrilium.com   (necessário para ENVIAR e RECEBER respostas)
 //
 // SEGURANÇA:
 //   - Token efêmero (UUID) por convite — NÃO é o token ETAPI
 //   - ETAPI nunca aparece na string de convite
-//   - Envio de respostas via api.runAsyncOnBackendWithManualTransactionHandling + require('https') (sem CORS)
-//   - Single-use validado no backend de A
-//   - Expiração de 7 dias verificada no handler
+//   - Envio de respostas via api.runAsyncOnBackendWithManualTransactionHandling + fetch
+//     (sem CORS; o sandbox de scripts 0.105+ bloqueia require('https'))
+//   - Convite multiuso (multi-rodada); revogar = deletar a gate note
+//   - Expiração do convite: 7 dias (verificada no handler)
+//   - Canal de retorno (myReplyToken): permite o destinatário responder de volta
+//   - Endpoint: https sempre; http apenas localhost/rede privada
 // ══════════════════════════════════════════════════════════════════════════════
 
 const STYLE = `<style>
@@ -83,37 +86,258 @@ const ICONS = {
     warn: '<svg class="sn-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>'
 };
 
-const HTML = `${STYLE}
+// ── Helpers (compatíveis com contexto não-seguro: Trilium via http:// na LAN) ─
+
+function snUuid() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        try { return crypto.randomUUID(); } catch(e) { /* usa fallback */ }
+    }
+    const bytes = new Uint8Array(16);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+        crypto.getRandomValues(bytes);
+    } else {
+        for (let i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
+    }
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+
+function snEscape(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
+
+// https sempre; http apenas localhost/rede privada/Tailscale (169.254/16 bloqueado — metadados de nuvem)
+function snValidarEndpoint(raw, lang) {
+    const url = String(raw || '').trim().replace(/\/+$/, '');
+    if (!url) return { ok: false, erro: snTranslate(lang, 'endpoint.vazio') };
+    let u;
+    try { u = new URL(url); } catch(e) { return { ok: false, erro: snTranslate(lang, 'endpoint.invalida', { url }) }; }
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') {
+        return { ok: false, erro: snTranslate(lang, 'endpoint.protocolo') };
+    }
+    if (u.protocol === 'https:') return { ok: true, url, aviso: '' };
+    const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+    if (/^169\.254\./.test(h)) {
+        return { ok: false, erro: snTranslate(lang, 'endpoint.linklocal') };
+    }
+    const ehLocal = h === 'localhost' || h === '127.0.0.1' || h === '::1' ||
+        /^10\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+        /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h);
+    if (!ehLocal) {
+        return { ok: false, erro: snTranslate(lang, 'endpoint.http_publico') };
+    }
+    return { ok: true, url, aviso: snTranslate(lang, 'endpoint.http_aviso') };
+}
+
+function snCopiar(texto) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(texto);
+    }
+    return new Promise((resolve, reject) => {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = texto;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            ok ? resolve() : reject(new Error('execCommand("copy") falhou.'));
+        } catch(e) { reject(e); }
+    });
+}
+
+// ── I18N (início) ───────────────────────────────────────────────────────
+// PT/EN. A UI segue o idioma da interface do Trilium (opção `locale`,
+// a mesma que o Excalidraw usa). Funções puras (sem DOM/api) para teste.
+
+const SN_I18N = {
+    pt: {
+        'widget.title':       'Compartilhar nota',
+        'tab.gerar':          'Gerar convite',
+        'tab.aceitar':        'Aceitar convite',
+        'tab.enviar':         'Responder',
+        'gerar.info':         'Serializa a nota atual em uma string segura.<br>O token incluído é efêmero e vinculado apenas a esta nota — <strong>não é seu token ETAPI</strong>.',
+        'gerar.btn':          'Gerar string de convite',
+        'gerar.copiar':       'Copiar',
+        'gerar.placeholder':  'A string aparecerá aqui. Copie e envie por email ou mensagem.',
+        'gerar.copiado':      'Copiado para a área de transferência!',
+        'gerar.copiar_falhou':'Não foi possível copiar. Selecione o texto e use Ctrl+C.',
+        'gerar.gerando':      'Gerando…',
+        'gerar.erro':         'Erro: {msg}',
+        'gerar.config_missing': 'Nota #sharedNotesConfig não encontrada.',
+        'gerar.nota_missing': 'Nota não encontrada.',
+        'aceitar.nota_missing': 'Nota não encontrada',
+        'gerar.endpoint_missing': 'Configure #myEndpoint na nota #sharedNotesConfig.',
+        'gerar.endpoint_invalido': '#myEndpoint inválido: {msg}',
+        'gerar.pronto':       'Convite gerado!',
+        'gerar.string_grande': 'String grande ({kb} KB) — prefira enviar por email.',
+        'gerar.tamanho':      ' ({kb} KB)',
+        'aceitar.info':       'Cole a string recebida. A nota será criada em <strong>📥 Shared Inbox</strong> com o conteúdo original.',
+        'aceitar.placeholder':'Cole aqui a string de convite...',
+        'aceitar.btn':        'Aceitar e criar nota',
+        'aceitar.vazio':      'Cole a string primeiro.',
+        'aceitar.decodificando': 'Decodificando…',
+        'aceitar.invalida':   'String inválida ou corrompida.',
+        'aceitar.incompleta': 'Payload incompleto. Campos ausentes: {campos}',
+        'aceitar.versao_nova':'String gerada por uma versão mais nova do plugin. Atualize o widget.',
+        'aceitar.criada':     'Nota criada em 📥 Shared Inbox (v{versao})! Crie notas filhas e use "↩️ Responder". O canal de retorno já está ativo: o remetente poderá responder de volta.',
+        'aceitar.atualizada': 'Nota atualizada para versão {versao}!',
+        'aceitar.erro':       'Erro: {msg}',
+        'enviar.info':        'Crie notas filhas desta nota como suas respostas.<br>O envio é <strong>cumulativo</strong> — apenas notas não enviadas serão transmitidas.',
+        'enviar.btn':         'Enviar respostas',
+        'enviar.coletando':   'Coletando respostas…',
+        'enviar.metadados':   'Metadados de envio ausentes. Esta nota é um convite válido?',
+        'enviar.vazio':       'Nenhuma nota filha nova para enviar. Crie respostas como notas filhas desta nota.',
+        'enviar.enviando':    'Enviando {n} resposta(s) via backend…',
+        'enviar.erro_conexao':'Erro de conexão: {msg}',
+        'enviar.expirado':    'Convite expirado (mais de 7 dias).',
+        'enviar.erro_http':   'Erro HTTP {status}',
+        'enviar.marcar_falhou':'Respostas enviadas, mas falha ao marcar localmente: {msg}',
+        'enviar.sucesso':     '{n} resposta(s) enviada(s) com sucesso!',
+        'enviar.inesperado':  'Erro inesperado: {msg}',
+        'enviar.me_invalido': '#myEndpoint inválido: o peer não poderá responder de volta.',
+        'enviar.sem_endpoint':'Sem #myEndpoint configurado: o peer não poderá responder de volta.',
+        'enviar.todas_enviadas': 'Todas as notas filhas já foram enviadas.',
+        'enviar.pendentes':   '{n} nota(s) filha(s) não enviada(s).',
+        'notif.respostas':   '{n} resposta(s) recebida(s)',
+        'backend.off':       'Backend scripting está desabilitado nesta instância. Ative em Options → Security (ou [Security] backendScriptingEnabled=true) para o plugin funcionar.',
+        'anonimo':           'Anônimo',
+        'sem_nome':          'Sem nome',
+        'nota.convite':      '🔒 Convite pendente — {data}',
+        'nota.retorno':      '🔒 Canal de retorno — {data}',
+        'nota.inbox':        '📥 Shared Inbox',
+        'nota.inbox_desc':   '<p>Notas compartilhadas recebidas via convite.</p>',
+        'nota.recebida':     '📨 {from} — {titulo}',
+        'endpoint.vazio':    'Endpoint vazio.',
+        'endpoint.invalida': 'URL de endpoint inválida: {url}',
+        'endpoint.protocolo':'Endpoint deve usar https:// (ou http:// apenas em rede local).',
+        'endpoint.linklocal':'http:// em 169.254.x.x (link-local) não é permitido.',
+        'endpoint.http_publico': 'http:// só é permitido para localhost, rede privada ou Tailscale. Use https:// para hosts públicos.',
+        'endpoint.http_aviso': 'Endpoint em http:// (rede local/Tailscale, sem TLS).',
+    },
+    en: {
+        'widget.title':       'Share note',
+        'tab.gerar':          'Generate invite',
+        'tab.aceitar':        'Accept invite',
+        'tab.enviar':         'Reply',
+        'gerar.info':         'Serializes the current note into a safe string.<br>The token included is ephemeral and bound to this note only — <strong>it is not your ETAPI token</strong>.',
+        'gerar.btn':          'Generate invite string',
+        'gerar.copiar':       'Copy',
+        'gerar.placeholder':  'The string will appear here. Copy and send it by email or message.',
+        'gerar.copiado':      'Copied to the clipboard!',
+        'gerar.copiar_falhou':'Could not copy automatically. Select the text and press Ctrl+C.',
+        'gerar.gerando':      'Generating…',
+        'gerar.erro':         'Error: {msg}',
+        'gerar.config_missing': 'Note #sharedNotesConfig not found.',
+        'gerar.nota_missing': 'Note not found.',
+        'aceitar.nota_missing': 'Note not found',
+        'gerar.endpoint_missing': 'Set #myEndpoint on the #sharedNotesConfig note.',
+        'gerar.endpoint_invalido': '#myEndpoint is invalid: {msg}',
+        'gerar.pronto':       'Invite generated!',
+        'gerar.string_grande': 'Large string ({kb} KB) — prefer sending by email.',
+        'gerar.tamanho':      ' ({kb} KB)',
+        'aceitar.info':       'Paste the received string. The note will be created in <strong>📥 Shared Inbox</strong> with the original content.',
+        'aceitar.placeholder':'Paste the invite string here...',
+        'aceitar.btn':        'Accept and create note',
+        'aceitar.vazio':      'Paste a string first.',
+        'aceitar.decodificando': 'Decoding…',
+        'aceitar.invalida':   'Invalid or corrupted string.',
+        'aceitar.incompleta': 'Incomplete payload. Missing fields: {campos}',
+        'aceitar.versao_nova':'String generated by a newer version of the plugin. Update the widget.',
+        'aceitar.criada':     'Note created in 📥 Shared Inbox (v{versao})! Create child notes and use "↩️ Reply". The return channel is already active: the sender will be able to reply back.',
+        'aceitar.atualizada': 'Note updated to version {versao}!',
+        'aceitar.erro':       'Error: {msg}',
+        'enviar.info':        'Create child notes of this note as your replies.<br>Sending is <strong>cumulative</strong> — only unsent notes will be transmitted.',
+        'enviar.btn':         'Send replies',
+        'enviar.coletando':   'Collecting replies…',
+        'enviar.metadados':   'Sending metadata missing. Is this note a valid invite?',
+        'enviar.vazio':       'No new child notes to send. Create replies as child notes of this note.',
+        'enviar.enviando':    'Sending {n} reply(ies) via backend…',
+        'enviar.erro_conexao':'Connection error: {msg}',
+        'enviar.expirado':    'Invite expired (more than 7 days).',
+        'enviar.erro_http':   'HTTP error {status}',
+        'enviar.marcar_falhou':'Replies sent, but failed to mark them locally: {msg}',
+        'enviar.sucesso':     '{n} reply(ies) sent successfully!',
+        'enviar.inesperado':  'Unexpected error: {msg}',
+        'enviar.me_invalido': '#myEndpoint is invalid: the peer will not be able to reply back.',
+        'enviar.sem_endpoint':'No #myEndpoint configured: the peer will not be able to reply back.',
+        'enviar.todas_enviadas': 'All child notes have already been sent.',
+        'enviar.pendentes':   '{n} unsent child note(s).',
+        'notif.respostas':   '{n} reply(ies) received',
+        'backend.off':       'Backend scripting is disabled on this instance. Enable it in Options → Security (or [Security] backendScriptingEnabled=true) for the plugin to work.',
+        'anonimo':           'Anonymous',
+        'sem_nome':          'Unnamed',
+        'nota.convite':      '🔒 Pending invite — {data}',
+        'nota.retorno':      '🔒 Return channel — {data}',
+        'nota.inbox':        '📥 Shared Inbox',
+        'nota.inbox_desc':   '<p>Shared notes received via invite.</p>',
+        'nota.recebida':     '📨 {from} — {titulo}',
+        'endpoint.vazio':    'Empty endpoint.',
+        'endpoint.invalida': 'Invalid endpoint URL: {url}',
+        'endpoint.protocolo':'Endpoint must use https:// (or http:// only on a local network).',
+        'endpoint.linklocal':'http:// on 169.254.x.x (link-local) is not allowed.',
+        'endpoint.http_publico': 'http:// is only allowed for localhost, private networks or Tailscale. Use https:// for public hosts.',
+        'endpoint.http_aviso': 'Endpoint over http:// (local network/Tailscale, no TLS).',
+    }
+};
+
+function snNormalizeLang(locale) {
+    return String(locale || '').toLowerCase().startsWith('pt') ? 'pt' : 'en';
+}
+
+/** Traduz uma chave. Fallback: idioma → EN → PT → a própria chave. Interpola {vars}. */
+function snTranslate(lang, key, vars) {
+    const dict = SN_I18N[lang] || SN_I18N.en;
+    let str = dict[key];
+    if (str === undefined) str = SN_I18N.pt[key];
+    if (str === undefined) return key;
+    if (vars) {
+        for (const k of Object.keys(vars)) str = str.split('{' + k + '}').join(String(vars[k]));
+    }
+    return str;
+}
+
+// Cache do locale detectado via backend (uma chamada por carregamento da página)
+let SN_LANG_CACHE = null;
+
+// ── I18N (fim) ────────────────────────────────────────────────────────────
+
+function snHtml(lang) {
+    const t = (k, v) => snTranslate(lang, k, v);
+    return `${STYLE}
 <div class="sn-wrap">
   <div class="sn-tabs">
-    <button class="sn-tab active" data-tab="gerar">${ICONS.share} Gerar convite</button>
-    <button class="sn-tab"        data-tab="aceitar">${ICONS.inbox} Aceitar convite</button>
-    <button class="sn-tab hidden" data-tab="enviar" id="sn-tab-enviar">${ICONS.reply} Responder</button>
+    <button class="sn-tab active" data-tab="gerar">${ICONS.share} ${t('tab.gerar')}</button>
+    <button class="sn-tab"        data-tab="aceitar">${ICONS.inbox} ${t('tab.aceitar')}</button>
+    <button class="sn-tab hidden" data-tab="enviar" id="sn-tab-enviar">${ICONS.reply} ${t('tab.enviar')}</button>
   </div>
 
   <!-- PAINEL 1: Gerar convite -->
-    <div class="sn-panel active" data-panel="gerar">
+  <div class="sn-panel active" data-panel="gerar">
     <div id="sn-reply-notif" style="display:none;margin-bottom:6px;padding:6px 10px;background:rgba(46,204,113,0.15);color:#4ade80;border-radius:4px;font-size:13px;"></div>
-    <p class="sn-info">
-      Serializa a nota atual em uma string segura.<br>
-      O token incluído é efêmero e vinculado apenas a esta nota — <strong>não é seu token ETAPI</strong>.
-    </p>
+    <p class="sn-info">${t('gerar.info')}</p>
     <div class="sn-row">
-      <button class="sn-btn primary" id="sn-gerar-btn">Gerar string de convite</button>
-      <button class="sn-btn" id="sn-copiar-btn" style="display:none">${ICONS.copy} Copiar</button>
+      <button class="sn-btn primary" id="sn-gerar-btn">${t('gerar.btn')}</button>
+      <button class="sn-btn" id="sn-copiar-btn" style="display:none">${ICONS.copy} ${t('gerar.copiar')}</button>
     </div>
     <textarea class="sn-textarea" id="sn-convite-out" rows="3"
-      placeholder="A string aparecerá aqui. Copie e envie por email ou mensagem." readonly></textarea>
+      placeholder="${t('gerar.placeholder')}" readonly></textarea>
     <p class="sn-status" id="sn-gerar-status"></p>
   </div>
 
   <!-- PAINEL 2: Aceitar convite -->
   <div class="sn-panel" data-panel="aceitar">
-    <p class="sn-info">Cole a string recebida. A nota será criada em <strong>📥 Shared Inbox</strong> com o conteúdo original.</p>
+    <p class="sn-info">${t('aceitar.info')}</p>
     <textarea class="sn-textarea" id="sn-convite-in" rows="3"
-      placeholder="Cole aqui a string de convite..."></textarea>
+      placeholder="${t('aceitar.placeholder')}"></textarea>
     <div class="sn-row">
-      <button class="sn-btn primary" id="sn-aceitar-btn">Aceitar e criar nota</button>
+      <button class="sn-btn primary" id="sn-aceitar-btn">${t('aceitar.btn')}</button>
     </div>
     <p class="sn-status" id="sn-aceitar-status"></p>
   </div>
@@ -121,18 +345,16 @@ const HTML = `${STYLE}
   <!-- PAINEL 3: Responder (notas com replyEndpoint) -->
   <div class="sn-panel" data-panel="enviar">
     <div id="sn-enviar-form">
-      <p class="sn-info" style="color:var(--muted-text-color)">
-        Crie notas filhas desta nota como suas respostas.<br>
-        O envio é <strong>cumulativo</strong> — apenas notas não enviadas serão transmitidas.
-      </p>
+      <p class="sn-info" style="color:var(--muted-text-color)">${t('enviar.info')}</p>
       <div class="sn-row">
         <span class="sn-status" id="sn-replies-count" style="margin:0"></span>
-        <button class="sn-btn primary" id="sn-enviar-btn">Enviar respostas</button>
+        <button class="sn-btn primary" id="sn-enviar-btn">${t('enviar.btn')}</button>
       </div>
     </div>
     <p class="sn-status" id="sn-enviar-status"></p>
   </div>
 </div>`;
+}
 
 // ── Widget ────────────────────────────────────────────────────────────────────
 
@@ -140,15 +362,43 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
     get position()     { return 200; }
     static get parentWidget() { return 'right-pane'; }
-    get widgetTitle()  { return 'Compartilhar nota'; }
+    get widgetTitle()  {
+        return snTranslate(this._lang || snNormalizeLang(typeof navigator !== 'undefined' ? navigator.language : ''), 'widget.title');
+    }
     isEnabled()        { return true; }
 
+    _t(key, vars) { return snTranslate(this._lang || 'en', key, vars); }
+
     doRenderBody() {
-        this.$body.html(HTML);
+        if (!this._lang) {
+            this._lang = snNormalizeLang(typeof navigator !== 'undefined' ? navigator.language : '');
+        }
+        this.$body.html(snHtml(this._lang));
         this._bindTabs();
         this._bindGerar();
         this._bindAceitar();
         this._bindEnviar();
+        this._refineLang();
+    }
+
+    /* Idiomas: segue a opção `locale` do Trilium (a mesma que o Excalidraw usa),
+       com palpite síncrono por navigator.language e re-render se divergir. */
+    async _refineLang() {
+        try {
+            if (SN_LANG_CACHE === null) {
+                SN_LANG_CACHE = await api.runOnBackend(() => {
+                    const opt = api.getOption('locale');
+                    return opt ? opt.value : null;
+                });
+            }
+            const lang = snNormalizeLang(SN_LANG_CACHE || (typeof navigator !== 'undefined' ? navigator.language : ''));
+            if (lang === this._lang) return;
+            this._lang = lang;
+            if (this.$widgetTitle && this.$widgetTitle.text) this.$widgetTitle.text(this._t('widget.title'));
+            this.doRenderBody();
+        } catch(e) {
+            console.warn('[SharedNotes] locale detection failed:', e);
+        }
     }
 
     async refreshWithNote(note) {
@@ -160,33 +410,32 @@ class SharedNotesWidget extends api.RightPanelWidget {
         // Aba "Responder" aparece quando há endpoint de reply (B ou A podem responder)
         this.$widget.find('#sn-tab-enviar').toggleClass('hidden', !hasReplyEp);
 
+        // Uma única chamada: pendentes de envio (ignora gates e respostas recebidas)
+        // + respostas recebidas (notificação)
+        const counters = await api.runOnBackend((nid) => {
+            const n = api.getNote(nid);
+            if (!n) return { pending: 0, received: 0 };
+            const filhas = n.getChildNotes();
+            const responde = (c) => c.getLabelValue('snSent') === 'true'
+                || c.getLabelValue('inviteGate') !== null
+                || c.getLabelValue('sharedReply') !== null;
+            return {
+                pending:  filhas.filter(c => !responde(c)).length,
+                received: filhas.filter(c => c.getLabelValue('sharedReply') !== null).length
+            };
+        }, [note.noteId]);
+
         if (hasReplyEp) {
-            const count = await api.runOnBackend(
-                (nid) => {
-                    const n = api.getNote(nid);
-                    if (!n) return 0;
-                    return n.getChildNotes().filter(
-                        c => c.getLabelValue('snSent') !== 'true'
-                    ).length;
-                },
-                [note.noteId]
-            );
             this.$widget.find('#sn-replies-count').text(
-                count === 0
-                    ? 'Todas as notas filhas já foram enviadas.'
-                    : `${count} nota(s) filha(s) não enviada(s).`
+                counters.pending === 0
+                    ? this._t('enviar.todas_enviadas')
+                    : this._t('enviar.pendentes', { n: counters.pending })
             );
         }
 
-        // Mostra notificação de replies recebidas (nota original após B responder)
-        const replyCount = await api.runOnBackend((nid) => {
-            const n = api.getNote(nid);
-            if (!n) return 0;
-            return n.getChildNotes().filter(c => c.getLabelValue('sharedReply') !== null).length;
-        }, [note.noteId]);
         const $notif = this.$widget.find('#sn-reply-notif');
-        if (replyCount > 0) {
-            $notif.text(`${replyCount} resposta(s) recebida(s)`).show();
+        if (counters.received > 0) {
+            $notif.text(this._t('notif.respostas', { n: counters.received })).show();
         } else {
             $notif.hide();
         }
@@ -195,10 +444,20 @@ class SharedNotesWidget extends api.RightPanelWidget {
         ['gerar','aceitar','enviar'].forEach(p => this._status(p, ''));
     }
 
+    // Backend scripting é requisito do plugin (Options → Security / config.ini)
+    _backendOk(panel) {
+        try {
+            if (typeof api.isBackendScriptingEnabled === 'function' && !api.isBackendScriptingEnabled()) {
+                this._status(panel, 'err', this._t('backend.off'));
+                return false;
+            }
+        } catch(e) { /* versões antigas não expõem a checagem */ }
+        return true;
+    }
+
     // ── Tabs ──────────────────────────────────────────────────────────────────
 
-    _bindTabs() {
-        this.$widget.find('.sn-tab').on('click', (e) => {
+    _bindTabs() {        this.$widget.find('.sn-tab').on('click', (e) => {
             const tab = $(e.currentTarget).data('tab');
             this.$widget.find('.sn-tab').removeClass('active');
             this.$widget.find('.sn-panel').removeClass('active');
@@ -212,34 +471,45 @@ class SharedNotesWidget extends api.RightPanelWidget {
     _bindGerar() {
         this.$widget.find('#sn-gerar-btn').on('click',  () => this._gerar());
         this.$widget.find('#sn-copiar-btn').on('click', () => {
-            navigator.clipboard.writeText(this.$widget.find('#sn-convite-out').val());
-            this._status('gerar', 'ok', 'Copiado para a área de transferência!');
+            snCopiar(this.$widget.find('#sn-convite-out').val())
+                .then(() => this._status('gerar', 'ok', this._t('gerar.copiado')))
+                .catch(() => this._status('gerar', 'warn', this._t('gerar.copiar_falhou')));
         });
     }
 
     async _gerar() {
         if (!this._sharedNote) return;
+        if (!this._backendOk('gerar')) return;
         const $btn = this.$widget.find('#sn-gerar-btn').prop('disabled', true);
-        this._status('gerar', '', 'Gerando…');
+        this._status('gerar', '', this._t('gerar.gerando'));
 
         try {
             // Token efêmero — gerado no frontend, nunca é o ETAPI token
-            const inviteToken = crypto.randomUUID();
+            const inviteToken = snUuid();
             const noteId      = this._sharedNote.noteId;
 
-            // Cria gate note e busca config no backend
-            const result = await api.runOnBackend((nid, token) => {
-                // Configuração
-                const cfg = api.searchForNote('#sharedNotesConfig');
-                if (!cfg) return { error: 'Nota #sharedNotesConfig não encontrada.' };
+            // 1) Config: valida o endpoint ANTES de criar qualquer nota
+            const cfg = await api.runOnBackend(() => {
+                const lista = api.searchForNotes('#sharedNotesConfig');
+                // prefere a nota com #myName/#myEndpoint (evita colisão com outros plugins)
+                const c = lista.find(n => n.getLabelValue('myName') || n.getLabelValue('myEndpoint')) || lista[0];
+                if (!c) return { error: 'gerar.config_missing' };
+                return {
+                    myName:     c.getLabelValue('myName')     || 'sem_nome',
+                    myEndpoint: c.getLabelValue('myEndpoint') || ''
+                };
+            }, []);
+            if (cfg.error) { this._status('gerar', 'err', this._t(cfg.error)); return; }
+            if (!cfg.myEndpoint) { this._status('gerar', 'err', this._t('gerar.endpoint_missing')); return; }
 
-                const myName     = cfg.getLabelValue('myName')     || 'Sem nome';
-                const myEndpoint = cfg.getLabelValue('myEndpoint') || '';
-                if (!myEndpoint) return { error: 'Configure #myEndpoint na nota #sharedNotesConfig.' };
+            const epCheck = snValidarEndpoint(cfg.myEndpoint, this._lang);
+            if (!epCheck.ok) { this._status('gerar', 'err', this._t('gerar.endpoint_invalido', { msg: epCheck.erro })); return; }
 
-                // Nota e conteúdo
+            // 2) Cria a gate note (rastreia uso e revogação) + lê o conteúdo
+            const localeBcp = this._lang === 'pt' ? 'pt-BR' : 'en-US';
+            const result = await api.runOnBackend((nid, token, sGate, locale) => {
                 const note = api.getNote(nid);
-                if (!note) return { error: 'Nota não encontrada.' };
+                if (!note) return { error: 'gerar.nota_missing' };
 
                 const noteTitle   = note.title;
                 const noteContent = note.getContent();
@@ -249,45 +519,40 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 const snapVer = prevVer + 1;
                 note.setLabel('snVersion', String(snapVer));
 
+                // Canal de retorno: o peer usa este token para responder de volta
+                note.setLabel('myReplyToken', token);
+
                 // Expiração: 7 dias
                 const expiresAt = (Date.now() + 7 * 24 * 60 * 60 * 1000).toString();
 
                 // Gate note filha — rastreia uso do convite
                 const { note: gate } = api.createNewNote({
                     parentNoteId: nid,
-                    title:        '🔒 Convite pendente — ' + new Date().toLocaleString('pt-BR'),
+                    title:        sGate.replace('{data}', new Date().toLocaleString(locale)),
                     content:      '',
                     type:         'text'
                 });
                 gate.setLabel('inviteGate',           '');
                 gate.setLabel('inviteToken',           token);
                 gate.setLabel('inviteParentNoteId',    nid);
-                gate.setLabel('inviteUsed',            'false');
                 gate.setLabel('inviteExpires',         expiresAt);
 
-                return {
-                    ok:             true,
-                    myName,
-                    myEndpoint,
-                    noteTitle,
-                    noteContent,
-                    snapshotVersion: snapVer
-                };
-            }, [noteId, inviteToken]);
+                return { ok: true, noteTitle, noteContent, snapshotVersion: snapVer };
+            }, [noteId, inviteToken, this._t('nota.convite'), localeBcp]);
 
             if (result.error) {
-                this._status('gerar', 'err', result.error);
+                this._status('gerar', 'err', this._t(result.error));
                 return;
             }
 
             // Monta payload — SEM token ETAPI
             const payload = {
                 v:               2,
-                from:            result.myName,
+                from:            cfg.myName === 'sem_nome' ? this._t('sem_nome') : cfg.myName,
                 noteId:          noteId,
                 noteTitle:       result.noteTitle,
                 noteContent:     result.noteContent,
-                endpoint:        result.myEndpoint.replace(/\/+$/, '') + '/custom/shared-notes-reply',
+                endpoint:        epCheck.url + '/custom/shared-notes-reply',
                 inviteToken:     inviteToken,
                 snapshotVersion: result.snapshotVersion
             };
@@ -303,13 +568,14 @@ class SharedNotesWidget extends api.RightPanelWidget {
             this.$widget.find('#sn-copiar-btn').show();
 
             const kb = (str.length / 1024).toFixed(1);
-            const aviso = str.length > 5000
-                ? `String grande (${kb} KB) — prefira enviar por email.`
-                : ` (${kb} KB)`;
-            this._status('gerar', 'ok', 'Convite gerado!' + aviso);
+            const avisoTam = str.length > 5000
+                ? this._t('gerar.string_grande', { kb })
+                : this._t('gerar.tamanho', { kb });
+            const aviso = [epCheck.aviso, avisoTam].filter(Boolean).join(' ');
+            this._status('gerar', epCheck.aviso ? 'warn' : 'ok', this._t('gerar.pronto') + aviso);
 
         } catch(e) {
-            this._status('gerar', 'err', 'Erro: ' + e.message);
+            this._status('gerar', 'err', this._t('gerar.erro', { msg: e.message }));
         } finally {
             $btn.prop('disabled', false);
         }
@@ -323,13 +589,13 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
     async _aceitar() {
         const str = this.$widget.find('#sn-convite-in').val().trim();
-        if (!str) { this._status('aceitar', 'warn', 'Cole a string primeiro.'); return; }
+        if (!str) { this._status('aceitar', 'warn', this._t('aceitar.vazio')); return; }
+        if (!this._backendOk('aceitar')) return;
 
         const $btn = this.$widget.find('#sn-aceitar-btn').prop('disabled', true);
-        this._status('aceitar', '', 'Decodificando…');
+        this._status('aceitar', '', this._t('aceitar.decodificando'));
 
         try {
-            // Decodificação segura para UTF-8
             // Decodificação segura para UTF-8
             let payload;
             try {
@@ -338,7 +604,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
                 payload = JSON.parse(new TextDecoder().decode(bytes));
             } catch(e) {
-                this._status('aceitar', 'err', 'String inválida ou corrompida.');
+                this._status('aceitar', 'err', this._t('aceitar.invalida'));
                 return;
             }
 
@@ -346,15 +612,25 @@ class SharedNotesWidget extends api.RightPanelWidget {
             const required = ['v','from','noteId','noteTitle','noteContent','endpoint','inviteToken'];
             const missing  = required.filter(k => !payload[k]);
             if (missing.length) {
-                this._status('aceitar', 'err', 'Payload incompleto. Campos ausentes: ' + missing.join(', '));
+                this._status('aceitar', 'err', this._t('aceitar.incompleta', { campos: missing.join(', ') }));
+                return;
+            }
+            if (payload.v > 2) {
+                this._status('aceitar', 'err', this._t('aceitar.versao_nova'));
+                return;
+            }
+            const epCheck = snValidarEndpoint(payload.endpoint, this._lang);
+            if (!epCheck.ok) {
+                this._status('aceitar', 'err', epCheck.erro);
                 return;
             }
 
-            // Verifica se já temos esta nota (mesmo sharedNoteId) — versão anterior
+            // Canal de retorno próprio (permite o remetente responder de volta)
+            const replyToken = snUuid();
+
+            // Já temos esta nota (mesmo sharedNoteId)? Busca global, não só na Inbox
             const existing = await api.runOnBackend((p) => {
-                const inbox = api.searchForNote('#sharedInbox');
-                if (!inbox) return null;
-                for (const c of inbox.getChildNotes()) {
+                for (const c of api.searchForNotes('#sharedNoteId')) {
                     if (c.getLabelValue('sharedNoteId') === p.noteId) {
                         return {
                             noteId: c.noteId,
@@ -368,36 +644,54 @@ class SharedNotesWidget extends api.RightPanelWidget {
             if (existing) {
                 // Atualiza nota existente (mesmo sharedNoteId)
                 const newVer = payload.snapshotVersion || existing.version + 1;
-                const upResult = await api.runOnBackend((nid, content, title, from, ver) => {
+                const localeBcp = this._lang === 'pt' ? 'pt-BR' : 'en-US';
+                const upResult = await api.runOnBackend((nid, p, endpoint, ver, meuToken, sRecebida, sRetorno, locale) => {
                     const note = api.getNote(nid);
-                    if (!note) return { error: 'Nota não encontrada' };
-                    note.setContent(content);
-                    note.title = '📨 ' + from + ' — ' + title;
+                    if (!note) return { error: 'aceitar.nota_missing' };
+                    note.setContent(p.noteContent);
+                    note.title = sRecebida.replace('{from}', p.from).replace('{titulo}', p.noteTitle);
                     if (ver > 1) note.title += ' [v' + ver + ']';
                     note.setLabel('snVersion', String(ver));
+                    note.setLabel('inviteToken', p.inviteToken);
+                    note.setLabel('replyEndpoint', endpoint);
+
+                    // Garante canal de retorno (conversas aceitas antes desta versão)
+                    if (!note.getLabelValue('myReplyToken')) {
+                        note.setLabel('myReplyToken', meuToken);
+                        const { note: gate } = api.createNewNote({
+                            parentNoteId: nid,
+                            title:        sRetorno.replace('{data}', new Date().toLocaleString(locale)),
+                            content:      '',
+                            type:         'text'
+                        });
+                        gate.setLabel('inviteGate',        '');
+                        gate.setLabel('inviteToken',        meuToken);
+                        gate.setLabel('inviteParentNoteId', nid);
+                    }
+
                     return { ok: true, noteId: nid };
-                }, [existing.noteId, payload.noteContent, payload.noteTitle, payload.from, newVer]);
+                }, [existing.noteId, payload, epCheck.url, newVer, replyToken,
+                    this._t('nota.recebida'), this._t('nota.retorno'), localeBcp]);
 
                 if (upResult.error) {
-                    this._status('aceitar', 'err', upResult.error);
+                    this._status('aceitar', 'err', this._t(upResult.error));
                     return;
                 }
 
                 this.$widget.find('#sn-convite-in').val('');
-                this._status('aceitar', 'ok',
-                    `Nota atualizada para versão ${newVer}!`
-                );
+                this._status('aceitar', 'ok', this._t('aceitar.atualizada', { versao: newVer }));
                 return;
             }
 
-            // Primeiro recebimento — cria nota nova
-            const result = await api.runOnBackend((p) => {
+            // Primeiro recebimento — cria nota nova + canal de retorno
+            const localeBcp = this._lang === 'pt' ? 'pt-BR' : 'en-US';
+            const result = await api.runOnBackend((p, endpoint, token, sInbox, sInboxDesc, sRecebida, sRetorno, locale) => {
                 let inbox = api.searchForNote('#sharedInbox');
                 if (!inbox) {
                     const { note: created } = api.createNewNote({
                         parentNoteId: 'root',
-                        title:        '📥 Shared Inbox',
-                        content:      '<p>Notas compartilhadas recebidas via convite.</p>',
+                        title:        sInbox,
+                        content:      sInboxDesc,
                         type:         'text'
                     });
                     created.setLabel('sharedInbox', '');
@@ -406,32 +700,44 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
                 const { note: shared } = api.createNewNote({
                     parentNoteId: inbox.noteId,
-                    title:        '📨 ' + p.from + ' — ' + p.noteTitle,
+                    title:        sRecebida.replace('{from}', p.from).replace('{titulo}', p.noteTitle),
                     content:      p.noteContent,
                     type:         'text'
                 });
 
                 shared.setLabel('sharedFrom',     p.from);
                 shared.setLabel('sharedNoteId',   p.noteId);
-                shared.setLabel('replyEndpoint',  p.endpoint);
+                shared.setLabel('replyEndpoint',  endpoint);
                 shared.setLabel('inviteToken',    p.inviteToken);
                 shared.setLabel('snVersion',      String(p.snapshotVersion || 1));
+                shared.setLabel('myReplyToken',   token);
+
+                // Canal de retorno: permite o remetente responder de volta
+                const { note: gate } = api.createNewNote({
+                    parentNoteId: shared.noteId,
+                    title:        sRetorno.replace('{data}', new Date().toLocaleString(locale)),
+                    content:      '',
+                    type:         'text'
+                });
+                gate.setLabel('inviteGate',        '');
+                gate.setLabel('inviteToken',        token);
+                gate.setLabel('inviteParentNoteId', shared.noteId);
 
                 return { ok: true, noteId: shared.noteId, version: p.snapshotVersion || 1 };
-            }, [payload]);
+            }, [payload, epCheck.url, replyToken,
+                this._t('nota.inbox'), this._t('nota.inbox_desc'),
+                this._t('nota.recebida'), this._t('nota.retorno'), localeBcp]);
 
             if (result.error) {
-                this._status('aceitar', 'err', result.error);
+                this._status('aceitar', 'err', this._t(result.error));
                 return;
             }
 
             this.$widget.find('#sn-convite-in').val('');
-            this._status('aceitar', 'ok',
-                `Nota criada em 📥 Shared Inbox (v${result.version})! Abra-a na árvore, adicione notas filhas como respostas e use a aba "↩️ Responder".`
-            );
+            this._status('aceitar', 'ok', this._t('aceitar.criada', { versao: result.version }));
 
         } catch(e) {
-            this._status('aceitar', 'err', 'Erro: ' + e.message);
+            this._status('aceitar', 'err', this._t('aceitar.erro', { msg: e.message }));
         } finally {
             $btn.prop('disabled', false);
         }
@@ -445,155 +751,172 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
     async _enviar() {
         if (!this._sharedNote) return;
+        if (!this._backendOk('enviar')) return;
         const $btn = this.$widget.find('#sn-enviar-btn').prop('disabled', true);
-        this._status('enviar', '', 'Coletando respostas…');
+        this._status('enviar', '', this._t('enviar.coletando'));
 
         try {
             const noteId   = this._sharedNote.noteId;
             const endpoint = this._sharedNote.getLabelValue('replyEndpoint');
-            const token    = this._sharedNote.getLabelValue('inviteToken');
+            // inviteToken = token do peer recebido no convite (nota recebida)
+            // replyToken  = token do peer gravado pelo handler (nota original)
+            const peerToken = this._sharedNote.getLabelValue('inviteToken')
+                           || this._sharedNote.getLabelValue('replyToken');
+            const myToken   = this._sharedNote.getLabelValue('myReplyToken') || '';
 
-            if (!endpoint || !token) {
-                this._status('enviar', 'err', 'Metadados de envio ausentes. Esta nota é um convite válido?');
+            if (!endpoint || !peerToken) {
+                this._status('enviar', 'err', this._t('enviar.metadados'));
+                $btn.prop('disabled', false);
+                return;
+            }
+
+            const epCheck = snValidarEndpoint(endpoint, this._lang);
+            if (!epCheck.ok) {
+                this._status('enviar', 'err', epCheck.erro);
                 $btn.prop('disabled', false);
                 return;
             }
 
             // Nome + endpoint de quem responde
             const config = await api.runOnBackend(() => {
-                const cfg = api.searchForNote('#sharedNotesConfig');
+                const lista = api.searchForNotes('#sharedNotesConfig');
+                const cfg = lista.find(n => n.getLabelValue('myName') || n.getLabelValue('myEndpoint')) || lista[0];
                 return {
-                    name:     cfg?.getLabelValue('myName')     || 'Anônimo',
+                    name:     cfg?.getLabelValue('myName')     || 'anonimo',
                     endpoint: cfg?.getLabelValue('myEndpoint') || ''
                 };
             }, []);
 
-            // Coleta apenas notas filhas NÃO enviadas
+            // Coleta apenas notas filhas NÃO enviadas (ignora gates e respostas recebidas)
             const children = await api.runOnBackend((nid) => {
                 const note = api.getNote(nid);
                 if (!note) return [];
                 return note.getChildNotes()
-                    .filter(c => c.getLabelValue('snSent') !== 'true')
+                    .filter(c => c.getLabelValue('snSent') !== 'true'
+                              && c.getLabelValue('inviteGate') === null
+                              && c.getLabelValue('sharedReply') === null)
                     .map(c => ({
+                        noteId:  c.noteId,
                         title:   c.title,
-                        content: c.getContent(),
-                        type:    c.type
+                        content: c.getContent()
                     }));
             }, [noteId]);
 
             if (!children.length) {
-                this._status('enviar', 'warn', 'Nenhuma nota filha nova para enviar. Crie respostas como notas filhas desta nota.');
+                this._status('enviar', 'warn', this._t('enviar.vazio'));
                 $btn.prop('disabled', false);
                 return;
             }
 
-            this._status('enviar', '', `Enviando ${children.length} resposta(s) via backend…`);
+            this._status('enviar', '', this._t('enviar.enviando', { n: children.length }));
 
-            // Monta payload com replyEndpoint de B incluso
-            const myEndpoint = config.endpoint
-                ? config.endpoint.replace(/\/+$/, '') + '/custom/shared-notes-reply'
-                : '';
+            // Endpoint de retorno (para o peer responder de volta)
+            let myEndpoint = '';
+            let aviso = '';
+            if (config.endpoint) {
+                const myCheck = snValidarEndpoint(config.endpoint, this._lang);
+                if (myCheck.ok) {
+                    myEndpoint = myCheck.url + '/custom/shared-notes-reply';
+                    aviso = myCheck.aviso;
+                } else {
+                    aviso = this._t('enviar.me_invalido');
+                }
+            } else {
+                aviso = this._t('enviar.sem_endpoint');
+            }
 
-            // Envio servidor→servidor via require('https') — sem CORS
+            // Envio servidor→servidor via fetch — o sandbox de scripts do Trilium
+            // (0.105+) bloqueia require('https'), mas expõe fetch/AbortController.
             const result = await api.runAsyncOnBackendWithManualTransactionHandling(
-                async (ep, tok, repls, from, replyEp) => {
-                    const https = require('https');
-                    const http  = require('http');
-                    const url   = new URL(ep);
-                    const mod   = url.protocol === 'https:' ? https : http;
-                    const body  = JSON.stringify({
+                async (ep, tok, repls, from, replyEp, replyTok) => {
+                    const body = JSON.stringify({
                         inviteToken: tok,
                         from,
                         replies: repls,
-                        replyEndpoint: replyEp
+                        replyEndpoint: replyEp,
+                        replyToken: replyTok
                     });
 
                     const REQ_TIMEOUT = 30000;
-
-                    return new Promise((resolve) => {
-                        const req = mod.request({
-                            hostname: url.hostname,
-                            port:     url.port || (url.protocol === 'https:' ? 443 : 80),
-                            path:     url.pathname,
-                            method:   'POST',
-                            headers:  {
-                                'Content-Type':   'application/json',
-                                'Content-Length': Buffer.byteLength(body)
-                            },
-                            timeout: REQ_TIMEOUT
-                        }, (res) => {
-                            let raw = '';
-                            res.on('data', d => raw += d);
-                            res.on('end', () => {
-                                try {
-                                    resolve({ status: res.statusCode, data: JSON.parse(raw) });
-                                } catch(e) {
-                                    resolve({ status: res.statusCode, data: { raw } });
-                                }
-                            });
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), REQ_TIMEOUT);
+                    try {
+                        const resp = await fetch(ep, {
+                            method:  'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body,
+                            signal:  controller.signal
                         });
-                        req.on('error', (e) => resolve({ status: 0, error: e.message }));
-                        req.on('timeout', () => {
-                            req.destroy();
-                            resolve({ status: 0, error: 'Timeout: servidor não respondeu em 30s.' });
-                        });
-                        req.write(body);
-                        req.end();
-                    });
+                        let data;
+                        try { data = await resp.json(); } catch(e) { data = {}; }
+                        return { status: resp.status, data };
+                    } catch(e) {
+                        const msg = (e && e.name === 'AbortError')
+                            ? 'Timeout: servidor não respondeu em 30s.'
+                            : (e.message || String(e));
+                        return { status: 0, error: msg };
+                    } finally {
+                        clearTimeout(timer);
+                    }
                 },
-                [endpoint, token, children, config.name, myEndpoint]
+                [epCheck.url, peerToken, children,
+                 config.name === 'anonimo' ? this._t('anonimo') : config.name,
+                 myEndpoint, myToken]
             );
 
             if (result.error) {
-                this._status('enviar', 'err', 'Erro de conexão: ' + result.error);
+                this._status('enviar', 'err', this._t('enviar.erro_conexao', { msg: result.error }));
                 $btn.prop('disabled', false);
                 return;
             }
 
             if (result.status === 410) {
-                this._status('enviar', 'err', 'Convite expirado (mais de 7 dias).');
+                this._status('enviar', 'err', this._t('enviar.expirado'));
                 return;
             }
             if (result.status !== 200) {
-                const msg = result.data?.error || `Erro HTTP ${result.status}`;
+                const msg = result.data?.error || this._t('enviar.erro_http', { status: result.status });
                 this._status('enviar', 'err', msg);
                 $btn.prop('disabled', false);
                 return;
             }
 
-            // Marca child notes como enviadas (permite novo envio de futuras)
+            // Marca como enviadas apenas as notas efetivamente transmitidas
             try {
-                await api.runOnBackend((nid) => {
+                await api.runOnBackend((nid, ids) => {
                     const note = api.getNote(nid);
                     if (!note) return;
+                    const alvo = new Set(ids);
                     note.getChildNotes().forEach(c => {
-                        if (c.getLabelValue('snSent') !== 'true') {
-                            c.setLabel('snSent', 'true');
-                        }
+                        if (alvo.has(c.noteId)) c.setLabel('snSent', 'true');
                     });
-                }, [noteId]);
+                }, [noteId, children.map(c => c.noteId)]);
             } catch(e) {
-                this._status('enviar', 'warn', 'Respostas enviadas, mas falha ao marcar localmente: ' + e.message);
+                this._status('enviar', 'warn', this._t('enviar.marcar_falhou', { msg: e.message }));
             }
 
             const received = result.data?.received ?? children.length;
-            this._status('enviar', 'ok', `${received} resposta(s) enviada(s) com sucesso!`);
+            const avisoTxt = [epCheck.aviso, aviso].filter(Boolean).join(' ');
+            this._status('enviar', avisoTxt ? 'warn' : 'ok',
+                this._t('enviar.sucesso', { n: received }) + (avisoTxt ? ' ' + avisoTxt : ''));
 
             // Atualiza contagem de não-enviadas
             const remaining = await api.runOnBackend((nid) => {
                 const n = api.getNote(nid);
                 if (!n) return 0;
-                return n.getChildNotes().filter(c => c.getLabelValue('snSent') !== 'true').length;
+                return n.getChildNotes().filter(c => c.getLabelValue('snSent') !== 'true'
+                                                  && c.getLabelValue('inviteGate') === null
+                                                  && c.getLabelValue('sharedReply') === null).length;
             }, [noteId]);
 
             this.$widget.find('#sn-replies-count').text(
                 remaining === 0
-                    ? 'Todas as notas filhas já foram enviadas.'
-                    : `${remaining} nota(s) filha(s) não enviada(s).`
+                    ? this._t('enviar.todas_enviadas')
+                    : this._t('enviar.pendentes', { n: remaining })
             );
 
         } catch(e) {
-            this._status('enviar', 'err', 'Erro inesperado: ' + e.message);
+            this._status('enviar', 'err', this._t('enviar.inesperado', { msg: e.message }));
         } finally {
             $btn.prop('disabled', false);
         }
@@ -604,9 +927,11 @@ class SharedNotesWidget extends api.RightPanelWidget {
     _status(panel, type, msg) {
         const $el = this.$widget.find(`#sn-${panel}-status`);
         const icon = type === 'ok' ? ICONS.ok : type === 'err' ? ICONS.err : type === 'warn' ? ICONS.warn : '';
-        $el.html((icon ? icon + ' ' : '') + (msg ?? ''))
+        $el.html((icon ? icon + ' ' : '') + snEscape(msg ?? ''))
            .removeClass('ok err warn').addClass(type || '');
     }
 }
 
 module.exports = SharedNotesWidget;
+module.exports.snTranslate = snTranslate;
+module.exports.SN_I18N = SN_I18N;
