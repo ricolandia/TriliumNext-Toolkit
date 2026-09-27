@@ -3,20 +3,34 @@
     {
       "title": "Attribute Garbage Collector",
       "type": "text",
-      "content": "Escaneia atributos orfaos. Abra esta nota para usar."
-    },
-    {
-      "title": "attribute-gc",
-      "type": "code",
-      "mime": "application/javascript;env=frontend",
-      "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Attribute-Garbage-Collector/attribute-gc.js"
+      "content": "Escaneia atributos orfaos. Abra esta nota para usar.",
+      "children": [
+        {
+          "title": "attribute-gc",
+          "type": "code",
+          "mime": "application/javascript;env=frontend",
+          "sourceUrl": "https://raw.githubusercontent.com/ricolandia/TriliumNext-Toolkit/main/Attribute-Garbage-Collector/attribute-gc.js"
+        }
+      ]
     }
   ],
   "relations": [
-    { "type": "renderNote", "from": "Attribute Garbage Collector", "to": "attribute-gc" }
+    {
+      "type": "renderNote",
+      "from": "Attribute Garbage Collector",
+      "to": "attribute-gc"
+    }
   ],
   "labels": [
-    { "note": "attribute-gc", "name": "widget", "value": "" },
-    { "note": "attribute-gc", "name": "readOnly", "value": "" }
+    {
+      "note": "attribute-gc",
+      "name": "widget",
+      "value": ""
+    },
+    {
+      "note": "attribute-gc",
+      "name": "readOnly",
+      "value": ""
+    }
   ]
 }

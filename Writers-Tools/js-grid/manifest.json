@@ -3,19 +3,29 @@
     {
       "title": "Longform Compiler",
       "type": "text",
-      "content": "Agrega notas filhas em um documento compilado. Abra esta nota para usar."
-    },
-    {
-      "title": "js - grade",
-      "type": "code",
-      "mime": "application/javascript;env=frontend",
-      "sourceUrl": "js%20-%20grade.js"
+      "content": "Agrega notas filhas em um documento compilado. Abra esta nota para usar.",
+      "children": [
+        {
+          "title": "js - grade",
+          "type": "code",
+          "mime": "application/javascript;env=frontend",
+          "sourceUrl": "js%20-%20grade.js"
+        }
+      ]
     }
   ],
   "relations": [
-    { "type": "renderNote", "from": "Longform Compiler", "to": "js - grade" }
+    {
+      "type": "renderNote",
+      "from": "Longform Compiler",
+      "to": "js - grade"
+    }
   ],
   "labels": [
-    { "note": "js - grade", "name": "readOnly", "value": "" }
+    {
+      "note": "js - grade",
+      "name": "readOnly",
+      "value": ""
+    }
   ]
 }
