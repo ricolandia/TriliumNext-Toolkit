@@ -16,6 +16,7 @@
     { "type": "renderNote", "from": "Attribute Garbage Collector", "to": "attribute-gc" }
   ],
   "labels": [
+    { "note": "attribute-gc", "name": "widget", "value": "" },
     { "note": "attribute-gc", "name": "readOnly", "value": "" }
   ]
 }
