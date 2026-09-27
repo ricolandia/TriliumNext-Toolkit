@@ -41,6 +41,41 @@
     ═══════════════════════════════════════════════════════════ */
 
     const $root = $container;
+
+    // Hoista <style> de qualquer HTML injetado para o <head> — render notes podem
+    // ignorar style inline e o visual não pode depender do tema (ex.: Folio).
+    (function () {
+        if (typeof document === 'undefined' || typeof $ === 'undefined' || !$.fn) return;
+        const getStyleEl = () => {
+            let el = document.getElementById('wp-injected-css');
+            if (!el) {
+                el = document.createElement('style');
+                el.id = 'wp-injected-css';
+                document.head.appendChild(el);
+            }
+            return el;
+        };
+        const hoist = (html) => {
+            const str = String(html);
+            if (!str.includes('<style>')) return str;
+            const styleEl = getStyleEl();
+            const re = /<style>([\s\S]*?)<\/style>/g;
+            let m;
+            while ((m = re.exec(str)) !== null) styleEl.textContent += '\n' + m[1];
+            return str.replace(re, '');
+        };
+        const origHtml = $.fn.html;
+        const origAppend = $.fn.append;
+        $.fn.html = function (arg) {
+            if (typeof arg === 'string' && arg.includes('<style>')) arg = hoist(arg);
+            return origHtml.apply(this, [arg]);
+        };
+        $.fn.append = function (arg) {
+            if (typeof arg === 'string' && arg.includes('<style>')) arg = hoist(arg);
+            return origAppend.apply(this, [arg]);
+        };
+    })();
+
     // id fixo no root → especificidade de ID vence qualquer CSS global do Trilium (#app *, button…)
     $root.attr('id', 'wp-root');
 
