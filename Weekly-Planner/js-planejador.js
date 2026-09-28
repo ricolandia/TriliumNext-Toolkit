@@ -155,19 +155,14 @@
             #wp-root .pl-mode-switch { display:none !important; }
         }
 
-        /* ── Chips de referência (@nota) nos cards ── */
-        #wp-root .task-refs { display:flex; flex-wrap:wrap; gap:2px 4px; margin-top:3px; }
-        #wp-root .task-ref {
-            display:inline-block; max-width:100%;
-            font-size:11px; line-height:1.35; padding:0 6px;
+        /* ── Indicador de links internos (@nota) nos cards ── */
+        #wp-root .task-links {
+            display:inline-block; margin-top:3px; padding:0 6px;
+            font-size:10px; line-height:1.6; border-radius:99px;
             border:1px solid var(--main-border-color,#45475a);
-            border-radius:99px;
             color:var(--muted-text-color,#888);
-            cursor:pointer; user-select:none;
-            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-            vertical-align:middle;
+            vertical-align:middle; white-space:nowrap;
         }
-        #wp-root .task-ref:hover { color:var(--main-text-color,#cdd6f4); border-color:var(--main-text-color,#cdd6f4); }
         </style>`);
 
     // Aplica tipografia do painel de Tarefas via INLINE !important (setProperty 'important'):
@@ -527,7 +522,16 @@
                                 .replace(/&#39;/g,   "'")
                                 .replace(/\s+/g,     ' ')
                                 .trim();
-                            if (text) tasks.push({ text, cbIndex, raw });
+                            if (text) {
+                                const apos = m.index + m[0].length;
+                                const proxA = content.indexOf('type="checkbox"', apos);
+                                const proxB = content.indexOf("type='checkbox'", apos);
+                                const cands = [proxA, proxB].filter(i => i !== -1);
+                                const fimTrecho = cands.length
+                                    ? Math.min(...cands)
+                                    : Math.min(content.length, apos + 4000);
+                                tasks.push({ text, cbIndex, refHtml: content.substring(m.index, fimTrecho) });
+                            }
                         }
                     }
                     cbIndex++;
@@ -559,7 +563,7 @@
                     id,
                     text:           cleanText,
                     tags,
-                    refs:           extrairRefs(task.raw || ''),
+                    linkCount:      contarLinksInternos(extrairSpanDescricao(task.refHtml || '') || task.refHtml || ''),
                     checkboxIndex:  task.cbIndex,
                     noteId:         g.noteId,
                     noteTitle:      g.title,
@@ -712,29 +716,42 @@
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-    /* REFS (início) — parsing puro dos links internos (@nota) do HTML da tarefa */
-    function extrairRefs(html) {
-        const refs = [];
+    /* REFS (início) — parsing puro do indicador de links internos (@nota) */
+    // Extrai o innerHTML do primeiro <span> com fechamento balanceado
+    // (spans aninhados, ex. texto colorido, não truncam mais o conteúdo).
+    function extrairSpanDescricao(html) {
+        const str = String(html || '');
+        const ss = str.indexOf('<span');
+        if (ss === -1) return '';
+        const abre = str.indexOf('>', ss);
+        if (abre === -1) return '';
+        let depth = 1;
+        let pos = abre + 1;
+        const re = /<span\b|<!--[\s\S]*?-->|<\/span>/gi;
+        re.lastIndex = pos;
+        let m;
+        while ((m = re.exec(str)) !== null) {
+            if (m[0] === '</span>') {
+                depth--;
+                if (depth === 0) return str.substring(abre + 1, m.index);
+            } else if (m[0].slice(0, 5).toLowerCase() === '<span') {
+                depth++;
+            }
+        }
+        return str.substring(abre + 1);
+    }
+
+    // Conta links internos ÚNICOS para notas (formato real do Trilium:
+    // href="#root/ID1/ID2/.../IDfinal" — alvo é o último segmento; ?bookmark= ignorado).
+    function contarLinksInternos(html) {
         const seen = new Set();
-        const re = /<a\b[^>]*href=["']#root\/([A-Za-z0-9]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        const re = /<a\b[^>]*href=["']#root\/([^"']+)["']/gi;
         let m;
         while ((m = re.exec(String(html || ''))) !== null) {
-            const noteId = m[1];
-            const title = String(m[2])
-                .replace(/<[^>]+>/g, '')
-                .replace(/&nbsp;/g, ' ')
-                .replace(/&amp;/g,  '&')
-                .replace(/&lt;/g,   '<')
-                .replace(/&gt;/g,   '>')
-                .replace(/&quot;/g, '"')
-                .replace(/&#39;/g,  "'")
-                .replace(/\s+/g, ' ')
-                .trim();
-            if (!noteId || seen.has(noteId)) continue;
-            seen.add(noteId);
-            refs.push({ noteId, title: title || noteId });
+            const alvo = String(m[1]).split(/[?#]/)[0].split('/').filter(Boolean).pop();
+            if (alvo) seen.add(alvo);
         }
-        return refs;
+        return seen.size;
     }
     /* REFS (fim) */
 
@@ -838,11 +855,9 @@
         return `<div class="doing-bar"><div class="doing-fill" style="width:${doing.value}%"></div></div>`;
     }
 
-    function renderRefChips(refs) {
-        if (!refs || !refs.length) return '';
-        return `<div class="task-refs">${refs.map(r =>
-            `<span class="task-ref" data-ref-note-id="${esc(r.noteId)}" title="Abrir: ${esc(r.title)}">🔗 ${esc(r.title)}</span>`
-        ).join('')}</div>`;
+    function renderLinkBadge(n) {
+        if (!n) return '';
+        return `<span class="task-links" title="${n} link(s) para nota(s) nesta tarefa">🔗 ${n}</span>`;
     }
 
     const isMobile   = () => window.matchMedia('(max-width:1024px)').matches;
@@ -1020,7 +1035,7 @@
                          data-cb-index="${t.checkboxIndex}">
                         <span class="pl-done-btn" title="Marcar como concluída">✓</span>
                         <div>${esc(t.text)}</div>
-                        ${renderRefChips(t.refs)}
+                        ${renderLinkBadge(t.linkCount)}
                         ${t.tags && t.tags.length
                             ? `<div class="task-tags">${renderTagBadges(t.tags)}</div>`
                             : ''}
@@ -1259,7 +1274,7 @@
                                      color:var(--muted-text-color);user-select:none;">✓</span>
                     </div>
                     ${tagsHtml ? `<div class="gantt-label-tags">${tagsHtml}</div>` : ''}
-                    ${renderRefChips(item.refs)}
+                    ${renderLinkBadge(item.linkCount)}
                     ${doingHtml ? doingHtml.replace('doing-bar', 'gantt-label-doing').replace('doing-fill', 'gantt-label-doing-fill') : ''}
                 </div>`;
 
@@ -1293,7 +1308,7 @@
                                   data-note-id="${esc(t.noteId)}"
                                   data-cb-index="${t.checkboxIndex}">✓</span>
                             <span class="gantt-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
-                            ${renderRefChips(t.refs)}
+                            ${renderLinkBadge(t.linkCount)}
                             <span class="gantt-blog-note">${esc(t.noteTitle)}</span>
                             ${tagsHtml ? `<span class="gantt-blog-tags">${tagsHtml}</span>` : ''}
                         </div>`;
@@ -1587,7 +1602,7 @@
                                          title="${esc(t.text)}">
                                     <span class="mn-done-btn" title="Marcar como concluída">✓</span>
                                     ${esc(t.text)}
-                                    ${renderRefChips(t.refs)}
+                                    ${renderLinkBadge(t.linkCount)}
                                 </div>`;
                         }).join('')}
                         <div class="mn-drop"></div>
@@ -1612,7 +1627,7 @@
                              data-note-id="${esc(t.noteId)}"
                              data-cb-index="${t.checkboxIndex}">
                             <span class="mn-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
-                            ${renderRefChips(t.refs)}
+                            ${renderLinkBadge(t.linkCount)}
                             <span class="mn-blog-note">${esc(t.noteTitle)}</span>
                         </div>`).join('')}
                     </div>
@@ -2162,7 +2177,7 @@
                                         ? `<div class="task-tags" style="margin-top:2px;">${renderTagBadges(t.tags)}</div>`
                                         : ''}
                                     ${renderDoingBar(t.tags)}
-                                    ${renderRefChips(t.refs)}
+                                    ${renderLinkBadge(t.linkCount)}
                                 </div>
 
                             </div>`;
@@ -2289,12 +2304,6 @@
     renderPlanner();
     renderTasks();
     bindTaskEvents();
-
-    // Chips de referência (@nota): abrem a nota apontada sem disparar o clique do card
-    $root.on('click', '.task-ref', function (e) {
-        e.stopPropagation();
-        api.activateNote($(this).data('refNoteId'));
-    });
 
     // spans role=button (barra de modo): suporte a Enter/Espaço
     $pl.on('keydown', '.pl-mode-btn', function (e) {

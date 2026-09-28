@@ -26,7 +26,7 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 
 ### Features
 
-- **Chips de @nota nos cards (`🔗 Projeto`)**: se a tarefa contém um link interno do Trilium (basta digitar `@Nota` no texto), o card mostra um chip clicável que abre a nota apontada — sem perder o link padrão para a nota-fonte (daily journal). Suporta vários links por tarefa (com dedupe) e aparece no Kanban, Mês, Gantt e painel de Tarefas Abertas. Teste: `test-refs.js`.
+- **Indicador de links internos (`🔗 n`)**: se a tarefa contém links internos do Trilium (basta digitar `@Nota` no texto), o card mostra um badge discreto com o número de notas referenciadas (únicos, com dedupe). O clique no texto continua abrindo a nota-fonte (daily journal) — o badge é só o indicador. Aparece no Kanban, Mês, Gantt e painel de Tarefas Abertas. Teste: `test-refs.js`.
 
 - **Mobile layout**: painéis empilhados em coluna única (planner acima, tarefas abaixo) em telas < 700px — sem espremer as duas colunas no celular
 - **Mobile Mês — backlog agendável**: no celular, tocar num item do backlog da visão Mês abre o seletor de dias (mesmo comportamento do Kanban); antes só abria a nota

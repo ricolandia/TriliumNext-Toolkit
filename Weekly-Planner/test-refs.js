@@ -1,6 +1,7 @@
 // ============================================================
-// test-refs.js — valida extrairRefs() (chips de @nota nos cards)
-// extraindo a função pura do fonte real (padrão test-fountain-stats.js).
+// test-refs.js — valida o indicador de links internos (@nota):
+//   extrairSpanDescricao() (span balanceado) + contarLinksInternos()
+// extraindo as funções puras do fonte real (padrão test-fountain-stats.js).
 //
 // Uso: node test-refs.js  (ou: bun test-refs.js)
 // ============================================================
@@ -10,7 +11,7 @@ const path = require('path');
 const src = fs.readFileSync(path.join(__dirname, 'js-planejador.js'), 'utf8');
 const bloco = src.match(/\/\* REFS \(início\)[\s\S]*?\/\* REFS \(fim\) \*\//);
 if (!bloco) { console.error('não achei o bloco REFS no js-planejador.js'); process.exit(1); }
-eval(bloco[0] + '\nglobalThis.extrairRefs = extrairRefs;');
+eval(bloco[0] + '\nglobalThis.extrairSpanDescricao = extrairSpanDescricao; globalThis.contarLinksInternos = contarLinksInternos;');
 
 let falhas = 0;
 const ok = (nome, cond, extra) => {
@@ -18,34 +19,46 @@ const ok = (nome, cond, extra) => {
     else { falhas++; console.log('  ✗ ' + nome + (extra !== undefined ? ' → ' + JSON.stringify(extra) : '')); }
 };
 
-console.log('1) link único (@nota)');
-const r1 = extrairRefs('Revisar proposta <a class="reference-link" href="#root/abc123XYZ">Projeto Aurora</a> até sexta');
-ok('extrai 1 ref', r1.length === 1, r1);
-ok('noteId correto', r1[0] && r1[0].noteId === 'abc123XYZ', r1);
-ok('título correto', r1[0] && r1[0].title === 'Projeto Aurora', r1);
+// ── amostras REAIS (extraídas da base do Ricardo) ───────────────────────────
+const REAL_SIMPLES = '<input type="checkbox" checked="checked" disabled="disabled">' +
+    '<span class="todo-list__label__description">' +
+    '<a class="reference-link" href="#root/LCuq6PVnN9TL/VWxAoKFRWRWZ/eqb3BvbssDyh/ZYfZxCrKZBP4">Workana - Prompt mágico - Redator</a>' +
+    '</span></label>';
 
-console.log('2) vários links (ordem preservada)');
-const r2 = extrairRefs('<a href="#root/aaa111">Projeto A</a> e <a href="#root/bbb222">Projeto B</a>');
-ok('extrai 2 refs', r2.length === 2, r2);
-ok('ordem preservada', r2[0].noteId === 'aaa111' && r2[1].noteId === 'bbb222', r2);
+const REAL_ANINHADO = '<input type="checkbox" checked="checked" disabled="disabled">' +
+    '<span class="todo-list__label__description">' +
+    '<span style="color:hsl(120, 75%, 60%);">&nbsp;Jabuti character sheet -Teaser 2</span>&nbsp;' +
+    '<a class="reference-link" href="#root/bWbXL3ytWhqR/DET9Qvd3PUtO/WRmcRsre46zC">Em busca do Céu</a>' +
+    '</span></label>';
 
-console.log('3) dedupe por noteId');
-const r3 = extrairRefs('<a href="#root/aaa111">A</a> <a href="#root/aaa111">A de novo</a>');
-ok('deduplica', r3.length === 1, r3);
+console.log('1) extrairSpanDescricao (balanceado)');
+const inner1 = extrairSpanDescricao(REAL_SIMPLES);
+ok('inner contém o link real', inner1.includes('ZYfZxCrKZBP4'), inner1.slice(0, 120));
+const inner2 = extrairSpanDescricao(REAL_ANINHADO);
+ok('span aninhado não trunca (link depois aparece)', inner2.includes('Em busca do Céu') && inner2.includes('bWbXL3ytWhqR'), inner2.slice(0, 160));
+ok('sem span → string vazia', extrairSpanDescricao('texto puro') === '' && extrairSpanDescricao('') === '');
 
-console.log('4) rótulo com HTML e entidades');
-const r4 = extrairRefs('<a href="#root/ccc333"><strong>Projeto</strong> &amp; Cia&nbsp;X</a>');
-ok('limpa tags e entidades', r4[0] && r4[0].title === 'Projeto & Cia X', r4);
+console.log('2) contarLinksInternos (formato real multi-segmento)');
+ok('link real simples → 1', contarLinksInternos(inner1) === 1, contarLinksInternos(inner1));
+ok('link real após span aninhado → 1', contarLinksInternos(inner2) === 1, contarLinksInternos(inner2));
 
-console.log('5) casos sem link');
-ok('texto puro → []', extrairRefs('Só texto').length === 0);
-ok('link externo ignorado', extrairRefs('<a href="https://x.com">X</a>').length === 0);
-ok('href não-#root ignorado', extrairRefs('<a href="#notaX">X</a>').length === 0);
-ok('vazio/null → []', extrairRefs('').length === 0 && extrairRefs(null).length === 0);
+console.log('3) contagem e dedupe');
+const dois = '<a href="#root/a1/b2/c3">A</a> e <a href="#root/x9/y8">B</a>';
+ok('dois alvos → 2', contarLinksInternos(dois) === 2, contarLinksInternos(dois));
+const dup = '<a href="#root/a1/b2/c3">A</a> <a href="#root/zz/b2/c3">A de novo</a>';
+ok('mesmo alvo (último id) → 1', contarLinksInternos(dup) === 1, contarLinksInternos(dup));
 
-console.log('6) aspas simples');
-const r6 = extrairRefs("<a href='#root/ddd444'>D</a>");
-ok('aceita href com aspas simples', r6.length === 1 && r6[0].noteId === 'ddd444', r6);
+console.log('4) ?bookmark= e variações');
+ok('?bookmark= ignorado', contarLinksInternos('<a href="#root/a1/b2/c3?bookmark=xyz">X</a>') === 1);
+ok('aspas simples OK', contarLinksInternos("<a href='#root/q1/w2'>X</a>") === 1);
+ok('link externo ignorado', contarLinksInternos('<a href="https://x.com">X</a>') === 0);
+ok('sem links → 0', contarLinksInternos('Só texto') === 0 && contarLinksInternos('') === 0);
+
+console.log('5) integração (span + contagem, como no card)');
+const contarTarefa = (html) => contarLinksInternos(extrairSpanDescricao(html) || html);
+ok('tarefa real simples → 1', contarTarefa(REAL_SIMPLES) === 1);
+ok('tarefa real com aninhado → 1', contarTarefa(REAL_ANINHADO) === 1);
+ok('tarefa sem link → 0', contarTarefa('<span class="todo-list__label__description">Só texto</span>') === 0);
 
 console.log(falhas === 0 ? '\n>>> TODOS OS TESTES PASSARAM' : `\n>>> ${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);
