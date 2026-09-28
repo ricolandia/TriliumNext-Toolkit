@@ -346,6 +346,19 @@
 
         const data = await api.runOnBackend(() => {
 
+            /* REFS-BE (início) — conta links internos ÚNICOS da nota (@nota) */
+            function contarLinksDaNota(html) {
+                const seen = new Set();
+                const re = /<a\b[^>]*href=["']#root\/([^"']+)["']/gi;
+                let m;
+                while ((m = re.exec(String(html || ''))) !== null) {
+                    const alvo = String(m[1]).split(/[?#]/)[0].split('/').filter(Boolean).pop();
+                    if (alvo) seen.add(alvo);
+                }
+                return seen.size;
+            }
+            /* REFS-BE (fim) */
+
             function expandRecurringInContent(content, noteId) {
                 const all = [];
                 const inputRe = /<input\s[^>]*type=["']checkbox["'][^>]*>/gi;
@@ -485,6 +498,9 @@
                 let content = note.getContent();
                 if (!content || !content.includes('checkbox')) continue;
 
+                // Links internos da nota toda (indicador 🔗 n nos cards)
+                const notaLinkCount = contarLinksDaNota(content);
+
                 // ── Expande tasks recorrentes ANTES da extração ─────────────
                 const expResult = expandRecurringInContent(content, row.noteId);
                 if (expResult.html !== content) {
@@ -522,16 +538,7 @@
                                 .replace(/&#39;/g,   "'")
                                 .replace(/\s+/g,     ' ')
                                 .trim();
-                            if (text) {
-                                const apos = m.index + m[0].length;
-                                const proxA = content.indexOf('type="checkbox"', apos);
-                                const proxB = content.indexOf("type='checkbox'", apos);
-                                const cands = [proxA, proxB].filter(i => i !== -1);
-                                const fimTrecho = cands.length
-                                    ? Math.min(...cands)
-                                    : Math.min(content.length, apos + 4000);
-                                tasks.push({ text, cbIndex, refHtml: content.substring(m.index, fimTrecho) });
-                            }
+                            if (text) tasks.push({ text, cbIndex });
                         }
                     }
                     cbIndex++;
@@ -544,6 +551,7 @@
                         tasks,
                         checkedCbs,
                         totalCbs: cbIndex,
+                        noteLinks: notaLinkCount,
                     });
                     cbStats[row.noteId] = { checked: checkedCbs, total: cbIndex };
                 }
@@ -563,7 +571,7 @@
                     id,
                     text:           cleanText,
                     tags,
-                    linkCount:      contarLinksInternos(extrairSpanDescricao(task.refHtml || '') || task.refHtml || ''),
+                    noteLinks:      g.noteLinks || 0,
                     checkboxIndex:  task.cbIndex,
                     noteId:         g.noteId,
                     noteTitle:      g.title,
@@ -716,44 +724,6 @@
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-    /* REFS (início) — parsing puro do indicador de links internos (@nota) */
-    // Extrai o innerHTML do primeiro <span> com fechamento balanceado
-    // (spans aninhados, ex. texto colorido, não truncam mais o conteúdo).
-    function extrairSpanDescricao(html) {
-        const str = String(html || '');
-        const ss = str.indexOf('<span');
-        if (ss === -1) return '';
-        const abre = str.indexOf('>', ss);
-        if (abre === -1) return '';
-        let depth = 1;
-        let pos = abre + 1;
-        const re = /<span\b|<!--[\s\S]*?-->|<\/span>/gi;
-        re.lastIndex = pos;
-        let m;
-        while ((m = re.exec(str)) !== null) {
-            if (m[0] === '</span>') {
-                depth--;
-                if (depth === 0) return str.substring(abre + 1, m.index);
-            } else if (m[0].slice(0, 5).toLowerCase() === '<span') {
-                depth++;
-            }
-        }
-        return str.substring(abre + 1);
-    }
-
-    // Conta links internos ÚNICOS para notas (formato real do Trilium:
-    // href="#root/ID1/ID2/.../IDfinal" — alvo é o último segmento; ?bookmark= ignorado).
-    function contarLinksInternos(html) {
-        const seen = new Set();
-        const re = /<a\b[^>]*href=["']#root\/([^"']+)["']/gi;
-        let m;
-        while ((m = re.exec(String(html || ''))) !== null) {
-            const alvo = String(m[1]).split(/[?#]/)[0].split('/').filter(Boolean).pop();
-            if (alvo) seen.add(alvo);
-        }
-        return seen.size;
-    }
-    /* REFS (fim) */
 
     function modeSwitcher() {
         const modes = [
@@ -857,7 +827,7 @@
 
     function renderLinkBadge(n) {
         if (!n) return '';
-        return `<span class="task-links" title="${n} link(s) para nota(s) nesta tarefa">🔗 ${n}</span>`;
+        return `<span class="task-links" title="${n} link(s) interno(s) nesta nota">🔗 ${n}</span>`;
     }
 
     const isMobile   = () => window.matchMedia('(max-width:1024px)').matches;
@@ -1035,7 +1005,7 @@
                          data-cb-index="${t.checkboxIndex}">
                         <span class="pl-done-btn" title="Marcar como concluída">✓</span>
                         <div>${esc(t.text)}</div>
-                        ${renderLinkBadge(t.linkCount)}
+                        ${renderLinkBadge(t.noteLinks)}
                         ${t.tags && t.tags.length
                             ? `<div class="task-tags">${renderTagBadges(t.tags)}</div>`
                             : ''}
@@ -1274,7 +1244,7 @@
                                      color:var(--muted-text-color);user-select:none;">✓</span>
                     </div>
                     ${tagsHtml ? `<div class="gantt-label-tags">${tagsHtml}</div>` : ''}
-                    ${renderLinkBadge(item.linkCount)}
+                    ${renderLinkBadge(item.noteLinks)}
                     ${doingHtml ? doingHtml.replace('doing-bar', 'gantt-label-doing').replace('doing-fill', 'gantt-label-doing-fill') : ''}
                 </div>`;
 
@@ -1308,7 +1278,7 @@
                                   data-note-id="${esc(t.noteId)}"
                                   data-cb-index="${t.checkboxIndex}">✓</span>
                             <span class="gantt-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
-                            ${renderLinkBadge(t.linkCount)}
+                            ${renderLinkBadge(t.noteLinks)}
                             <span class="gantt-blog-note">${esc(t.noteTitle)}</span>
                             ${tagsHtml ? `<span class="gantt-blog-tags">${tagsHtml}</span>` : ''}
                         </div>`;
@@ -1602,7 +1572,7 @@
                                          title="${esc(t.text)}">
                                     <span class="mn-done-btn" title="Marcar como concluída">✓</span>
                                     ${esc(t.text)}
-                                    ${renderLinkBadge(t.linkCount)}
+                                    ${renderLinkBadge(t.noteLinks)}
                                 </div>`;
                         }).join('')}
                         <div class="mn-drop"></div>
@@ -1627,7 +1597,7 @@
                              data-note-id="${esc(t.noteId)}"
                              data-cb-index="${t.checkboxIndex}">
                             <span class="mn-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
-                            ${renderLinkBadge(t.linkCount)}
+                            ${renderLinkBadge(t.noteLinks)}
                             <span class="mn-blog-note">${esc(t.noteTitle)}</span>
                         </div>`).join('')}
                     </div>
@@ -2177,7 +2147,7 @@
                                         ? `<div class="task-tags" style="margin-top:2px;">${renderTagBadges(t.tags)}</div>`
                                         : ''}
                                     ${renderDoingBar(t.tags)}
-                                    ${renderLinkBadge(t.linkCount)}
+                                    ${renderLinkBadge(t.noteLinks)}
                                 </div>
 
                             </div>`;

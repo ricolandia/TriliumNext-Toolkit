@@ -1,7 +1,8 @@
 // ============================================================
-// test-refs.js — valida o indicador de links internos (@nota):
-//   extrairSpanDescricao() (span balanceado) + contarLinksInternos()
-// extraindo as funções puras do fonte real (padrão test-fountain-stats.js).
+// test-refs.js — valida contarLinksDaNota() (badge 🔗 n nos cards):
+// conta links internos ÚNICOS da NOTA (não da linha da tarefa).
+// A função vive no callback backend, delimitada por marcadores
+// REFS-BE (início/fim); o teste a extrai do fonte real.
 //
 // Uso: node test-refs.js  (ou: bun test-refs.js)
 // ============================================================
@@ -9,9 +10,9 @@ const fs = require('fs');
 const path = require('path');
 
 const src = fs.readFileSync(path.join(__dirname, 'js-planejador.js'), 'utf8');
-const bloco = src.match(/\/\* REFS \(início\)[\s\S]*?\/\* REFS \(fim\) \*\//);
-if (!bloco) { console.error('não achei o bloco REFS no js-planejador.js'); process.exit(1); }
-eval(bloco[0] + '\nglobalThis.extrairSpanDescricao = extrairSpanDescricao; globalThis.contarLinksInternos = contarLinksInternos;');
+const bloco = src.match(/\/\* REFS-BE \(início\)[\s\S]*?\/\* REFS-BE \(fim\) \*\//);
+if (!bloco) { console.error('não achei o bloco REFS-BE no js-planejador.js'); process.exit(1); }
+eval(bloco[0] + '\nglobalThis.contarLinksDaNota = contarLinksDaNota;');
 
 let falhas = 0;
 const ok = (nome, cond, extra) => {
@@ -19,46 +20,37 @@ const ok = (nome, cond, extra) => {
     else { falhas++; console.log('  ✗ ' + nome + (extra !== undefined ? ' → ' + JSON.stringify(extra) : '')); }
 };
 
-// ── amostras REAIS (extraídas da base do Ricardo) ───────────────────────────
-const REAL_SIMPLES = '<input type="checkbox" checked="checked" disabled="disabled">' +
-    '<span class="todo-list__label__description">' +
-    '<a class="reference-link" href="#root/LCuq6PVnN9TL/VWxAoKFRWRWZ/eqb3BvbssDyh/ZYfZxCrKZBP4">Workana - Prompt mágico - Redator</a>' +
-    '</span></label>';
+// ── fixture REAL: trecho da nota diária do Ricardo (3 links de projetos) ────
+const NOTA_REAL = `
+<table><tbody><tr>
+<td><h3><a class="reference-link" href="#root/L84YPic0h0Se/vYHHgwRrR6Kc">Faculdade</a></h3></td>
+<td><h3><a class="reference-link" href="#root/bWbXL3ytWhqR/DET9Qvd3PUtO">Freela</a></h3></td>
+<td><h3><a class="reference-link" href="#root/bWbXL3ytWhqR/WGycD5ksCshb">Autorais</a></h3></td>
+</tr><tr><td><ul><li>Editar vídeo</li></ul></td><td></td><td></td></tr></tbody></table>
+<h2>Tarefas do Dia</h2>
+<ul class="todo-list"><li><label class="todo-list__label"><input type="checkbox" disabled="disabled">
+<span class="todo-list__label__description">Cancela google <span style="color:hsl(30,75%,60%);">#todo</span></span></label></li></ul>
+`;
 
-const REAL_ANINHADO = '<input type="checkbox" checked="checked" disabled="disabled">' +
-    '<span class="todo-list__label__description">' +
-    '<span style="color:hsl(120, 75%, 60%);">&nbsp;Jabuti character sheet -Teaser 2</span>&nbsp;' +
-    '<a class="reference-link" href="#root/bWbXL3ytWhqR/DET9Qvd3PUtO/WRmcRsre46zC">Em busca do Céu</a>' +
-    '</span></label>';
+console.log('1) nota real (tabela de projetos) → 3 alvos únicos');
+ok('conta 3', contarLinksDaNota(NOTA_REAL) === 3, contarLinksDaNota(NOTA_REAL));
 
-console.log('1) extrairSpanDescricao (balanceado)');
-const inner1 = extrairSpanDescricao(REAL_SIMPLES);
-ok('inner contém o link real', inner1.includes('ZYfZxCrKZBP4'), inner1.slice(0, 120));
-const inner2 = extrairSpanDescricao(REAL_ANINHADO);
-ok('span aninhado não trunca (link depois aparece)', inner2.includes('Em busca do Céu') && inner2.includes('bWbXL3ytWhqR'), inner2.slice(0, 160));
-ok('sem span → string vazia', extrairSpanDescricao('texto puro') === '' && extrairSpanDescricao('') === '');
+console.log('2) formato real multi-segmento');
+const UM = '<a class="reference-link" href="#root/LCuq6PVnN9TL/VWxAoKFRWRWZ/eqb3BvbssDyh/ZYfZxCrKZBP4">Workana</a>';
+ok('um link → 1', contarLinksDaNota(UM) === 1, contarLinksDaNota(UM));
 
-console.log('2) contarLinksInternos (formato real multi-segmento)');
-ok('link real simples → 1', contarLinksInternos(inner1) === 1, contarLinksInternos(inner1));
-ok('link real após span aninhado → 1', contarLinksInternos(inner2) === 1, contarLinksInternos(inner2));
-
-console.log('3) contagem e dedupe');
-const dois = '<a href="#root/a1/b2/c3">A</a> e <a href="#root/x9/y8">B</a>';
-ok('dois alvos → 2', contarLinksInternos(dois) === 2, contarLinksInternos(dois));
-const dup = '<a href="#root/a1/b2/c3">A</a> <a href="#root/zz/b2/c3">A de novo</a>';
-ok('mesmo alvo (último id) → 1', contarLinksInternos(dup) === 1, contarLinksInternos(dup));
+console.log('3) dedupe por alvo (último segmento)');
+const DUP = '<a href="#root/a1/b2/c3">A</a> <a href="#root/zz/b2/c3">A de novo</a> <a href="#root/x9/y8">B</a>';
+ok('mesmo alvo repetido conta 1; dois alvos → 2', contarLinksDaNota(DUP) === 2, contarLinksDaNota(DUP));
 
 console.log('4) ?bookmark= e variações');
-ok('?bookmark= ignorado', contarLinksInternos('<a href="#root/a1/b2/c3?bookmark=xyz">X</a>') === 1);
-ok('aspas simples OK', contarLinksInternos("<a href='#root/q1/w2'>X</a>") === 1);
-ok('link externo ignorado', contarLinksInternos('<a href="https://x.com">X</a>') === 0);
-ok('sem links → 0', contarLinksInternos('Só texto') === 0 && contarLinksInternos('') === 0);
+ok('?bookmark= ignorado', contarLinksDaNota('<a href="#root/a1/b2/c3?bookmark=xyz">X</a>') === 1);
+ok('aspas simples OK', contarLinksDaNota("<a href='#root/q1/w2'>X</a>") === 1);
+ok('link externo ignorado', contarLinksDaNota('<a href="https://x.com">X</a>') === 0);
 
-console.log('5) integração (span + contagem, como no card)');
-const contarTarefa = (html) => contarLinksInternos(extrairSpanDescricao(html) || html);
-ok('tarefa real simples → 1', contarTarefa(REAL_SIMPLES) === 1);
-ok('tarefa real com aninhado → 1', contarTarefa(REAL_ANINHADO) === 1);
-ok('tarefa sem link → 0', contarTarefa('<span class="todo-list__label__description">Só texto</span>') === 0);
+console.log('5) casos vazios');
+ok('nota sem links → 0', contarLinksDaNota('<p>Só texto e checkboxes</p>') === 0);
+ok('vazio/null → 0', contarLinksDaNota('') === 0 && contarLinksDaNota(null) === 0);
 
 console.log(falhas === 0 ? '\n>>> TODOS OS TESTES PASSARAM' : `\n>>> ${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);
