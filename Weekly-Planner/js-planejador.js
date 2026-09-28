@@ -154,6 +154,20 @@
             #wp-root .pl-mode-btn { cursor:pointer; user-select:none; box-sizing:border-box; }
             #wp-root .pl-mode-switch { display:none !important; }
         }
+
+        /* ── Chips de referência (@nota) nos cards ── */
+        #wp-root .task-refs { display:flex; flex-wrap:wrap; gap:2px 4px; margin-top:3px; }
+        #wp-root .task-ref {
+            display:inline-block; max-width:100%;
+            font-size:11px; line-height:1.35; padding:0 6px;
+            border:1px solid var(--main-border-color,#45475a);
+            border-radius:99px;
+            color:var(--muted-text-color,#888);
+            cursor:pointer; user-select:none;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+            vertical-align:middle;
+        }
+        #wp-root .task-ref:hover { color:var(--main-text-color,#cdd6f4); border-color:var(--main-text-color,#cdd6f4); }
         </style>`);
 
     // Aplica tipografia do painel de Tarefas via INLINE !important (setProperty 'important'):
@@ -513,7 +527,7 @@
                                 .replace(/&#39;/g,   "'")
                                 .replace(/\s+/g,     ' ')
                                 .trim();
-                            if (text) tasks.push({ text, cbIndex });
+                            if (text) tasks.push({ text, cbIndex, raw });
                         }
                     }
                     cbIndex++;
@@ -545,6 +559,7 @@
                     id,
                     text:           cleanText,
                     tags,
+                    refs:           extrairRefs(task.raw || ''),
                     checkboxIndex:  task.cbIndex,
                     noteId:         g.noteId,
                     noteTitle:      g.title,
@@ -697,6 +712,32 @@
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
+    /* REFS (início) — parsing puro dos links internos (@nota) do HTML da tarefa */
+    function extrairRefs(html) {
+        const refs = [];
+        const seen = new Set();
+        const re = /<a\b[^>]*href=["']#root\/([A-Za-z0-9]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+        let m;
+        while ((m = re.exec(String(html || ''))) !== null) {
+            const noteId = m[1];
+            const title = String(m[2])
+                .replace(/<[^>]+>/g, '')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&amp;/g,  '&')
+                .replace(/&lt;/g,   '<')
+                .replace(/&gt;/g,   '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g,  "'")
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (!noteId || seen.has(noteId)) continue;
+            seen.add(noteId);
+            refs.push({ noteId, title: title || noteId });
+        }
+        return refs;
+    }
+    /* REFS (fim) */
+
     function modeSwitcher() {
         const modes = [
             { id: 'kanban', label: 'Semana' },
@@ -795,6 +836,13 @@
         const doing = tags.find(t => t.type === 'progress');
         if (!doing) return '';
         return `<div class="doing-bar"><div class="doing-fill" style="width:${doing.value}%"></div></div>`;
+    }
+
+    function renderRefChips(refs) {
+        if (!refs || !refs.length) return '';
+        return `<div class="task-refs">${refs.map(r =>
+            `<span class="task-ref" data-ref-note-id="${esc(r.noteId)}" title="Abrir: ${esc(r.title)}">🔗 ${esc(r.title)}</span>`
+        ).join('')}</div>`;
     }
 
     const isMobile   = () => window.matchMedia('(max-width:1024px)').matches;
@@ -972,6 +1020,7 @@
                          data-cb-index="${t.checkboxIndex}">
                         <span class="pl-done-btn" title="Marcar como concluída">✓</span>
                         <div>${esc(t.text)}</div>
+                        ${renderRefChips(t.refs)}
                         ${t.tags && t.tags.length
                             ? `<div class="task-tags">${renderTagBadges(t.tags)}</div>`
                             : ''}
@@ -1210,6 +1259,7 @@
                                      color:var(--muted-text-color);user-select:none;">✓</span>
                     </div>
                     ${tagsHtml ? `<div class="gantt-label-tags">${tagsHtml}</div>` : ''}
+                    ${renderRefChips(item.refs)}
                     ${doingHtml ? doingHtml.replace('doing-bar', 'gantt-label-doing').replace('doing-fill', 'gantt-label-doing-fill') : ''}
                 </div>`;
 
@@ -1243,6 +1293,7 @@
                                   data-note-id="${esc(t.noteId)}"
                                   data-cb-index="${t.checkboxIndex}">✓</span>
                             <span class="gantt-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
+                            ${renderRefChips(t.refs)}
                             <span class="gantt-blog-note">${esc(t.noteTitle)}</span>
                             ${tagsHtml ? `<span class="gantt-blog-tags">${tagsHtml}</span>` : ''}
                         </div>`;
@@ -1536,6 +1587,7 @@
                                          title="${esc(t.text)}">
                                     <span class="mn-done-btn" title="Marcar como concluída">✓</span>
                                     ${esc(t.text)}
+                                    ${renderRefChips(t.refs)}
                                 </div>`;
                         }).join('')}
                         <div class="mn-drop"></div>
@@ -1560,6 +1612,7 @@
                              data-note-id="${esc(t.noteId)}"
                              data-cb-index="${t.checkboxIndex}">
                             <span class="mn-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
+                            ${renderRefChips(t.refs)}
                             <span class="mn-blog-note">${esc(t.noteTitle)}</span>
                         </div>`).join('')}
                     </div>
@@ -2109,6 +2162,7 @@
                                         ? `<div class="task-tags" style="margin-top:2px;">${renderTagBadges(t.tags)}</div>`
                                         : ''}
                                     ${renderDoingBar(t.tags)}
+                                    ${renderRefChips(t.refs)}
                                 </div>
 
                             </div>`;
@@ -2235,6 +2289,12 @@
     renderPlanner();
     renderTasks();
     bindTaskEvents();
+
+    // Chips de referência (@nota): abrem a nota apontada sem disparar o clique do card
+    $root.on('click', '.task-ref', function (e) {
+        e.stopPropagation();
+        api.activateNote($(this).data('refNoteId'));
+    });
 
     // spans role=button (barra de modo): suporte a Enter/Espaço
     $pl.on('keydown', '.pl-mode-btn', function (e) {
