@@ -76,7 +76,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 |---|--------|------------|------|-----------|----------|---------------|----------|
 | 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados + fix pós-batch 4** (`t`→`tr` + guard do render + `test-smoke.js`): ~65 correções/refactors; 49 asserções + smoke. Residual no `ROADMAP-RESIDUAIS.md` |
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smokes dos dois no Chrome headless); residual no `ROADMAP-RESIDUAIS.md` |
-| 3 | Canvas-Note-Tools (widget + launcher mobile) | `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js`, `mobile-launcher.src.js`, `build-mobile-launcher.js` | 29/09/2026 | 42 achados (0C/4A/14M/20B/4S) | 35 achados (2C/8A/18M/5B/2S) | 16 itens (S/M) | **Relatório publicado** (29/09); correções em batches após triagem |
+| 3 | Canvas-Note-Tools (widget + launcher mobile) | `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js`, `mobile-launcher.src.js`, `build-mobile-launcher.js` | 29/09/2026 | 42 achados (0C/4A/14M/20B/4S) | 35 achados (2C/8A/18M/5B/2S) | 16 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smoke do widget e do launcher); residual no `ROADMAP-RESIDUAIS.md` |
 
 ### 🔁 Fila proposta (ajustável)
 
@@ -902,3 +902,65 @@ resultados de busca no widget, e do diálogo no launcher (D3.1/D3.2/D3.6); (d)
 cards (C4.3/C4.4). Nenhuma correção foi aplicada nesta rodada.
 
 **Próximo da lista:** Shared-Notes (rodada 4).
+
+---
+
+## ✅ Correções aplicadas — rodada 3, batches 1-3 (29/09/2026)
+
+### Batch 1 — bugs, integridade e segurança
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C4.2 + M4.1 | Rótulo da seta corrigido: helper puro `clwArrowLabel(relType, t)` no engine, usado nos **dois** front-ends (era `rel.label`, inexistente) | `test-mobile-launcher` (rótulo PT + custom + `REL_SAVE` alterando o texto) |
+| C4.1 | Clone de template remapeia **`groupIds`** (duas cópias não ficam mais presas; remover uma não apaga elementos da outra) | novo teste (grupos próprios e diferentes do original) |
+| C1.1 | Canvas com JSON corrompido: 11 pontos trocaram `catch → data={}` por **erro explícito** (com mensagem i18n) — nada é sobrescrito | novo teste (não sobrescreve + conteúdo intacto) |
+| C1.2 | Editor não salva mais "fantasma": backend lança quando a nota não existe (e o erro aparece) | revisão |
+| C2.1 + M2.1 | `sanitizarHtml` (scripts/frames/on*/javascript:) no editor flutuante e no diálogo do launcher | smoke |
+| C2.2 + C2.3 | Opção custom das relações com escaping; título do longform com `escapeHtml` | revisão |
+| C1.3 | `err.message` com guarda em 20 pontos (`(err && err.message) || err`) | revisão |
+| C4.5 | Sync cria o **elemento de trecho** quando a nota vazia ganha conteúdo (antes ficava sem trecho para sempre) | novo teste (card sem trecho → sync cria) |
+| C4.3 | `colGap` 280 → 360 (fim da sobreposição de 50 px entre colunas de cards) | revisão (constantes) |
+| M1.1 | "Nota criada, mas o card não foi inserido" (novo aviso no launcher) | revisão |
+| D2.4 | Paridade do custom no launcher: valor desconhecido vira opção preservada | revisão |
+
+### Batch 2 — UI/UX, acessibilidade e quick wins
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D3.1 + QW5 | Editor flutuante com `role="dialog"`/`aria-modal`/`aria-labelledby` e **Esc fecha salvando** (como o ✕) | smoke (role + Esc) |
+| D3.2 | Resultados de busca e templates viraram `<button>` (focáveis; `:focus-visible` deixou de ser código morto) | smoke (widget) |
+| D3.3 + QW12 | `aria-label` nos 11 botões da toolbar + `aria-pressed` no toggle de captura | smoke (aria-pressed alterna) |
+| D7.1/D7.2/D7.3 | Tema claro detectado pelo brilho de `--main-background-color` (`.clw-light`): perigo/erro/foco com tons escuros; status usa `_corErro()` | revisão + smoke |
+| D5.3 | Botão destrutivo com sinal de perigo em repouso | revisão |
+| D4.1 + D5.1 + D6.1 | Painéis com `max-height`/scroll; `:disabled` no botão primário; `prefers-reduced-motion` no widget | revisão |
+| D2.2/C5.2 + QW6 | Clique-fora fecha também o painel de relações | revisão |
+| QW4 | `confirm()` nativo → **dois toques** com i18n (padrão do launcher) | revisão |
+| QW7/C7.3 + M7.1 | Template novo aparece no 🧩 sem recarregar (cache invalidado no desktop; launcher revalida a cada abertura) | revisão |
+| QW8 | Progresso `i/n` na sincronização do launcher | revisão |
+| QW11 | `Enter` na busca insere o primeiro resultado | revisão |
+| QW2/QW3 + C7.2 | `remove.btn`/`edit.btn`/`common.untitled` usados de fato; `(sem título)` traduzido; `editor.discard` novo | `test-flow-engine` (paridade PT/EN) |
+| D3.6/D3.7/D3.8 + D4.4 | Launcher: `role="dialog"`/`aria-modal`, abas com `role="tab"`/`aria-selected`/`aria-controls`, status `aria-live`, ✖/abas com 44px | smoke (dialog, abas, região viva, Esc) |
+| D5.5 + D5.6 + D5.7 + D5.8 + D6.3 | "Voltar" com 2 toques quando há edição não salva; "…" eterno de templates corrigido; vazios da busca/lista com i18n; re-render de locale não apaga digitação; hover/transições no launcher | revisão + smoke |
+| D1.1 do batch: `common.close` no ✖ do launcher | revisão ||
+
+### Batch 3 — harness e miúdos
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| QW13 + C8.2 | `test-flow-engine.js` portátil (`__dirname` + `os.tmpdir()`) | `bun` |
+| C8.1 | Asserção de z-index deixou de ser tautológica (verifica definido e ordenado de verdade) | `bun` |
+| QW14 + B2 | `build-mobile-launcher.js --check` (compara sem escrever) e **timestamp removido** (fim do diff a cada build) | `--check` em sincronia ✅ |
+| QW18 + C8.3 | **Smoke de runtime** (`test-smoke.js`): widget (doRender, 11 botões, editor role=dialog, aria-pressed, Esc) e launcher (dialog, abas ARIA, aria-live, Esc) no Chrome headless | `bun test-smoke.js` ✅ |
+| C7.4 + C1.4 + C1.5 | `style.id` duplicado; captura com `try/catch` (desliga em vez de quebrar); `String()` na busca | revisão |
+
+**Deploy (29/09):** VPS `KX5k2GPjU39s` (widget v8) e `sjnN3xRWafpG` (launcher) + demo
+`GlqViuRJYfcj` (widget) via ETAPI; **sha256 idêntico repo = zip = VPS = demo**
+(`9b6dc57d…` v8; `3ec4c083…` launcher); zip `Canvas-note-tools.zip` regenerado.
+⚠️ O widget no VPS estava numa versão intermediária (sem os marcadores `CLW-BE-*`) —
+agora alinhado com o repo.
+
+**Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Canvas-Note-Tools):
+sync em lote (C3.1/M3.1), layout de cards (C4.4/C4.7), índice de z-order (C4.8),
+Ctrl+Z (C4.9), vínculo texto↔forma (C4.10), limite do `flowZIndex` (C4.11),
+listeners do widget (C5.1/C7.5), refinos de UI/i18n (D1.x/D2.x/D3.4/D3.5/D4.x/D6.2/D8.1)
+e quick wins restantes (QW9/QW10/QW15/QW16).

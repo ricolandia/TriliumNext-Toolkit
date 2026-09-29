@@ -59,8 +59,32 @@ prioridade.
 3. **Deploy** (ETAPI VPS + demo, sha256 idêntico, zips regerados) só quando o plugin
    entrar em release; marcar o item como ✅ aqui e registrar no `SESSION.md`.
 
+## Canvas-Note-Tools (rodada 3)
+
+| ID | Item | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+|----|------|-----------|:-------:|:-----:|------------------------------|-----------|
+| CN-C3.1 | Sync em lote: um backend percorre todos os cards e grava o canvas 1× (hoje N round-trips e N gravações) | Perf | M | Médio | `_syncCards`/`_updateCardText`; `mobile-launcher.src.js` | manual com canvas grande + `bun` no backend novo |
+| CN-C4.4 | Linha do grid usa a altura estimada do card novo (um card alto faz o próximo nascer sobreposto) | Layout | M | Médio | `Canvas tools v8.js` (INSERT) | manual (visual) |
+| CN-C4.7 | Título do card sem wrap (o trecho tem; o título estoura os 330 px) | Layout | S | Baixo | INSERT/SYNC | manual (visual) |
+| CN-C4.8 | Cards sem `index` e índices de template recomeçando em `a00` (z-order indefinido/colisões) | Robustez | S/M | Médio | INSERT/TPL | manual (Excalidraw) |
+| CN-C4.9 | Ctrl+Z não desfaz nada (escrita direta + `activateNote`) — documentar ou usar a API do Excalidraw | UX | S/M | Médio | INSERT/FLOW/REMOVE | manual |
+| CN-C4.10 | Textos não vinculados às formas (`containerId`/`boundElements`) | UX | M | Médio | elementos de card/nó | manual |
+| CN-C4.11 | `flowZIndex` esgota em ~3.844 elementos (base fixa) | Robustez | S | Baixo | engine de fluxo | `bun` (limite) |
+| CN-C5.1 + CN-C7.5 | Listeners de documento na reinjeção e `window._clw`/timers sem limpeza | Manutenção | S | Baixo | `_injectFloat`/`_refineLang` | revisão |
+| CN-D1.1 + CN-D1.2 | Hierarquia do painel de ajuda e agrupamento dos 11 botões da toolbar | UX | S/M | Baixo | CSS/markup da ajuda/toolbar | revisão visual |
+| CN-D2.1 + CN-D2.3 + CN-D2.5 | Cabeçalho ✕ consistente nos painéis; hardcodes restantes e strings do launcher fora do i18n | UX/i18n | S | Baixo | vários | grep + paridade do teste |
+| CN-D3.4 + CN-D3.5 | `aria-label` nos inputs; devolver o foco ao gatilho ao fechar painéis | a11y | S | Baixo | busca/título/filtro; fechamentos | inspeção + smoke |
+| CN-D4.2 + CN-D4.3 + CN-D4.5 | Linha de botões com wrap; `word-break` no status; truncamento recuperável no launcher | UX | S | Baixo | CSS dos painéis/launcher | revisão visual |
+| CN-D5.4 | Busca com retry e captura com desfazer | UX | S/M | Baixo | painel de busca/captura | manual |
+| CN-D6.2 + CN-D8.1 | "Glass" sem efeito real (blur desnecessário); micro-tipografia (títulos 11 px etc.) | UX/perf | S | Baixo | CSS | revisão visual |
+| CN-QW9 | Busca mostra "15 de N"; listas de editar/remover com limite 50 + "+N" | UX | S/M | Baixo | resultados/listas | manual com 60 cards |
+| CN-QW10 | Paridade do launcher: botão "Exemplo" e ordenação de templates | UX | S | Baixo | `mobile-launcher.src.js` | manual |
+| CN-QW15 | Desfazer remoção de card (restaurar `isDeleted=false`) | UX | M | Médio | REMOVE + painel | `bun` + manual |
+| CN-QW16 | Consolidar a listagem de cards num helper/backend `CARDS` único | Manutenção | M | Baixo | `v8` (4 fluxos) | `bun` + manual |
+
 ## Histórico
 
+- **29/09/2026** — atualizado com os residuais da rodada 3 (Canvas-Note-Tools).
 - **29/09/2026** — criado com os residuais das rodadas 1 (Weekly Planner) e 2
   (Writers-Tools); regra de execução pós-rodada 16 registrada no método do
   `AUDITORIA-ESPECIALISTAS.md`.
