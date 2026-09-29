@@ -80,14 +80,15 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 3 | Canvas-Note-Tools (widget + launcher mobile) | `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js`, `mobile-launcher.src.js`, `build-mobile-launcher.js` | 29/09/2026 | 42 achados (0C/4A/14M/20B/4S) | 35 achados (2C/8A/18M/5B/2S) | 16 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smoke do widget e do launcher); residual no `ROADMAP-RESIDUAIS.md` |
 | 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Batches 1-2 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; 70 chaves i18n em paridade; testes hostis); ✅ token do E2E rotacionado (29/09); residual no `ROADMAP-RESIDUAIS.md` |
 | 5 | AI-Chat (render note) | `AI-Chat/AI-Chat/AI Code.js` | 29/09/2026 | 50 achados (2C/9A/18M/17B/4S) | 40 achados (3C/11A/16M/9B/1S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/zip com sha256 idêntico; demo: instalação nova via ETAPI com sha idêntico e config pelo label; 85 chaves i18n em paridade; `test-chat.js` + `test-smoke.js`); residual no `ROADMAP-RESIDUAIS.md` |
+| 6 | Minimalist Pomodoro + Time Tracker | `Minimalist-Pomodoro/Pomodoro-mini/Pomodoro mini.js` | 29/09/2026 | 36 achados (2C/4A/16M/9B/5S) | 33 achados (1C/8A/14M/8B/3S) | 20 itens (S/M) | **Auditoria concluída; nenhuma correção aplicada** (batches após triagem: 1) integridade/perda de dados + relatório, 2) a11y/estado/tema + i18n, 3) harness + README/zip) |
 
 ### 🔁 Fila proposta (ajustável)
 
 ~~2. Writers-Tools (Fountain + Longform)~~ ✅ 29/09 · ~~3. Canvas-Note-Tools~~ ✅ 29/09 ·
 ~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · ~~6. Daily-Note-Map~~ ⛔ removido da
 coleção (29/09 — o mapa nativo do Trilium cobre; decisão no `SESSION.md`) ·
-**6. Minimalist Pomodoro + Time Tracker (próximo — prioridade do release)** · 7. Word-Counter ·
-8. Daily-Note-Navigator · 9. Knowledge-Dashboard · 10. Attribute-GC · 11. UI-Tweaks ·
+~~6. Minimalist Pomodoro + Time Tracker~~ ✅ 29/09 · **7. Word-Counter (próximo — prioridade do
+release)** · 8. Daily-Note-Navigator · 9. Knowledge-Dashboard · 10. Attribute-GC · 11. UI-Tweaks ·
 12. Kanboard · 13. Mastodon · 14. Canvas-Template-Loader · 15. Canvas-Templates.
 
 ---
@@ -1536,3 +1537,217 @@ plugin encontra pelo label".
 por instância, política para imagens remotas, render em lote no restore, títulos duplicados dos
 comandos, prompt custom na troca de persona, estado do botão Enviar, breakpoint por container,
 densidade das faixas, capturas do README, bump/descrição no registry.
+
+---
+
+## Rodada 6 — Minimalist Pomodoro + Time Tracker (29/09/2026)
+
+**Escopo:** `Minimalist-Pomodoro/Pomodoro-mini/Pomodoro mini.js` (471 linhas), `README.md`,
+`Pomodoro-mini.zip`; registry `minimalist-pomodoro`.
+**Verificação:** `bun build` (sintaxe) ✅ · zip = repo (sha256 `632968db…`) · **sem harness de
+teste** · registry `0.8.0` com `sourceUrl` + labels (`widget`/`readOnly`), sem manifest (ok) ·
+3 especialistas (read-only) + conferência direta dos achados graves.
+**Baseline conferido no runtime 0.106:** `api.showError` existe; `cssBlock(CSS)` é API válida
+(style no widget, reanexado a cada render); `get parentWidget()` **de instância funciona** (a nota
+antiga do `SESSION.md:127` sobre ser `static` está desatualizada); **`--button-hover-background-color`
+NÃO existe** em nenhum tema do 0.106 (hover morto); Boxicons `bx-*` existem (via `window.glob`).
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 2 | 4 | 16 | 9 | 5 | 36 |
+| 🎨 UI/UX | 1 | 8 | 14 | 8 | 3 | 33 |
+| ⚡ Quick wins | — | — | — | — | — | 20 itens |
+
+**Top 5 (triagem sugerida):**
+1. **[Crítica · C1/D5]** `_stop()` limpa todo o rastreamento mesmo quando o relatório falha (o `catch` interno engole o erro e o reset acontece de qualquer jeito) — perda irreversível com só um toast (`267-290`, `446-467`).
+2. **[Crítica · C4]** `lastTick` restaurado sem janela de validade (`savedAt` é escrito e nunca lido): abrir no dia seguinte e salvar credita a noite inteira à última nota (`57`, `75`, `338-348`).
+3. **[Alta · C2/C1]** Relatório com título de nota **sem escape** e **linhas em sintaxe markdown dentro do `<tbody>`** (a tabela não renderiza; HTML persistente) (`428-442`).
+4. **[Alta · C4]** Recarga no meio da sessão **não retoma o timer** e descarta `pomo-session-end`; boot só repinta a UI se houver pendência (`393-406`, `205-208`).
+5. **[Alta · C5]** `beforeunload` acumulativo a cada render + interval órfão sem cleanup; `restoreTrackingData` sobrescreve o estado vivo no remount (`210-213`, `62-76`).
+
+**Nota de dedupe:** STOP destrutivo e "salvar no meio perde rastreio" aparecem nas três listas
+(Código 1/13/14, UI 1/2, QW-9/10); hover inexistente (Código 28?, UI 7), boot sem `_updateUI`
+(Código 19, UI 10, QW-1) e ARIA/alvos (Código 28, UI 3/4/5, QW-12) também. Os batches consolidam.
+
+### 👨‍💻 Código — achados
+
+**Crítica**
+
+- **C1.1 · `_stop()` limpa o tracking mesmo com falha no relatório** (`267-290`, `465-467`): `await this._saveReport()` engole o erro e não devolve status; em seguida `noteTimes.clear()` + `clearTrackingData()`. Qualquer falha de backend destrói horas de foco. Correção: `_saveReport()` retorna booleano; só limpar em sucesso. (verificar em runtime com backend falhando)
+- **C4.1 · `lastTick` restaurado sem validade infla o relatório offline** (`57`, `75`, `338-348`, `203`): `savedAt` gravado e nunca lido; clique em "pendente" → `_flushNoteTime()` soma `now - lastTick`. Correção: limitar/descartar pela janela (`savedAt`) ou reancorar no restore. (verificar em runtime)
+
+**Alta**
+
+- **C4.2 · Recarga no meio da sessão não retoma o timer e destrói `pomo-session-end`** (`393-406`, `205-208`; README `27`): calcula `remaining` mas não liga `running`/intervalo e remove a chave; UI só repinta se houver pendência. Correção: retomar quando `remaining>0`, `_updateUI()` incondicional e só consumir a chave de fato.
+- **C5.1 · `beforeunload` acumulativo e timer sem cleanup de ciclo de vida** (`210-213`, `242`, `328`): listener anônimo por render; `cleanup()` do widget não remove; intervalo sobrevive a unmount/re-render. Correção: referência + `removeEventListener`, init idempotente. (verificar em runtime)
+- **C2.1 · Título de nota sem escape no HTML do relatório** (`429-431`): `${title}` cru em `<a>` criado por `createTextNote`. Correção: `esc()` (com aspas) e validar `id`. (verificar em runtime)
+- **C4.3 · A pausa do ciclo é contada como tempo de trabalho da nota** (`313-326`): `if (lastNoteId) lastTick = Date.now()` mantém a mesma nota durante o break. Correção: zerar/desancorar no início do break e reancorar no foco.
+
+**Média**
+
+- **C1.2 · `restoreTrackingData` sobrescreve `noteTimes` vivo no remount** (`62-76`, `205-208`): o snapshot persistido não contém os segundos desde o último `persistTrackingData`. Correção: só restaurar com `noteTimes.size === 0` ou merge por soma. (verificar em runtime)
+- **C7.1 · i18n ausente** (todo o arquivo; UI + relatório + datas `pt-BR`): diverge do padrão (Canvas/Shared/AI-Chat). Correção: `PM_I18N` + `tr()` + locale. (raiz também em `D2.2`/`QW-18`)
+- **C3.1 · `pomo-ticks` gravado a cada 250 ms e nunca lido** (`306`): escrita síncrona 4×/s + lixo. Correção: remover.
+- **C3.2 · DOM reescrito 4×/s sem mudança de segundo** (`294-307`): `$timer.text()` a cada tick. Correção: cachear a última string; intervalo de 1 s.
+- **C1.3 · `_saveReport` sem guarda de reentrada** (`202-203`, `267-277`, `446-467`): duplo clique → dois relatórios idênticos. Correção: flag `saving` + botões desabilitados.
+- **C1.4 · `catch {}` mudo no restore** (`77-79`): JSON corrompido some sem aviso e a chave fica. Correção: avisar/limpar com aviso.
+- **C4.4 · Relatório manual durante a sessão perde o trecho até a próxima troca** (`411-412`, `454-458`): `lastNoteId=null`/`lastTick=0` com `running=true`. Correção: reancorar na nota atual. (raiz também em `D5.2`/`QW-10`)
+- **C4.5 · `cycleCount` não zera no save manual** (`454-458` × `279-281`, `419-426`): o próximo relatório repete "ciclos completos". Correção: zerar por relatório.
+- **C1.5 · `localStorage` sem `try/catch`** (`59`, `83`, `306`, `377`, `384-390`, `394-405`): cota/contexto restrito quebram `_start`/`_pause` no meio. Correção: embrulhar e degradar com aviso.
+- **C7.2 · Chaves de storage sem versão/escopo** (`59`, `83`, `306`, `384-390`, `394-405`): duas cópias/contas compartilham estado. Correção: prefixo + `schemaVersion`.
+- **C4.6 · `_loadState` monta estado incoerente em storage sujo** (`394-405`): fallback de `seconds` com `isWorkSession` de outra chave → "Pausa" de 25:00. Correção: coerência entre ramos + `Number.isFinite`.
+- **C8.1 · Sem testes puros nem smoke** (pasta sem `test-*.js`). Correção: `test-pomodoro.js` (marcadores) + smoke do `doRenderBody` (padrão `QW-14/15`).
+- **C1.6 · `_updateUI()` não roda no boot sem pendência** (`205-208`): template fica 25:00/status vazio. Correção: chamar sempre. (raiz também em `D5.4`/`QW-1`)
+- **C4.7 · Relatório do cruzamento de meia-noite vai para o dia errado** (`415-417`): `dateStr` calculada no save. Correção: persistir a data de início da sessão.
+- **C4.8 · `_start` sem nota ativa mantém `lastNoteId` antigo** (`244-248`, `338-348`): tempo creditado à nota errada. Correção: `lastNoteId = null` sem nota.
+- **C6.1 · Destino do relatório nem sempre é a daily note e não é informado** (`444-452`): `getDayNote` pode devolver null → cai no contexto/`root` em silêncio. Correção: informar o destino no toast.
+- **C4.9 · `_pause` persiste pendência mesmo sem dados** (`254-265`, `377-378`, `412`): banner "fantasma" que nunca some e cujo clique não faz nada. Correção: persistir só com dados; esconder sem dados. (raiz também em `D5.3`)
+
+**Baixa**
+
+- **C4.10 · `Math.round` por flush acumula deriva** (`224-227`, `341-347`). Correção: guardar ms e arredondar na exibição.
+- **C4.11 · Título velho e links mortos no relatório** (`73-75`, `429-431`). Correção: revalidar no flush.
+- **C4.12 · Ramo de status `'...'` morto/confuso** (`366-367`). Correção: remover ou nomear ("pronto para a pausa").
+- **C5.2/C7.3 · CSS reanexado a cada render e IDs globais** (`191`, `113-158`). Correção: CSS idempotente + classes escopadas. (raiz também em `D2.5`)
+- **C7.4 · Versões desalinhadas** (registry `0.8.0`; README "v4"; zip `appVersion 0.103.0`; sem manifest). Correção: alinhar no release.
+- **C7.5 · Acessibilidade fora da convenção** (`127-144`, `148-158`, `163-176`). Correção: `aria-label`, ≥40 px, `:focus-visible`. (raiz também em `D3.x`)
+- **C3.3 · `_updateUI` relê o localStorage a cada chamada** (`377`). Correção: cache em memória.
+- **C1.7 · `catch` assume `Error`** (`465-467`): rejeição sem `message` → "undefined". Correção: `(e && e.message) || e`.
+- **C4.13 · `restoreTrackingData` não valida tipos nem descarta `{secs: 0}`** (`67-71`). Correção: `Number.isFinite` + descartar vazios.
+
+**Sugestão**
+
+- **C4.14 · `savedAt` escrito e nunca lido** (`57`): usar no restore (raiz do C4.1).
+- **C7.6 · Comentário do topo × README divergem sobre left-pane** (`11-13` × README `36`).
+- **C5.3/C4.15 · Autochain infinito e silencioso** (`309-334`): sessões de horas sem aviso; relatório só no stop. Correção: aviso opcional no fim do foco.
+- **C8.2 · Helpers não exportados para teste** (`471`): expor condicionalmente (padrão Shared Notes).
+- **C6.2 · Dependência silenciosa do rótulo `#widget`** (README `34`, registry): o zip traz `iconClass`/`color` que o fluxo `sourceUrl` não aplica. Correção: labels no registry ou manifest.
+
+### 🎨 UI/UX — achados
+
+**Crítica**
+
+- **D5.1 · STOP destrutivo e silencioso** (`267-290`, `446-467`): salva + zera tudo em um clique, mesmo em falha, sem confirmação/desfazer e com estilo idêntico ao play. Correção: 2 toques quando há dados + reset condicionado ao sucesso. (raiz também em `C1.1`/`QW-9`)
+
+**Alta**
+
+- **D5.2 · Salvar no meio da sessão para o rastreamento da nota atual em silêncio** (`410-412`, `454-458`): só volta a registrar na próxima troca de nota. Correção: reancorar a nota atual. (raiz também em `C4.4`/`QW-10`)
+- **D3.1/D4.1 · "Relatório pendente" só de mouse, alvo ~14 px** (`148-158`, `175`, `203`): `<div>` com `cursor:pointer`, sem `role`/tabindex/Enter; é a única via de salvar em alguns estados. Correção: `<button>` real, ≥40 px.
+- **D3.2 · Botões ícone-only sem `aria-label`** (`171-173`, `360-363`): nome só por `title` (muda em runtime sem anúncio). Correção: `aria-label` estável + `aria-pressed` no toggle; `title` como dica.
+- **D4.2 · Alvos de 32 px** (`122-144`): abaixo da régua de 40 px/44 no mobile. Correção: `min-height` + gap maior.
+- **D2.1 · i18n ausente (UI e relatório em PT)** (`166-175`, `360-371`, `416`, `423-425`, `433`, `452`, `460-466`). Correção: `tr()` por locale. (raiz também em `C7.1`/`QW-18`)
+- **D7.1/D6.1 · `--button-hover-background-color` não existe no 0.106** (`143`): hover sem efeito e sem fallback. Correção: `--hover-item-background-color`/`--cmd-button-hover-background-color` com fallback. (verificar em runtime)
+- **D2.2 · Boot sem `_updateUI()` (status em branco)** (`169`, `205-208`): captura confirma; timer pode divergir do restaurado. Correção: chamar sempre. (raiz também em `C1.6`/`QW-1`)
+- **D5.3 · Pendência fantasma** (`254-265`, `377-378`, `412`): aparece sem dados e o clique não faz nada. Correção: persistir/exibir só com dados; avisar quando não há o que salvar. (raiz também em `C4.9`)
+
+**Média**
+
+- **D5.4 · Sem estado "salvando…" nem lock; duplo clique duplica relatório** (`202-203`, `410-412`, `447-454`). Correção: flag + `disabled` + rótulo.
+- **D3.3 · Timer sem `role`/`aria`** (`113-121`, `169`, `294-307`): leitor de tela sem acesso ao tempo. Correção: `role="timer"` + nome acessível atualizado por minuto + região `polite` para transições.
+- **D5.5 · Trocas de fase silenciosas e sem indicador de ciclo** (`309-334`, `355-372`): `cycleCount` só no relatório. Correção: anúncio `polite` + "Ciclo N".
+- **D1.1/D2.3 · Título duplicado** (`166`, `185`): cabeçalho do painel + corpo repetem "Pomodoro". Correção: usar a linha para ciclo/contexto.
+- **D2.4 · Emoji 🍅 diverge dos glifos das rodadas 2-5** (`166`). Correção: remover/trocar por ícone monocromático.
+- **D2.5 · Estado `'...'` sem significado** (`366-367`). Correção: "Pausa pronta" ou omitir.
+- **D2.6 · Terminologia inconsistente** (`171-173`, `360-371`): Iniciar × Iniciar/Retomar × Pausa × Parar. Correção: glossário único ("Encerrar e salvar").
+- **D5.6 · Botão de relatório aparece cedo demais e clicar não faz nada** (`374-375`, `412`). Correção: exigir `noteTimes.size > 0` + feedback.
+- **D3.4/D5.7 · Pendência não anunciada** (`355-379`): sem `role="status"`. Correção: região `polite`.
+- **D7.2 · Borda dos botões < 3:1 (WCAG 1.4.11)** (`133`, `142-144`): `--main-border-color` é o único limite visual (hover morto). Correção: borda de item ativo/fundo acentuado. (verificar em runtime)
+- **D3.5 · Sem `:focus-visible` próprio** (`127-144`). Correção: outline 2 px + offset.
+- **D5.8 · Sucesso/erro só em toast, sem destino/retry** (`444-466`). Correção: mensagem no widget com referência da nota + "tentar de novo".
+- **D6.2 · Sem `prefers-reduced-motion`** (`140`). Correção: bloco de redução.
+- **D6.3 · Sem `:active`/`disabled`** (`127-144`): Stop sempre habilitado. Correção: estados coerentes.
+
+**Baixa**
+
+- **D2.7/D3.6 · "clique para salvar" centrado no mouse e sem cara de ação** (`148-158`, `175`).
+- **D8.1 · Ícone do relatório menor que os demais** (`138`, `145-147`).
+- **D2.8 · Código morto `bx-right-arrow-alt`** (`359`).
+- **D5.9 · Tick de 250 ms mexe no DOM e no localStorage à toa** (`294-307`). (raiz também em `C3.1`/`C3.2`)
+- **D5.10 · `localStorage` sem tratamento de falha** (`46-84`, `383-406`). (raiz em `C1.5`)
+- **D4.3 · Sem ajustes de toque/mobile** (`89-158`): sem `touch-action`/rótulos visíveis.
+- **D2.9 · README desatualizado** (left-pane `36`; "restores pending data" `27`; promessas não cumpridas). (raiz em `QW-19`)
+- **D5.11 · Estado do widget perdido em re-mount** (mesma raiz do `C5.1`).
+
+**Sugestão**
+
+- **D1.2 · Indicador de ciclos no painel** (`27`, `318`, `374-378`).
+- **D5.12 · Prévia do relatório antes de salvar** (`410-442`).
+- **D6.4 · Feedback opcional de fim de sessão** (`309-334`): pulso/chime opt-in com reduced-motion.
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
+|---|----------|------|-------|:-------:|:-----:|-----------|
+| 1 | Boot mostra o tempo restaurado (`_updateUI` sempre) | `169`, `205-208`, `393-406` | Acaba a UI que "mente" | S | Baixo | smoke (`pomo-seconds=600` → 10:00) |
+| 2 | Remover `pomo-ticks` morto | `306` | Menos IO/limpeza | S | Baixo | grep + smoke |
+| 3 | Escapar título no relatório | `430` | Fim da injeção/tabela quebrada | S | Baixo | asserção com `<b>&"` |
+| 4 | Linhas do relatório em `<tr><td>` de verdade | `428-442` | Tabela renderiza | S | Baixo | teste puro + nota gerada |
+| 5 | Toast no fim de foco/pausa + fim do `'...'` | `309-334`, `366-372` | Usuário percebe a transição | S | Baixo | smoke com durações curtas |
+| 6 | Ciclos visíveis no cabeçalho | `355-379`, `166-168` | Contexto sem custo | S | Baixo | smoke pós-1 ciclo |
+| 7 | Pending corrompido: avisar e permitir descartar | `62-80`, `377-378` | Fim do fantasma silencioso | S | Baixo | stub corrompido |
+| 8 | Título do relatório com data/hora + label `#pomodoro` | `452` | Busca/filtro e sem duplicatas | S | Baixo | manual/ETAPI |
+| 9 | STOP seguro (2 toques + não limpar em falha) | `267-290`, `465-467` | Fim da perda de dados | S/M | Baixo/Médio | teste com backend rejeitando |
+| 10 | Salvar sem parar o timer (reancorar; ciclos por relatório) | `454-458` | Tracking contínuo | S/M | Baixo | sequência save→troca de nota |
+| 11 | Atalho de teclado escopado (Espaço/`p`, `s`) | novo | Acesso rápido | S/M | Baixo/Médio | smoke (foco dentro vs. fora) |
+| 12 | A11y: `aria-label`, `:focus-visible`, ≥40 px, reduced-motion | `127-144`, `171-173` | Paridade com o toolkit | S/M | Baixo | smoke + inspeção |
+| 13 | `beforeunload` idempotente | `210-213` | Fim do acúmulo | S | Baixo | smoke de re-render |
+| 14 | Harness `test-pomodoro.js` (puros) | plugin | Rede de proteção | M | Baixo | `bun test-pomodoro.js` |
+| 15 | Smoke `test-smoke.js` de `doRenderBody` | plugin | Pega regressão de boot | M | Baixo | Chrome headless |
+| 16 | Retomar sessão após reload | `393-406` | Cumpre a promessa | M | Médio | teste de `_loadState` + manual |
+| 17 | Durações via labels `#pomoWorkMin`/`#pomoBreakMin` | `18-19`, `421-425` | Flex sem settings | M | Médio | teste puro + manual |
+| 18 | i18n PT/EN pelo `locale` | todo o arquivo | Demo EN e paridade | M | Baixo/Médio | paridade + smoke EN |
+| 19 | README fiel ao código (left-pane, restore, destino, STOP) | README | Doc confiável | S | Baixo | revisão item a item |
+| 20 | Higiene de release (versão/registry/zip) | registry/zip | Consistência | S/M | Baixo | sha256 nas pontas |
+
+**Descartes explícitos:** beep via Web Audio (o toast resolve; som pede toggle — reavaliar opt-in);
+trocar Boxicons por emoji (churn; o ganho é o nome acessível, QW-12); UI de settings/modal (os
+labels bastam); long break 15 min a cada 4 ciclos (muda o modelo anunciado, sem demanda); migrar
+`noteTimes` para backend/sync (sem demanda; localStorage é o padrão do repo); contador no título do
+painel (API não documentada; o corpo cobre); "só contar foco, excluir breaks" (decisão de semântica
+do dono — vira pergunta na triagem, não quick win).
+
+### Claims do README × código
+
+| README | Promessa | Código | Situação |
+|---|---|---|---|
+| 3 | "automated report generation" | `267-277`, `410-412` | Parcial: só no STOP ou clique manual |
+| 7 | "Standard 25/5 cycles" | `18-19` | Verdade, mas fixo (sem configuração) |
+| 8 | "Per-Note Tracking while the timer is running" | `313-351` | Verdade com ressalvas: break conta na nota e há inflação por `lastTick` velho |
+| 27 | "timer automatically restores pending data if you reopen the app" | `62-80` × `393-406` | Impreciso: os dados voltam, o **timer não** |
+| 28 | "Auto-Reports completed cycles (and if chained)" | `419-426`, `279-286` | Parcial: 2º save manual repete os ciclos |
+| 36 | "change `get parentWidget()` to left-pane and base class to NoteContextAwareWidget" | `11-13`, `181-191` | Contraditório: o comentário do código diz que basta o `parentWidget` (e a instância funciona) |
+| — | não documentado | `447-452`, `267-290`, `59`, `384-390`, `173` | Destino do relatório, STOP salva+zera, estado em localStorage, botão manual de relatório |
+
+### Pontos fortes (não mexer)
+
+- Wall-clock correto por `sessionEndTime` (`241`, `295`); tick não depende de contagem do intervalo.
+- Callback de backend auto-contido com args em array (`447-452`); `api.showError` existe.
+- Pausa preserva histórico (`254-265`); restauração de `noteTimes`/ciclos (`62-80`).
+- CSS 100% em variáveis do tema (nenhuma cor fixa); classes namespaceadas (`pomo-*`).
+- Formato do widget igual ao padrão do repo (`181-185`); zip = repo; sem dependências externas.
+- **Bug de formatação real já identificado**: as linhas do relatório usam sintaxe markdown dentro
+  de `<tbody>` (`428-442`) — a tabela não renderiza; correção barata no batch.
+
+### Versões/registry/README/artefatos
+
+- Registry `minimalist-pomodoro` **0.8.0** com `sourceUrl` + labels (sem manifest, ok);
+  README sem versão; zip `appVersion 0.103.0` com JS idêntico ao repo (`632968db…`).
+- `SESSION.md:127` (nota sobre `static get parentWidget()`) **desatualizada** — instância funciona;
+  corrigir a nota no próximo toque do SESSION.
+- Baseline do runtime: `--button-hover-background-color` inexistente; `bx-*` via `window.glob`;
+  `cssBlock` válido (style no widget, reanexado por render).
+
+### Veredito da rodada 6
+
+Widget pequeno e bem comportado no fluxo feliz (wall-clock correto, backend ok, CSS no tema), mas
+com um **risco central de perda de dados** no STOP (limpa mesmo em falha) e um **bug de
+integridade do relatório** (título sem escape + linhas markdown dentro de `<tbody>`), além de
+**inflação do tracking** por `lastTick` restaurado sem validade; a vida útil do widget (reload,
+re-render de painel) tem vazamentos (listener/interval) e estado sobrescrito. Acessibilidade e
+i18n seguem fora do padrão do toolkit. Nenhuma correção aplicada nesta rodada — batches após
+triagem (candidatos: 1) integridade/perda de dados + relatório, 2) a11y/estado/tema + i18n,
+3) harness + README/zip).
+
+**Próximo da lista:** Word-Counter (rodada 7 — prioridade do release).
