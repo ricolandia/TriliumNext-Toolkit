@@ -76,11 +76,12 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 |---|--------|------------|------|-----------|----------|---------------|----------|
 | 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados + fix pós-batch 4** (`t`→`tr` + guard do render + `test-smoke.js`): ~65 correções/refactors; 49 asserções + smoke. Residual no `ROADMAP-RESIDUAIS.md` |
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smokes dos dois no Chrome headless); residual no `ROADMAP-RESIDUAIS.md` |
+| 3 | Canvas-Note-Tools (widget + launcher mobile) | `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js`, `mobile-launcher.src.js`, `build-mobile-launcher.js` | 29/09/2026 | 42 achados (0C/4A/14M/20B/4S) | 35 achados (2C/8A/18M/5B/2S) | 16 itens (S/M) | **Relatório publicado** (29/09); correções em batches após triagem |
 
 ### 🔁 Fila proposta (ajustável)
 
-~~2. Writers-Tools (Fountain + Longform)~~ ✅ 29/09 · **3. Canvas-Note-Tools
-(próximo)** · 4. Shared-Notes · 5. AI-Chat · 6. Daily-Note-Map · 7.
+~~2. Writers-Tools (Fountain + Longform)~~ ✅ 29/09 · ~~3. Canvas-Note-Tools~~ ✅ 29/09 ·
+**4. Shared-Notes (próximo)** · 5. AI-Chat · 6. Daily-Note-Map · 7.
 Knowledge-Dashboard · 8. Attribute-GC · 9. Pomodoro · 10. Word-Counter · 11.
 Daily-Note-Navigator · 12. UI-Tweaks · 13. Kanboard · 14. Mastodon · 15.
 Canvas-Template-Loader · 16. Canvas-Templates.
@@ -676,3 +677,228 @@ com o repo. Token novo do demo: `wrDeploy2909_…` (criado por linha em `etapi_t
 (import com `confirm`), Grid C3.3 (payload da compilação em passos), Grid C4.4
 (filtro por tipo/mime) e Grid C4.3 (alerta de `#compiledDoc` enganoso). O bump de
 registry/release segue no `SESSION.md`.
+
+---
+
+## Rodada 3 — Canvas-Note-Tools (widget + launcher mobile) (29/09/2026)
+
+**Escopo:** `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js` (3.137 linhas),
+`mobile-launcher.src.js` (644), `build-mobile-launcher.js` (80) e o **gerado**
+`mobile-launcher.js` (2.100, auditado por fonte/sincronia, não linha a linha);
+`README.md`, `test-flow-engine.js` (54 asserções), `test-mobile-launcher.js` (28) e a
+entrada `canvas-note-tools` 0.8.0 do registry. `Canvas tools v6/v7.js` e o spike
+ficam fora do escopo (histórico).
+**Verificação:** `bun test-flow-engine.js` 54 ✅ · `bun test-mobile-launcher.js` 28 ✅ ·
+`bun build` (sintaxe) ✅ · gerador em sincronia (só o timestamp muda) · zip = repo ·
+3 especialistas (read-only) + **conferência direta dos achados graves** (trechos
+citados conferidos no fonte: `catch → data={}`, `rel.label`, `groupIds`, `innerHTML`,
+`confirm()`, cores fixas e a asserção tautológica do teste).
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 0 | 4 | 14 | 20 | 4 | 42 |
+| 🎨 UI/UX | 2 | 8 | 18 | 5 | 2 | 35 |
+| ⚡ Quick wins | — | — | — | — | — | 16 itens |
+
+**Top 5 (triagem sugerida):**
+1. **[Alta · Código]** `rel.label` não existe (a lista tem `labelKey`): o rótulo da seta **nunca** é atualizado ao salvar relações, apesar da promessa do README (`v8:2391`; lista `v8:34-40`; `mobile-launcher.src.js:511`). Correção de 1 linha nos dois front-ends.
+2. **[Alta · Código]** Template inserido duas vezes compartilha `groupIds` (o clone remapeia ids/bindings/container/frame, não grupos, `v8:2668-2692`); remover um card apaga elementos das duas cópias (`_doRemoveCard` casa por grupo, `v8:1918-1927`).
+3. **[Alta · Código]** Canvas com JSON corrompido é sobrescrito sem aviso: `catch (_) { data = {}; }` + `setContent` (padrão em 10 pontos, `v8:3009-3013`/`3089` etc.).
+4. **[Crítica · UI]** Editor flutuante sem `role="dialog"`/`aria-modal`/foco preso, e o Esc **não** fecha (handler omite `clw-editor-float`, `v8:1694-1704`); o diálogo do launcher idem (`src:536-613`).
+5. **[Alta · Código]** Sync faz N round-trips e **N gravações do canvas inteiro** (parse+stringify+setContent por card, `v8:2190-2193`; `src:326-332`) — serialização O(N²); canvas grande/mobile trava.
+
+### 👨‍💻 Código — achados
+
+#### Widget (`Canvas tools v8.js`)
+
+**Alta**
+
+- **C1.1 · Canvas com JSON corrompido sobrescrito sem aviso** (`3009-3013`, `3089`; padrão em `1856`, `1911`, `1966`, `2112`, `2179`, `2223`, `2428`, `2464`, `2758`): o parse falha, `data` vira `{}` e o fluxo segue para `setContent`, trocando o canvas por um quase vazio. Correção: abortar com erro visível quando o parse falhar.
+- **C4.1 · `groupIds` não remapeado no clone de template** (`2668-2692`): cópias do mesmo template ficam presas (mover seleciona as duas) e `_doRemoveCard` (`1918-1927`) apaga elementos das duas. Correção: remapear `groupIds` com o mesmo mapa dos ids.
+- **C4.2 · `rel.label` inexistente → rótulo da seta nunca atualiza** (`2391`; `RELATION_TYPES` `34-40`): `newText = rel ? rel.label : select.value` resulta em `undefined` e o backend ignora (`if (!newText) continue`, `2431`); no mobile vira `''` (`src:511`). Correção: `this._t(rel.labelKey)` / `t(rel.labelKey)`.
+
+**Média**
+
+- **C1.2 · Editor salva "fantasma"** (`2044-2049`, `2054`): nota apagada entre abrir e salvar → backend retorna sem erro e a UI mostra "salva" (texto perdido em silêncio). Correção: lançar erro quando `api.getNote` não achar.
+- **C2.1 · HTML cru da nota entra no DOM e volta ao salvar** (`2021`, `2038`; `src:406`): `innerHTML = note.content` no `contenteditable` (e no diálogo) sem sanitização. Correção: sanitizar (allowlist) ou usar o editor do Trilium.
+- **C3.1 · Sync O(N) chamadas × N gravações do canvas** (`2190-2193`, `2163`; `src:326-332`): `_updateCardText` refaz parse/stringify/setContent por card. Correção: callback único em lote.
+- **C4.3 · Colunas de cards se sobrepõem 50 px** (`15-25`, `3026`): `CARD_CONFIG.width = 330` com `colGap = 280`. Correção: `colGap ≥ width + margem`.
+- **C4.4 · Linha do grid usa altura estimada** (`3022-3027`): card alto na linha de cima faz o próximo nascer sobreposto (y por estimativa, não pelo fundo real). Correção: usar os elementos já posicionados.
+- **C4.5 · Card sem excerpt nunca ganha excerpt no sync** (`2134-2152`): o sync só atualiza `texts[1]` se ele existir; card de nota vazia fica sem trecho para sempre. Correção: criar o texto no sync quando o conteúdo aparecer.
+- **C4.6 · Nota duplicada no canvas: sync atualiza só o 1º card** (`2115`; inserção sem dedupe `3016-3020`): o segundo card nunca sincroniza e o longform duplica a nota. Correção: deduplicar na inserção e iterar todos os rects com o mesmo link.
+- **C7.1 · Lógica de cards/limpeza duplicada em 3+ pontos** (`1852-1864`, `1962-1974`, `2175-2183`; helpers `2073-2107` × `2960-2994`): só uma cópia tem marcador `CLW-BE-*`; editar a "errada" não afeta o launcher. Correção: extrair um backend `CARDS` + helpers únicos.
+
+**Baixa**
+
+- **C1.3 · "undefined" nas mensagens de erro** (`1824`, `1939`, `2198`, `2785`; `src:315`): `err.message` sem guarda. Correção: `(err && err.message) || err`.
+- **C1.4 · Captura sem try/catch no `activateNote`** (`3114-3118`): canvas apagado pode rejeitar sem tratamento. Correção: try/catch + desligar a captura.
+- **C1.5 · Conteúdo não-string derruba a busca inteira** (`2894-2898`): `.replace` direto em `getContent()`. Correção: try/catch por nota (verificar em runtime).
+- **C2.2 · Opção custom de relação sem escape** (`2339-2341`): `safeValue` só remove `"` e entra via `innerHTML`. Correção: criar a `<option>` via DOM.
+- **C2.3 · Longform injeta o título sem escape** (`2505`): `<h2>${note.title}</h2>`. Correção: `escapeHtml`.
+- **C3.2 · Busca sem token de sequência** (`1706-1711`, `2867-2931`): resposta antiga pode sobrescrever a nova. Correção: comparar com a última query antes de renderizar.
+- **C3.3 · Layout do fluxo com `shift()` e DFS recursivo** (`312-318`, `282-291`): fila O(N²) e recursão profunda. Correção: índice de fila e DFS iterativo.
+- **C4.7 · Título do card sem wrap** (`3067` × `2136`): o excerpt tem wrap; o título estoura os 330 px. Correção: aplicar o mesmo wrap.
+- **C4.8 · Cards sem `index`; índices de template recomeçam em `a00`** (`3044-3087`; `2689`): z-order indefinido e colisão de índices entre inserções. Correção: índice único no INSERT e sequência contínua.
+- **C4.9 · Ctrl+Z não desfaz nada** (`3089`, `3097`, `2775`, `2781`): `setContent` + `activateNote` remontam o Excalidraw. Correção: documentar ou usar a API do Excalidraw.
+- **C5.1 · Listeners de documento duplicados na reinjeção** (`1030-1033`, `1694`, `1720`): `_refineLang` remove o root e o bind registra keydown/click de novo sem remover os antigos. Correção: remover antes de registrar.
+- **C5.2 · Fechamento inconsistente de painéis/editor** (`1720-1730` sem `clw-relmap-panel`; `1694-1704` sem `clw-editor-float`; `1677` o ✕ do editor salva): painel de relações ignora clique-fora; editor sem "Cancelar". Correção: incluir relmap no clique-fora e adicionar Cancelar.
+- **C7.2 · Pontas soltas de i18n** (`669`, `677`, `713`, `1118`, `2037`, `2122`): chaves mortas (`remove.btn`, `edit.btn`, `flow.note_error`), `remove.empty` no painel de edição e "Sem título" hardcoded. Correção: limpar e traduzir.
+- **C7.3 · Cache de templates nunca invalidado** (`2582-2583`): template novo só aparece após recarregar. Correção: invalidar ao abrir/salvar.
+- **C7.4 · `style.id` atribuído duas vezes** (`1229`, `1231`): inócuo, mas é código copiado.
+- **C8.1 · Asserção de z-index tautológica** (`test-flow-engine.js:131-132`): `|| idxSorted.length === els.length` faz passar sempre (inclusive com índice duplicado/ausente). Correção: comparar com a ordem original.
+- **C8.2 · Teste com caminho fixo de `$HOME`** (`test-flow-engine.js:4-5`): quebra fora do checkout original. Correção: `__dirname`.
+
+**Sugestão**
+
+- **C4.10 · Textos não vinculados às formas** (`455`, `516-526`, `3044-3086`): sem `containerId`/`boundElements`, texto e forma movem/redimensionam separados.
+- **C4.11 · `flowZIndex` esgota em 3.844 elementos** (`187-192`): base fixa colide depois disso.
+- **C7.5 · `window._clw` e timers sem limpeza** (`977-996`, `1706-1717`).
+- **C8.3 · Falta smoke de runtime do widget/diálogo** (`test-mobile-launcher.js:15-17`): os testes cortam a IIFE; DOM, painéis, editor e `refreshWithNote` ficam sem cobertura.
+
+#### Launcher mobile (`mobile-launcher.src.js` + build)
+
+- **M4.1 · Rótulo da seta também nunca atualiza no mobile** (`src:511`; raiz do C4.2). **[Alta]**
+- **M2.1 · HTML cru da nota no diálogo** (`src:406`): `${dados.content || ''}` dentro de `innerHTML`, sem sanitização. **[Média]**
+- **M3.1 · Sync com N round-trips no launcher** (`src:326-332`): mesma estrutura do desktop, agravada no app mobile. **[Média]**
+- **M1.1 · Nota criada fica órfã se o insert falhar** (`src:310-316`): `NEWNOTE` e `INSERT` são chamadas separadas; a segunda falha e o usuário só vê o erro. Correção: avisar ("nota criada, card não inserido"). **[Média]**
+- **M5.1 · Re-render por idioma apaga o estado do diálogo** (`src:601-604`): o locale confirmado chama `abrir()` de novo e perde DSL/filtro. Correção: atualizar só os rótulos. **[Média]**
+- **M5.2 · Sem Esc, foco inicial ou focus trap** (`src:613-614`): só ✖ e clique-fora fecham. Correção: tratar Escape e conter o foco. **[Média]**
+- **M7.1 · Cache de templates permanente** (`src:156-163`): template novo só depois de reabrir o app. Correção: revalidar a cada abertura. **[Média]**
+- **M7.2 · Duas UIs para as mesmas ações** (`src:300-528` × `v8:1801-2521`): correções de fluxo precisam ser feitas em dois lugares. Correção futura: controller compartilhado com adaptador de diálogo. **[Baixa]**
+- **B1 · Build não valida referências nem sobras** (`build:44-61`, `74-76`): `CLW_BE_*` errado ou marcador sem entrada em `BACKENDS` só quebra em runtime. Correção: validar no build. **[Baixa]**
+- **B2 · Timestamp no cabeçalho gera diff a cada build** (`build:67`): `git diff` sempre acusa o gerado. Correção: remover/isolá-lo. **[Baixa]**
+
+### 🎨 UI/UX — achados
+
+#### Widget (`Canvas tools v8.js`)
+
+**Crítica**
+
+- **D3.1 · Editor flutuante sem semântica de modal, Esc e foco preso** (`1186-1201`, `1258-1271`, `1694-1704`): `div.clw-editor-overlay` sem `role="dialog"`/`aria-modal`/`aria-labelledby`; o Esc não inclui `clw-editor-float`; o foco escapa para o canvas atrás. Correção: `role="dialog"`, foco preso, Esc fecha/cancela e devolve o foco.
+
+**Alta**
+
+- **D3.2 · Resultados de busca e templates são `div` clicáveis** (`2912-2928`, `2628-2633`; CSS `1342`): sem `tabindex`/`role`/Enter/Setas — o `:focus-visible` existente é código morto. Teclado não insere nota nem template. Correção: `<button>`/`role="option"` com navegação.
+- **D3.3 · Botões da toolbar só com emoji e `title`** (`1210-1222`, `1772-1780`): o nome acessível é o emoji; o toggle 🎯 não tem `aria-pressed`. Correção: `aria-label` com `t('btn.*')`.
+- **D7.1 · Cores fixas de tema escuro sobre o tema claro** (`1421-1427`, `1527-1533`, `1448-1454`, `2590`, `2713`): `#f38ba8` (~2,3:1) e `#cba6f7` (~2:1) no claro. Correção: tokens de erro/accent por tema.
+- **D7.2 · Fallbacks escuros misturados com variáveis do tema** (`1297-1300`, `1364-1368`): `.clw-input` com fundo `#181825` fixo + `var(--main-text-color)`; `.clw-round-btn` `#313244`. Risco de texto escuro sobre fundo escuro no tema "next". Correção: fallbacks por tema.
+- **D4.1 · Painéis sem `max-height`** (`1249-1271`, `1128-1129`, `1567-1568`): fluxo com textarea `min-height:280px` e busca até 320px; em janelas baixas o topo é cortado sem scroll. Correção: `max-height:calc(100vh - 120px)` + `overflow:auto`.
+
+**Média**
+
+- **D5.1 · "Salvar" desabilitado sem estado visual** (`1433-1441`, `2040-2041`, `2058-2059`): sem `:disabled` no `.clw-btn-primary` e sem "Salvando…". Correção: estilo + rótulo.
+- **D5.2 · `confirm()` nativo com texto PT hardcoded** (`1881`): diverge do padrão de 2 toques do launcher (`src:443-449`) e vaza PT em UI EN. Correção: confirmação inline via i18n.
+- **D1.1 · Hierarquia invertida no painel de ajuda** (`1627-1653`): título 13px, nomes 17px, descrições 16px. Correção: 14-15px nos itens.
+- **D8.1 · Micro-tipografia** (`1253`, `1283`, `1311-1314`, `1505`): títulos de painel 11px em caixa alta e status 12px. Correção: piso 12-13px.
+- **D3.4 · Inputs só com placeholder** (`1065-1067`, `1076-1078`, `1138-1140`, `1160-1161`, `1193-1194`): sem `<label>`/`aria-label`. Correção: `aria-label`.
+- **D2.1 · Chrome inconsistente entre painéis** (`1060-1081` vs `1088`, `1104`, `1115`, `1126`, `1158`, `1171`): busca e nova nota não têm ✕. Correção: padronizar cabeçalho.
+- **D2.2 · Painel de relações ignora clique-fora** (`1720-1731`): o README promete "click outside closes". Correção: incluir `clw-relmap-panel`.
+- **D4.2 · Linha de botões `nowrap` pode estourar** (`1142-1149`, `1356`, `1590`): sem `flex-wrap`/`min-width:0`. Correção: permitir wrap.
+- **D4.3 · Status sem quebra de palavra** (`1311-1314`, `1504-1507`): erros com IDs longos estouram o painel (o launcher já quebra, `src:130-134`). Correção: `overflow-wrap`.
+- **D2.3 · Hardcoded PT fora do i18n e chaves trocadas** (`1118`, `2037`, `2122`, `2370`, `2600`, `2830`, `2910`, `2340`): "Sem título", "(custom)", `remove.empty` no editor e `longform.read_error` nas relações. Correção: chaves novas/corretas.
+
+**Baixa**
+
+- **D6.1 · Sem `prefers-reduced-motion`** (`1234-1246`, `1379-1393`, `1875`, `1985`, `2309`, `2915`): pulse infinito da captura e animações em cascata. Correção: media query.
+- **D6.2 · "Glass" sem efeito real** (`1260-1270`): fundo opaco + `backdrop-filter` custoso. Sugestão: remover o blur ou translucidez real.
+- **D3.5 · Esc não devolve o foco ao gatilho** (`1694-1704`): foco cai no body ao fechar. Correção: refocar o botão de origem.
+- **D5.3 · Botão destrutivo indiferenciado em repouso** (`1397-1400`, `1220`): o perigo só aparece no `:hover`. Correção: sinal em repouso.
+
+**Sugestão**
+
+- **D1.2 · 11 botões de peso idêntico, sem agrupamento** (`1210-1222`): destrutivo no meio da barra; ordem da barra difere do README (`README:44-56`). Sugestão: agrupar e sincronizar a ordem.
+- **D5.4 · Busca sem retry e captura sem desfazer** (`2932-2936`, `3092-3097`).
+
+#### Launcher mobile (`mobile-launcher.src.js`)
+
+**Crítica**
+
+- **D3.6 · Diálogo sem semântica de modal, Esc e foco** (`536-613`, `629-632`): `#clwm-root` sem `role="dialog"`/`aria-modal`/`aria-labelledby`, sem Escape/foco inicial/trap e o ✖ (`546`) sem `aria-label`. Correção: padrão de modal.
+
+**Alta**
+
+- **D3.7 · Abas sem semântica nem estado acessível** (`549-554`, `616-625`): sem `role="tablist"/"tab"`/`aria-selected`/`aria-controls`. Correção: padrão WAI-ARIA de tabs.
+- **D4.4 · Alvos de toque abaixo de 40px** (`76-79`, `84-89`): ✖ ~26×34px e abas ~34px. Correção: `min-height/min-width:44px`.
+- **D5.5 · "Voltar" descarta o editor sem aviso** (`404-421`, `587`, `640`): o botão fica visível durante a edição e alterações somem (no desktop fechar salva). Correção: confirmar descarte ou salvar.
+
+**Média**
+
+- **D4.5 · Truncamento irrecuperável** (`80-83`, `119-124`, `267-272`, `385-390`): `ellipsis` sem `title`/expansão; em touch o título longo nunca é lido. Correção: `title` ou 2 linhas.
+- **D5.6 · "…" permanente quando templates falham** (`190-198`): o catch só escreve no status. Correção: limpar a lista e oferecer retry.
+- **D5.7 · Estados vazios fracos** (`260-265`, `439-455`): busca vazia mostra "—"; lista pós-remoção fica vazia sem mensagem. Correção: `search.empty`/`remove.empty`.
+- **D2.4 · Paridade quebrada nas relações custom** (`490-494` × `v8:2337-2342`): o desktop cria "(custom)"; o launcher perde o valor. Correção: mesma lógica nos dois (ver QW1).
+- **D2.5 · Strings fora do i18n e tipografia divergente** (`545`, `587`, `410`, `98-105`): "🎨 Canvas Mobile", "‹ Voltar", "Sem título"; monoespaçada × sans. Correção: i18n + fonte única.
+- **D7.3 · Cores fixas e fallback da aba ativa** (`90-93`, `128-129`): `.perigo` `#e78284` ~2,7:1 no claro; fallback `#ddd` pode ficar ilegível no escuro. Correção: tokens de tema.
+- **D6.3 · Sem hover/transição** (`107-127`): roda também em desktop/web. Correção: `:hover` discreto.
+- **D3.8 · Status sem região viva** (`41-44`, `130-134`): sem `aria-live`/`role="status"`. Correção: `aria-live="polite"`.
+
+**Baixa**
+
+- **D5.8 · Re-render do locale pode apagar digitação** (`598-608`): reinjeta o diálogo nos primeiros ms. Correção: só atualizar rótulos (mesma raiz de M5.1).
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
+|---|----------|------|-------|:-------:|:-----:|-----------|
+| 1 | Corrigir o rótulo da seta (`labelKey` traduzido) e extrair `clwDetectRelation`/`clwArrowLabel` puros | `v8:2390-2391`; `src:492-511`; engine `v8:34-69` | Cumpre o README; unifica desktop/mobile | S | Baixo | `bun` nos helpers + assert de `CLW_BE_REL_SAVE` com `textElId` |
+| 2 | Usar as chaves `remove.btn`/`edit.btn` já existentes nos botões das listas | `v8:1878,1988` | Painéis EN sem PT misturado | S | Baixo | locale EN + paridade do teste |
+| 3 | Criar `common.untitled` e usar em editor/sync/templates/busca (+ mobile) | `v8:2037,2122,2600,2910`; `src:410` | Fim do "Sem título" em EN | S | Baixo | paridade de chaves + grep |
+| 4 | Trocar o `confirm()` nativo pelo padrão de 2 toques do mobile | `v8:1881` (`src:443-450`) | Consistência e sem diálogo bloqueante | S | Baixo | manual (armar → confirmar/cancelar) |
+| 5 | Esc fecha o editor salvo (como o ✕) e ✕ ganha dica "salva ao fechar" | `v8:1694-1704,1677` | Cumpre "Esc fecha qualquer painel" | S | Baixo | manual (editar, Esc, conferir nota) |
+| 6 | Clique-fora fecha também o painel de relações; abrir 🕸️ fecha os outros | `v8:1720-1731,2203-2216` | Menos painéis empilhados | S | Baixo | manual |
+| 7 | Invalidar o cache de templates ao salvar template pelo 🪄 | `v8:2602` + `2856-2858` | Template novo aparece sem F5 | S | Baixo | manual |
+| 8 | Progresso na sincronização (`i/n`) no loop desktop e mobile | `v8:2190-2193`; `src:328-332` | Canvas grande não parece travado | S | Baixo | manual + chave nova |
+| 9 | Busca mostra "15 de N"; listas de editar/remover limitadas a 50 com "+N" | `v8:2894`; `src:267`; listas `v8:1872-1891,1982-1995` | Sabe-se que há mais; painéis não esticam | S/M | Baixo | manual com 60 cards |
+| 10 | Paridade do launcher: "Exemplo" (chave existe), templates ordenados, busca vazia com `search.empty` | `src:556-570,160-161,263` | Mesmo comportamento do desktop | S | Baixo | manual no launcher |
+| 11 | Enter no campo de busca insere o primeiro resultado | `v8:1706-1711` | Inserir card sem tirar a mão do teclado | S | Baixo | manual |
+| 12 | `aria-label` nos botões circulares da toolbar | `v8:1211-1221` | Leitor de tela anuncia a ação | S | Baixo | inspeção de DOM |
+| 13 | Portabilidade do teste: `__dirname` + `mkdirSync` da pasta de saída | `test-flow-engine.js:4-6,137` | `bun test-flow-engine.js` roda em qualquer checkout | S | Baixo | copiar para `/tmp` e rodar |
+| 14 | `build-mobile-launcher.js --check` (compara ignorando o timestamp, sai 1 se divergir) | `build:63-79` | Detecta gerado desatualizado antes do release | S | Baixo | rodar sincronizado (0) e após 1 linha (1) |
+| 15 | Desfazer remoção de card (backend devolve ids; "Desfazer" restaura `isDeleted=false`) | `v8:1905-1941,1880-1889` | Recupera toque acidental | M | Médio | assert no teste + manual |
+| 16 | Consolidar a listagem de cards num helper/backend `CARDS` único | `v8:1852-1864` × `1962-1974,2175-2183,2460-2469` | Menos duplicação e deriva com o mobile | M | Baixo | `CLW_BE_CARDS` já testado + manual |
+
+**Notas dos 5 primeiros:** (1) helpers puros logo após `TEXT_TO_RELATION`,
+comparando valor/rótulo em minúsculas, e trocar `rel ? rel.label : select.value` por
+`clwArrowLabel(select.value, k => this._t(k))`; (2) trocar os literais por
+`this._t('remove.btn')`/`this._t('edit.btn')` nas linhas de `innerHTML`; (3) chave
+`common.untitled` passada também no payload do sync; (4) copiar o bloco de 2 toques
+do mobile (texto muda por 3 s) com `remove.confirm`; (5) incluir `clw-editor-float`
+no handler de Escape chamando o mesmo caminho do ✕.
+
+**Descartes explícitos:** unificar os helpers duplicados dos callbacks de backend
+(serializados no sandbox; gerar por string seria mais frágil); sync em chamada única
+de backend (mexe no contrato `CLW_BE_SYNC` testado; o contador #8 resolve o feedback);
+captura 🎯 no mobile (decisão registrada: desktop-only); atalhos 1-9 para a toolbar
+(colidem com o Excalidraw; o `?` documenta); apagar o spike (decisão registrada no
+SESSION).
+
+### Pontos fortes (não mexer)
+
+- Engine de fluxo pura e bem fatorada (`111-599`), com ciclos, nudge por mediana e teste de não sobreposição TB/LR.
+- i18n completa (paridade PT/EN por teste, fallback em cadeia, interpolação) com detecção de locale correta.
+- 12 backends `CLW-BE-*` auto-contidos (uma transação por callback), extraídos por marcador e cobertos pelo teste do launcher.
+- Escaping correto nos demais sinks (`1877`, `1987`, `2346-2348`, `2630`, `2922-2923`, `1478`).
+- Fonte única real (v8 + src + gerador); zip e repo idênticos.
+- Launcher sem APIs inexistentes, com `<button>` reais, caixa `min(96vw,540px)`, corpo rolável e confirmação destrutiva em 2 toques.
+- Toolbar com botões 46×46, `flex-wrap` e `pointer-events:none` nos vãos (canvas preservado); estados de carga/vazio/erro cobertos na busca/templates/remoção.
+
+### Versões/registry/README
+
+- Registry: `canvas-note-tools` **0.8.0**, `sourceUrl` só do widget; o launcher mobile só chega pelo zip/manual (o README cobre o caminho).
+- Zip em sincronia (md5 = repo), `!!!meta.json` de `appVersion 0.104.1` (export antigo) e a nota do launcher rotulada só `#readOnly` (correto).
+- README × código: "relations ... updates labels on save" não se sustenta (C4.2/M4.1); "Escape dismisses any open panel" não vale para o editor (C5.2); "sync ... Title and excerpt are refreshed" falha em card sem excerpt (C4.5). A persistência da captura por `sessionStorage` confere.
+- Nomenclatura: widget "v8", mobile "v9", registry "0.8.0", README sem versão; v6/v7/spike são código morto no repo (mover para `historico/` ou remover, a decidir).
+
+### Veredito da rodada 3
+
+Plugin maduro (engine pura testada, i18n completa, backends limpos, fonte única com
+gerador) com riscos concentrados em: (a) **promessa central quebrada** no rótulo das
+relações (C4.2/M4.1); (b) **integridade do canvas** em template com `groupIds`
+(C4.1) e JSON corrompido sobrescrito (C1.1); (c) **acessibilidade** do editor e dos
+resultados de busca no widget, e do diálogo no launcher (D3.1/D3.2/D3.6); (d)
+**performance do sync** em canvas grande (C3.1/M3.1) e sobreposições no layout de
+cards (C4.3/C4.4). Nenhuma correção foi aplicada nesta rodada.
+
+**Próximo da lista:** Shared-Notes (rodada 4).
