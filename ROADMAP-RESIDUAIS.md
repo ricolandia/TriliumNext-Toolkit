@@ -140,8 +140,20 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 | WC-D2.x | Captura do README antiga (sem a linha "Semana") | Doc | S | Baixo | `imagens/` | manual |
 | WC-C7.6 | Bump de versão/registry + versão no README no release | Release | S | Baixo | registry/README | revisão |
 
+## Daily-Note-Navigator (rodada 8)
+
+| ID | Item | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+|----|------|-----------|:-------:|:-----:|------------------------------|-----------|
+| DNN-C6.x | Card do widget permanece fora de daily notes (layout novo; widget legado não esconde o header) — avaliar widget Preact | Manutenção/UX | L | Médio | `isEnabled`/layout | manual |
+| DNN-C3.x | Prefetch dos vizinhos (busca read-only) + coalescing "último vence" em navegação rápida | Perf/UX | S/M | Baixo | `_findDayNote`/`_goTo` | smoke |
+| DNN-D5.x | Ação "criar nota" também no salto de mês (hoje só no dia) | UX | S | Baixo | `_mostrarMsg` | manual |
+| DNN-D2.x | Captura do README defasada (3 controles; hoje 6 + aviso) | Doc | S | Baixo | `imagem/` | manual |
+| DNN-D4.x | QA visual da barra em painel estreito (240-280px) e nos 4 temas | UX | S | Baixo | CSS | QA visual |
+| DNN-C7.x | Bump de versão/registry + versão no README no release (`sourceUrl` sem pin) | Release | S | Baixo | registry/README | revisão |
+
 ## Histórico
 
+- **29/09/2026** — atualizado com os residuais da rodada 8 (Daily-Note-Navigator).
 - **29/09/2026** — atualizado com os residuais da rodada 7 (Word Counter).
 - **29/09/2026** — atualizado com os residuais da rodada 6 (Minimalist Pomodoro).
 - **29/09/2026** — **Daily-Note-Map removido da coleção** (decisão de uso: o mapa

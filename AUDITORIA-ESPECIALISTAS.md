@@ -82,7 +82,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 5 | AI-Chat (render note) | `AI-Chat/AI-Chat/AI Code.js` | 29/09/2026 | 50 achados (2C/9A/18M/17B/4S) | 40 achados (3C/11A/16M/9B/1S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/zip com sha256 idêntico; demo: instalação nova via ETAPI com sha idêntico e config pelo label; 85 chaves i18n em paridade; `test-chat.js` + `test-smoke.js`); residual no `ROADMAP-RESIDUAIS.md` |
 | 6 | Minimalist Pomodoro + Time Tracker | `Minimalist-Pomodoro/Pomodoro-mini/Pomodoro mini.js` | 29/09/2026 | 36 achados (2C/4A/16M/9B/5S) | 33 achados (1C/8A/14M/8B/3S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; `test-pomodoro.js` 35 ✅ + `test-smoke.js` 30 ✅; STOP em 2 toques que só limpa após salvar; relatório em `<tr>` com escaping e label `#pomodoro`; i18n 30 chaves em paridade); residual no `ROADMAP-RESIDUAIS.md` |
 | 7 | Word Counter | `Word-Counter/Word count.js` | 29/09/2026 | 34 achados (0C/4A/13M/13B/4S) | 29 achados (1C/6A/12M/7B/3S) | 17 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; `test-wordcount.js` 53 ✅ + `test-smoke.js` 24 ✅; semântica baseline+delta por nota; contagem com entidades; barras ARIA/meta; i18n 14 chaves; zip defasado regenerado); residual no `ROADMAP-RESIDUAIS.md` |
-| 8 | Daily-Note-Navigator | `Daily-Note-Navigator/Daily-Note-Navigator.js` | 29/09/2026 | 30 achados (2C/7A/11M/7B/3S) | 30 achados (1C/8A/11M/7B/3S) | 18 itens (S/M) | **Auditoria concluída; nenhuma correção aplicada** (batches após triagem: 1) navegação/contrato (`getDayNote`, teclado, concorrência) + datas, 2) UI/a11y/estado + i18n, 3) harness + README/captura; **decisão de produto pendente:** manter a criação do `getDayNote` × checar sem criar) |
+| 8 | Daily-Note-Navigator | `Daily-Note-Navigator/Daily-Note-Navigator.js` | 29/09/2026 | 30 achados (2C/7A/11M/7B/3S) | 30 achados (1C/8A/11M/7B/3S) | 18 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo com sha256 idêntico; `test-dnn.js` 36 ✅ em 3 fusos + `test-smoke.js` 18 ✅; navegação **read-only** com ação "Criar nota" — decisão do dono; teclado escopado; datas locais com clamp de mês; i18n 15 chaves); residual no `ROADMAP-RESIDUAIS.md` |
 
 ### 🔁 Fila proposta (ajustável)
 
@@ -2220,3 +2220,45 @@ correção aplicada nesta rodada — batches após triagem (candidatos: 1) naveg
 (`getDayNote`, teclado, concorrência) + datas, 2) UI/a11y/estado + i18n, 3) harness + README/captura).
 
 **Próximo da lista:** Knowledge-Dashboard (rodada 9).
+
+---
+
+## ✅ Correções aplicadas — rodada 8, batches 1-3 (29/09/2026)
+
+### Batch 1 — navegação/contrato e datas
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C4.1/C6.1/QW4 | **Navegação read-only** (decisão do Ricardo): busca por `api.searchForNote('#dateNote="…"')` com validação do valor; `getDayNote` **só na ação explícita "Criar nota"**; o aviso "sem nota" do README passa a existir de verdade | `test-dnn` (guardas) + smoke A (navegar não cria; criar só no clique) |
+| C5.1/C5.2/D3.1/QW10/QW12 | **Teclado escopado ao widget** (`this.$widget.on('keydown.dnn')`; nenhum `$(document)`), com `←/→`, `PgUp/PgDn` e `t`; `cleanup()` com `.off`; `e.repeat` ignorado | guarda estrutural + smoke A (seta no documento não navega; no widget navega) |
+| C4.2/C4.3/QW1/QW2 | **Datas locais** (`isoLocal`/`parseIso`/`addDays`/`addMonthsClamped`/`todayIso`): fim do UTC (após 21h BRT o "hoje" pulava) e do salto de mês (31/01 → 28/02) | `test-dnn` em **3 fusos** (São Paulo, Auckland, UTC) |
+| C3.1/C5.3 | Trava de concorrência (`_busy`) e cache com teto de 60 entradas | smoke + guardas |
+| C1.1/D5.2/D5.4/QW5/QW6 | Falhas visíveis (aviso de erro + botões reabilitados) e feedback no "hoje"/dia sem nota | smoke A/D |
+| C6.2/C7.1 | Base correta **`api.RightPanelWidget`** (funciona nos dois layouts; antes dependia de monkey-patch do layout novo) e `position = 110` (slot livre) | revisão + smoke |
+| C6.3 | `getDayNote` chamado com 1 argumento (o 2º é `calendarRootId`; o `false` era enganoso) | guarda (1 ocorrência, na ação) |
+
+### Batch 2 — UI/a11y/estado + i18n
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D3.2-D3.4/QW13 | `role="group"` + `aria-label` na barra; `aria-label`/`type=button` nos botões; glifos `aria-hidden`; label com `role="status"`; alvos 36-40px (44 no mobile); `:focus-visible` | smoke A/C + revisão |
+| D2.1/D2.2/D5.7/QW9 | **i18n PT/EN** (15 chaves) com data por locale e dia da semana; **estado "hoje"** (`aria-current="date"` + negrito) | smoke B/C + paridade no `test-dnn` |
+| D5.6/QW8 | Aviso de "sem nota" **com ação "Criar nota"** (única via de criação) e erro com token por tema (`--dnn-danger` + `.dnn-light`) | smoke A/D + guarda (sem hex fixo) |
+| D7.1/D7.2/QW16 | CSS extraído via `cssBlock` com classes `.dnn-*`, **fallback de tokens** (a `--button-background-color` não existe nos temas next), hover/disabled e `prefers-reduced-motion` | smoke (cssBlock) + QA visual |
+| D1.1/D1.2/D2.3/QW7/QW14 | Data em `--main-text-color` com `tabular-nums` e `title` longo; tooltips dos botões com a data alvo; **sem emoji** (Boxicon `bx-calendar`); `widgetTitle` i18n | smoke + revisão |
+| — | **Bug pego pelo smoke:** o `initI18n` re-renderizava o widget e o elemento novo ficava **destacado** (a UI visível não trocava de idioma); agora `aplicarI18n()` atualiza o DOM existente | smoke C (EN aplicado na tela) |
+
+### Batch 3 — harness, README e artefatos
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C8.1/QW3 | **`test-dnn.js`** (36 asserções: validação de datas, `addDays`, clamp de mês, `todayIso`, formatação PT/EN, 12 guardas estruturais, paridade i18n) rodando em **3 fusos**, e **`test-smoke.js`** (18 checks: read-only + criar, teclado escopado, hoje, EN, erro) | `bun test-dnn.js` (SP/Auckland/UTC) 36 ✅ · `bun test-smoke.js` 18 ✅ |
+| C7.10/QW15 | README reescrito (read-only + ação de criar, teclas, i18n, limitações) | revisão |
+
+**Deploy (29/09):** VPS (nota `fHMw2obfSlwY` "Daily Note Navigator") e demo EN
+(`Igms7U9NGKcG`) via ETAPI, **sha256 `efee6f8c…` idêntico repo=VPS=demo**; sem zip
+(o registry usa `sourceUrl`).
+
+**Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Daily-Note-Navigator): card fora de
+daily notes no layout novo (Preact), prefetch/coalescing, criar nota no salto de mês, captura,
+QA visual de painel estreito e bump de release.
