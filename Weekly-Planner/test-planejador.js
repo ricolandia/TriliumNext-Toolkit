@@ -25,6 +25,7 @@ eval(extrair('REC-BE') + '\nglobalThis.expandRecurringInContent = expandRecurrin
 eval(extrair('SPAN-BE') + '\nglobalThis.extrairSpanDe = extrairSpanDe;');
 eval(extrair('DATAS') + '\nglobalThis.isoLocal = isoLocal;');
 eval(extrair('RECON') + '\nglobalThis.assinaturaTexto = assinaturaTexto; globalThis.reconciliarDatas = reconciliarDatas;');
+eval(extrair('ORDENAR') + '\nglobalThis.ordenarBacklog = ordenarBacklog;');
 
 let falhas = 0;
 const ok = (nome, cond, extra) => {
@@ -127,6 +128,16 @@ ok('sem match: data permanece e sig é adotada', dados2['n::1'] === '2026-09-29'
 const dados3 = { 'n::0': '2026-09-30' };
 const rc3 = reconciliarDatas(tarefas, dados3);
 ok('primeira execução adota assinaturas', rc3.adotadas === 1 && dados3._sig['n::0'] === sigN, { rc3, sig: dados3._sig });
+
+console.log('8) ordenarBacklog() — vencidos primeiro, sem prazo por último');
+const mk = (id, upto) => ({ id, tags: upto ? [{ type: 'deadline', value: upto }] : [] });
+const bc = [mk('a'), mk('b', '2026-10-05'), mk('c', '2026-09-29'), mk('d')];
+const ord = ordenarBacklog(bc).map(t => t.id);
+ok('ISO: vencido, futuro e sem prazo por último', ord.join(',') === 'c,b,a,d', ord);
+const bc2 = [mk('x', '10-06-2026'), mk('y', '09-30-2026')];
+ok('formato MM-DD-YYYY também ordena', ordenarBacklog(bc2).map(t => t.id).join(',') === 'y,x', ordenarBacklog(bc2).map(t => t.id));
+ok('não muta a lista original', ordenarBacklog(bc).length === 4 && bc.map(t => t.id).join(',') === 'a,b,c,d');
+ok('lista sem prazos mantém a ordem', ordenarBacklog([mk('p'), mk('q')]).map(t => t.id).join(',') === 'p,q');
 
 console.log(falhas === 0 ? '\n>>> TODOS OS TESTES PASSARAM' : `\n>>> ${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);

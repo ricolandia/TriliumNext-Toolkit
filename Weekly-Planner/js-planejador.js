@@ -42,6 +42,99 @@
 
     const $root = $container;
 
+    /* I18N (início) — PT/EN conforme o idioma da interface do Trilium (locale) */
+    const WP_I18N = {
+        pt: {
+            planner: 'Planejador', tasks: 'Tarefas',
+            week: 'Semana', month: 'Mês', gantt: 'Gantt', backlog: 'Backlog',
+            noDate: 'sem data', today: 'hoje', backlogCount: '{n} sem data',
+            prevWeek: 'Semana anterior', nextWeek: 'Próxima semana',
+            prevMonth: 'Mês anterior', nextMonth: 'Próximo mês',
+            viewMode: 'Ver {label}',
+            clearWeek: 'Limpar esta semana', clearMonth: 'Limpar este mês',
+            reload: 'Recarregar tarefas', markDone: 'Marcar como concluída',
+            openNote: '↗ Abrir nota', backToBacklog: '↩ Backlog',
+            cancel: 'Cancelar', undo: 'Desfazer',
+            loading: 'Carregando…',
+            untitled: '(sem título)',
+            noOpenTasks: '✓ Nenhuma tarefa aberta.',
+            dropHere: 'solte uma tarefa aqui',
+            noWeekTasks: 'Nenhuma tarefa agendada nesta semana',
+            dragFromBacklog: 'Arraste tarefas do backlog para os dias no modo Semana',
+            linksInNote: '{n} link(s) interno(s) nesta nota',
+            donePrefix: 'Concluída: ',
+            cleared: 'Planejamento limpo ({n} tarefa(s))',
+            clearAsk: 'Limpar o planejamento de {rotulo}? {n} tarefa(s) serão desagendadas.',
+            clearOk: 'Limpar',
+            nothingToClear: 'Nada para limpar em {rotulo}.',
+            duplicateWeek: 'Rolar para a próxima semana',
+            nothingToDuplicate: 'Nada para rolar nesta semana.',
+            duplicated: 'Semana rolada ({n} tarefa(s))',
+            saveError: 'Erro ao salvar o planejamento: {err} Verifique se a nota com a label #plannerdata existe.',
+            reloadError: 'Falha ao recarregar: {err}',
+            taskError: 'Não foi possível concluir a tarefa: {err}',
+            undoError: 'Não foi possível desfazer: {err}',
+            missingData: 'Nota com a label #plannerdata não encontrada: o planejamento não será salvo. Crie uma nota de código (JSON) com as labels #plannerdata e #data.',
+            corruptData: 'O planner-data.json está ilegível. O planejamento abriu vazio; o conteúdo antigo está no console.',
+            initError: '✗ Erro ao inicializar: {err}',
+            retry: 'Tentar de novo',
+            saving: 'salvando…', saved: 'salvo ✓', saveFailed: 'erro ✗',
+        },
+        en: {
+            planner: 'Planner', tasks: 'Tasks',
+            week: 'Week', month: 'Month', gantt: 'Gantt', backlog: 'Backlog',
+            noDate: 'no date', today: 'today', backlogCount: '{n} without date',
+            prevWeek: 'Previous week', nextWeek: 'Next week',
+            prevMonth: 'Previous month', nextMonth: 'Next month',
+            viewMode: 'View {label}',
+            clearWeek: 'Clear this week', clearMonth: 'Clear this month',
+            reload: 'Reload tasks', markDone: 'Mark as done',
+            openNote: '↗ Open note', backToBacklog: '↩ Backlog',
+            cancel: 'Cancel', undo: 'Undo',
+            loading: 'Loading…',
+            untitled: '(untitled)',
+            noOpenTasks: '✓ No open tasks.',
+            dropHere: 'drop a task here',
+            noWeekTasks: 'No tasks scheduled this week',
+            dragFromBacklog: 'Drag tasks from the backlog onto the days in Week mode',
+            linksInNote: '{n} internal link(s) in this note',
+            donePrefix: 'Done: ',
+            cleared: 'Planning cleared ({n} task(s))',
+            clearAsk: 'Clear planning for {rotulo}? {n} task(s) will be unscheduled.',
+            clearOk: 'Clear',
+            nothingToClear: 'Nothing to clear in {rotulo}.',
+            duplicateWeek: 'Roll over to next week',
+            nothingToDuplicate: 'Nothing to roll over this week.',
+            duplicated: 'Week rolled over ({n} task(s))',
+            saveError: 'Failed to save planning: {err} Check that the note labeled #plannerdata exists.',
+            reloadError: 'Failed to reload: {err}',
+            taskError: 'Could not complete the task: {err}',
+            undoError: 'Could not undo: {err}',
+            missingData: 'Note labeled #plannerdata not found: planning will not be saved. Create a JSON code note with the labels #plannerdata and #data.',
+            corruptData: 'planner-data.json is unreadable. Planning opened empty; the old content is in the console.',
+            initError: '✗ Failed to initialize: {err}',
+            retry: 'Try again',
+            saving: 'saving…', saved: 'saved ✓', saveFailed: 'error ✗',
+        },
+    };
+    const WP_DIAS      = { pt: ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'], en: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] };
+    const WP_DIAS_CURTO= { pt: ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'], en: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] };
+    const WP_MESES     = { pt: ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'],
+                           en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] };
+    let wpLang = (typeof navigator !== 'undefined' && /^en/i.test(String(navigator.language || ''))) ? 'en' : 'pt';
+    function t(key, vars) {
+        const d = WP_I18N[wpLang] || WP_I18N.pt;
+        let s = d[key] != null ? d[key] : (WP_I18N.pt[key] != null ? WP_I18N.pt[key] : key);
+        if (vars) for (const k of Object.keys(vars)) s = s.split('{' + k + '}').join(String(vars[k]));
+        return s;
+    }
+    /* I18N (fim) */
+    // Data curta conforme o idioma: PT dd/mm, EN mm/dd
+    function fmtCurto(d) {
+        const dt = d instanceof Date ? d : new Date(d);
+        return wpLang === 'en' ? `${dt.getMonth() + 1}/${dt.getDate()}` : `${dt.getDate()}/${dt.getMonth() + 1}`;
+    }
+
     // Hoista <style> de qualquer HTML injetado para o <head> — render notes podem
     // ignorar style inline e o visual não pode depender do tema (ex.: Folio).
     (function () {
@@ -82,6 +175,7 @@
 
     // id fixo no root → especificidade de ID vence qualquer CSS global do Trilium (#app *, button…)
     $root.attr('id', 'wp-root');
+    $root.attr('tabindex', '-1'); // permite foco no plugin (atalhos de teclado)
 
     // Tema claro? (brilho de --main-background-color) → as tags usam cores mais escuras
     (function marcarTemaClaro() {
@@ -191,6 +285,38 @@
             color:var(--muted-text-color,#888);
             vertical-align:middle; white-space:nowrap;
         }
+
+        /* Indicador salvando/salvo/erro no cabeçalho */
+        #wp-root .wp-save { font-size:12px; color:var(--muted-text-color,#888); margin-left:4px; white-space:nowrap; }
+        #wp-root .wp-save--ok { color:var(--active-item-background-color,#a6e3a1); }
+        #wp-root .wp-save--error { color:#e78284; }
+
+        /* Foco visível em todos os controles (a11y) */
+        #wp-root .pl-task:focus-visible, #wp-root .mn-task:focus-visible, #wp-root .mn-blog-item:focus-visible,
+        #wp-root .gantt-bar:focus-visible, #wp-root .gantt-blog-item:focus-visible,
+        #wp-root .pl-done-btn:focus-visible, #wp-root .mn-done-btn:focus-visible,
+        #wp-root .gantt-done-btn:focus-visible, #wp-root .gantt-blog-check:focus-visible,
+        #wp-root .tk-check:focus-visible, #wp-root .tk-task-text:focus-visible,
+        #wp-root .gantt-blog-text:focus-visible, #wp-root .mn-blog-text:focus-visible,
+        #wp-root .pl-nav-btn:focus-visible, #wp-root .pl-icon-btn:focus-visible,
+        #wp-root .pl-today-btn:focus-visible, #wp-root .wp-undo-btn:focus-visible,
+        #wp-root .pl-mode-btn:focus-visible {
+            outline:2px solid var(--main-active-border-color,#89b4fa); outline-offset:2px;
+        }
+
+        /* Hover/foco do painel de Tarefas em CSS (sem handlers de mouse) */
+        #wp-root .tk-task-text:hover { text-decoration:underline; }
+        #wp-root .tk-note-link:hover { color:var(--main-text-color); }
+        #wp-root .tk-check:not(.completing):hover {
+            border-color:var(--main-text-color); background:var(--accented-background-color,#313244);
+            color:var(--muted-text-color,#888);
+        }
+
+        /* Respeita quem prefere menos movimento */
+        @media (prefers-reduced-motion: reduce) {
+            #wp-root * { animation-duration:.001ms !important; animation-iteration-count:1 !important;
+                         transition-duration:.001ms !important; }
+        }
         </style>`);
 
     // Aplica tipografia do painel de Tarefas via INLINE !important (setProperty 'important'):
@@ -279,7 +405,7 @@
         flexDirection: 'column',
     }).appendTo($root);
 
-    const loadingHtml = `
+    const telaCarregando = () => `
         <div style="display:flex;align-items:center;gap:10px;padding:24px;color:var(--muted-text-color)">
             <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
@@ -287,11 +413,11 @@
                 <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2"
                         stroke-dasharray="28" stroke-dashoffset="10"/>
             </svg>
-            Carregando…
+            ${t('loading')}
         </div>`;
 
-    $pl.html(loadingHtml);
-    $tk.html(loadingHtml);
+    $pl.html(telaCarregando());
+    $tk.html(telaCarregando());
 
 
     /* ═══════════════════════════════════════════════════════════
@@ -326,6 +452,8 @@
 
     async function save() {
         invalidarIndice();
+        saveState = 'saving';
+        atualizarSaveStatus();
         try {
             const data = JSON.stringify(plannerData, null, 2);
             await api.runAsyncOnBackendWithManualTransactionHandling(
@@ -337,13 +465,33 @@
                 },
                 [data]
             );
+            saveState = 'saved';
+            atualizarSaveStatus();
+            setTimeout(() => {
+                if (saveState === 'saved') { saveState = 'idle'; atualizarSaveStatus(); }
+            }, 2500);
             return true;
         } catch (err) {
             console.error('save error:', err);
-            aviso('Erro ao salvar o planejamento: ' + (err.message || err) +
-                  '. Verifique se a nota com a label #plannerdata existe.');
+            saveState = 'error';
+            atualizarSaveStatus();
+            aviso(t('saveError', { err: err.message || err }));
             return false;
         }
+    }
+
+    // Recarrega tarefas + dados (usado pelos botões ⟳ e pelo atalho "r")
+    async function recarregarTarefas() {
+        try {
+            const loaded = await loadPlannerData();
+            if (loaded.ok) plannerData = loaded.data || {};
+            await fetchTasks();
+        } catch (err) {
+            console.error('reload error:', err);
+            aviso(t('reloadError', { err: err.message || err }));
+        }
+        renderPlanner();
+        renderTasks();
     }
 
 
@@ -641,7 +789,7 @@
                 if (tasks.length) {
                     result.push({
                         noteId: row.noteId,
-                        title:  row.title || '(sem título)',
+                        title:  row.title || t('untitled'),
                         tasks,
                         checkedCbs,
                         totalCbs: cbIndex,
@@ -715,7 +863,7 @@
        3b. MIGRAÇÃO DE IDs ANTIGOS → NOVOS
            Converte plannerData salvo no formato antigo
            (noteId::primeiros_48_chars) para o novo (noteId::cbIndex).
-           Roda uma única vez; pode ser removida após uma semana de uso.
+           Mantida por compatibilidade; roda apenas quando há id legado (guard).
     ═══════════════════════════════════════════════════════════ */
 
     function migrateIds() {
@@ -811,7 +959,7 @@
         // persiste a remoção
         await save();
 
-        oferecerDesfazer('Concluída: ' + recortar(task.text, 44), async () => {
+        oferecerDesfazer(t('donePrefix') + recortar(task.text, 44), async () => {
             await definirCheckbox(task, false);
             if (oldDay != null) plannerData[task.id] = oldDay;
             if (oldOrder) plannerData._order[oldDay] = oldOrder;
@@ -842,7 +990,7 @@
         const dow = ref.getDay();
         const mon = new Date(ref);
         mon.setDate(ref.getDate() + (dow === 0 ? -6 : 1 - dow));
-        const labels = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+        const labels = WP_DIAS[wpLang];
         return labels.map((label, i) => {
             const d = new Date(mon);
             d.setDate(mon.getDate() + i);
@@ -850,26 +998,31 @@
             return {
                 key:     iso,
                 label,
-                dateStr: `${d.getDate()}/${d.getMonth() + 1}`,
+                dateStr: fmtCurto(d),
                 isToday: d.getTime() === todayBase.getTime(),
+                isWeekend: i >= 5,
             };
         });
     }
 
     function weekLabel(cols) {
-        const months = ['jan','fev','mar','abr','mai','jun',
-                        'jul','ago','set','out','nov','dez'];
+        const m = WP_MESES[wpLang];
         const d0 = new Date(cols[0].key + 'T12:00:00');
         const d1 = new Date(cols[6].key + 'T12:00:00');
+        if (wpLang === 'en') {
+            if (d0.getMonth() === d1.getMonth())
+                return `${m[d0.getMonth()]} ${d0.getDate()}–${d1.getDate()}, ${d1.getFullYear()}`;
+            return `${m[d0.getMonth()]} ${d0.getDate()} – ${m[d1.getMonth()]} ${d1.getDate()}, ${d1.getFullYear()}`;
+        }
         if (d0.getMonth() === d1.getMonth())
-            return `${d0.getDate()}–${d1.getDate()} ${months[d0.getMonth()]} ${d0.getFullYear()}`;
-        return `${d0.getDate()} ${months[d0.getMonth()]} – ${d1.getDate()} ${months[d1.getMonth()]} ${d1.getFullYear()}`;
+            return `${d0.getDate()}–${d1.getDate()} ${m[d0.getMonth()]} ${d0.getFullYear()}`;
+        return `${d0.getDate()} ${m[d0.getMonth()]} – ${d1.getDate()} ${m[d1.getMonth()]} ${d1.getFullYear()}`;
     }
 
     function dayBadge(isoDate) {
         const d = new Date(isoDate + 'T12:00:00');
-        const days = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-        return `${days[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`;
+        const days = WP_DIAS_CURTO[wpLang];
+        return `${days[d.getDay()]} ${fmtCurto(d)}`;
     }
 
 
@@ -887,6 +1040,23 @@
     // Aviso visível ao usuário (falhas de save/reload não podem ser só no console)
     function aviso(msg) {
         try { if (api && typeof api.showMessage === 'function') api.showMessage(String(msg), 6000); } catch (_) {}
+    }
+
+    // Indicador "salvando…/salvo ✓/erro ✗" no cabeçalho (Q2)
+    let saveState = 'idle';
+    function renderSaveStatus() {
+        if (saveState === 'idle') return '';
+        const texto = saveState === 'saving' ? t('saving') : saveState === 'error' ? t('saveFailed') : t('saved');
+        const cls = saveState === 'error' ? ' wp-save--error' : ' wp-save--ok';
+        return `<span class="wp-save${cls}" id="wp-save-status">${esc(texto)}</span>`;
+    }
+    function atualizarSaveStatus() {
+        const el = $pl.find('#wp-save-status')[0];
+        if (!el) return;
+        if (saveState === 'idle') { el.remove(); return; }
+        const texto = saveState === 'saving' ? t('saving') : saveState === 'error' ? t('saveFailed') : t('saved');
+        el.textContent = texto;
+        el.className = 'wp-save' + (saveState === 'error' ? ' wp-save--error' : ' wp-save--ok');
     }
 
     /* DATAS (início) — data local YYYY-MM-DD (pura, testável) */
@@ -959,7 +1129,7 @@
                     <div class="pl-day-sheet">
                         <h4>${esc(titulo)}</h4>
                         <button class="pl-day-btn" id="wp-confirm-ok" style="text-align:center;font-weight:600;">${esc(okLabel)}</button>
-                        <button class="pl-cancel-btn" id="wp-confirm-cancel">Cancelar</button>
+                        <button class="pl-cancel-btn" id="wp-confirm-cancel">${t('cancel')}</button>
                     </div>
                 </div>`);
             const fechar = (val) => { $root.find('#wp-confirm').remove(); resolve(val); };
@@ -980,7 +1150,7 @@
             $root.append(`
                 <div id="wp-undo" class="wp-undo">
                     <span class="wp-undo-text"></span>
-                    <button type="button" class="wp-undo-btn">Desfazer</button>
+                    <button type="button" class="wp-undo-btn">${t('undo')}</button>
                 </div>`);
             $bar = $root.find('#wp-undo');
             $bar.on('click', '.wp-undo-btn', async function () {
@@ -990,7 +1160,7 @@
                 if (acao.timer) clearTimeout(acao.timer);
                 $root.find('#wp-undo').removeClass('wp-undo--on');
                 try { await acao.desfazer(); }
-                catch (err) { console.error('undo error:', err); aviso('Não foi possível desfazer: ' + (err.message || err)); }
+                catch (err) { console.error('undo error:', err); aviso(t('undoError', { err: err.message || err })); }
             });
         }
         $bar.find('.wp-undo-text').text(rotulo);
@@ -1004,8 +1174,8 @@
     // Limpa as datas de um conjunto de dias com contagem + desfazer
     async function limparPlanejamento(keys, rotulo) {
         const afetadas = allTasks.filter(t => keys.has(plannerData[t.id])).length;
-        if (!afetadas) { aviso('Nada para limpar em ' + rotulo + '.'); return; }
-        const ok = await confirmar(`Limpar o planejamento de ${rotulo}? ${afetadas} tarefa(s) serão desagendadas.`, 'Limpar');
+        if (!afetadas) { aviso(t('nothingToClear', { rotulo })); return; }
+        const ok = await confirmar(t('clearAsk', { rotulo, n: afetadas }), t('clearOk'));
         if (!ok) return;
         const backup = JSON.parse(JSON.stringify(plannerData));
         for (const t of allTasks) {
@@ -1018,7 +1188,7 @@
         await save();
         renderPlanner();
         renderTasks();
-        oferecerDesfazer('Planejamento limpo (' + afetadas + ' tarefa(s))', async () => {
+        oferecerDesfazer(t('cleared', { n: afetadas }), async () => {
             plannerData = backup;
             invalidarIndice();
             await save();
@@ -1026,21 +1196,104 @@
             renderTasks();
         });
     }
+    /* ORDENAR (início) — backlog: vencidos primeiro, sem prazo por último (pura, testável) */
+    function ordenarBacklog(tasks) {
+        const prazoISO = (tk) => {
+            const tag = (tk.tags || []).find(x => x.type === 'deadline');
+            if (!tag) return null;
+            const v = String(tag.value || '');
+            let m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (m) return v;
+            m = v.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+            if (m) return `${m[3]}-${m[1]}-${m[2]}`;
+            return null;
+        };
+        return tasks.slice().sort((a, b) => {
+            const pa = prazoISO(a), pb = prazoISO(b);
+            if (pa && pb) return pa < pb ? -1 : pa > pb ? 1 : 0;
+            if (pa) return -1;
+            if (pb) return 1;
+            return 0;
+        });
+    }
+    /* ORDENAR (fim) */
+
+    // Rola (move) o planejamento da semana exibida para +7 dias, com desfazer
+    async function rolarSemana(weekCols) {
+        const origem = new Set(weekCols.map(c => c.key));
+        const afetadas = allTasks.filter(t => origem.has(plannerData[t.id]));
+        if (!afetadas.length) { aviso(t('nothingToDuplicate')); return; }
+        const backup = JSON.parse(JSON.stringify(plannerData));
+        const mais7 = (iso) => {
+            const d = new Date(iso + 'T12:00:00');
+            d.setDate(d.getDate() + 7);
+            return isoLocal(d);
+        };
+        for (const t of afetadas) plannerData[t.id] = mais7(plannerData[t.id]);
+        if (plannerData._order) {
+            const novo = {};
+            for (const dia of Object.keys(plannerData._order)) {
+                novo[origem.has(dia) ? mais7(dia) : dia] = plannerData._order[dia];
+            }
+            plannerData._order = novo;
+        }
+        invalidarIndice();
+        await save();
+        renderPlanner();
+        renderTasks();
+        oferecerDesfazer(t('duplicated', { n: afetadas.length }), async () => {
+            plannerData = backup;
+            invalidarIndice();
+            await save();
+            renderPlanner();
+            renderTasks();
+        });
+    }
+
+    /* SCROLL (início) — preserva posição nas re-renderizações e revela "hoje" na 1ª carga (Q9) */
+    const SCROLL_SEL = ['.pl-board', '.mn-scroll', '.gantt-scroll', '.tk-list'];
+    function capturarScroll() {
+        const s = {};
+        for (const q of SCROLL_SEL) {
+            const el = $root.find(q)[0];
+            if (el) s[q] = { top: el.scrollTop, left: el.scrollLeft };
+        }
+        return s;
+    }
+    function restaurarScroll(s) {
+        for (const q of Object.keys(s)) {
+            const el = $root.find(q)[0];
+            if (el) { el.scrollTop = s[q].top; el.scrollLeft = s[q].left; }
+        }
+    }
+    let primeiroRender = true;
+    function revelarHoje() {
+        if (!primeiroRender) return;
+        primeiroRender = false;
+        const $board = $pl.find('.pl-board');
+        const el = $board[0], hoje = $pl.find('.pl-col.today')[0];
+        if (!el || !hoje) return;
+        if (hoje.offsetLeft < el.scrollLeft || hoje.offsetLeft + hoje.offsetWidth > el.scrollLeft + el.clientWidth) {
+            el.scrollLeft = Math.max(0, hoje.offsetLeft - 8);
+        }
+    }
+    /* SCROLL (fim) */
+
     /* UI HELPERS (fim) */
 
 
     function modeSwitcher() {
         const modes = [
-            { id: 'kanban', label: 'Semana' },
-            { id: 'month',  label: 'Mês' },
-            { id: 'gantt',  label: 'Gantt' },
+            { id: 'kanban', label: t('week') },
+            { id: 'month',  label: t('month') },
+            { id: 'gantt',  label: t('gantt') },
         ];
         return `<span class="pl-mode-switch">
             ${modes.map(m => `
                 <span class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
-                      tabindex="0" role="button" aria-label="Ver ${m.label}"
+                      tabindex="0" role="button" aria-label="${t('viewMode', { label: m.label })}"
                       aria-current="${viewMode === m.id ? 'true' : 'false'}"
-                      data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
+                      data-mode="${m.id}" title="${t('viewMode', { label: m.label })}">${m.label}</span>
             `).join('')}
         </span>`;
     }
@@ -1050,16 +1303,16 @@
     // inflava os <button> e cortava o Gantt em telas estreitas.
     function modeBar() {
         const modes = [
-            { id: 'kanban', label: 'Semana' },
-            { id: 'month',  label: 'Mês' },
-            { id: 'gantt',  label: 'Gantt' },
+            { id: 'kanban', label: t('week') },
+            { id: 'month',  label: t('month') },
+            { id: 'gantt',  label: t('gantt') },
         ];
         return `<div class="pl-mode-bar">
             ${modes.map(m => `
                 <span class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
-                      tabindex="0" role="button" aria-label="Ver ${m.label}"
+                      tabindex="0" role="button" aria-label="${t('viewMode', { label: m.label })}"
                       aria-current="${viewMode === m.id ? 'true' : 'false'}"
-                      data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
+                      data-mode="${m.id}" title="${t('viewMode', { label: m.label })}">${m.label}</span>
             `).join('')}
         </div>`;
     }
@@ -1178,11 +1431,11 @@
 
     function renderLinkBadge(n) {
         if (!n) return '';
-        return `<span class="task-links" title="${n} link(s) interno(s) nesta nota">🔗 ${n}</span>`;
+        return `<span class="task-links" title="${t('linksInNote', { n })}">🔗 ${n}</span>`;
     }
 
     const isMobile   = () => window.matchMedia('(max-width:1024px)').matches;
-    const getBacklog = () => allTasks.filter(t => !plannerData[t.id]);
+    const getBacklog = () => ordenarBacklog(allTasks.filter(t => !plannerData[t.id]));
 
     /* ÍNDICE (início) — tarefas por dia com ordem, recalculado só quando o estado muda */
     let dayIndex = null;
@@ -1233,6 +1486,13 @@
     ═══════════════════════════════════════════════════════════ */
 
     function renderPlanner() {
+        const scrollSalvo = capturarScroll();
+        renderPlannerInterno();
+        restaurarScroll(scrollSalvo);
+        revelarHoje();
+    }
+
+    function renderPlannerInterno() {
         atualizarHoje();
         if (viewMode === 'gantt')  { renderGantt(); return; }
         if (viewMode === 'month')  { renderMonth(); return; }
@@ -1246,7 +1506,7 @@
         const planned       = allTasks.filter(t => weekKeys.has(plannerData[t.id])).length;
 
         const allCols = [
-            { key: 'backlog', label: 'Backlog', dateStr: 'sem data', isToday: false, isBacklog: true },
+            { key: 'backlog', label: t('backlog'), dateStr: t('noDate'), isToday: false, isBacklog: true },
             ...weekCols.map(c => ({ ...c, isBacklog: false })),
         ];
 
@@ -1317,18 +1577,20 @@
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
                         flex-wrap:wrap;">
-                <span style="font-size:19px;font-weight:700;">Planejador</span>
-                <button class="pl-nav-btn" id="pl-prev" title="Semana anterior">‹</button>
+                <span style="font-size:19px;font-weight:700;">${t('planner')}</span>
+                <button class="pl-nav-btn" id="pl-prev" title="${t('prevWeek')}">‹</button>
                 <span style="font-size:16px;color:var(--muted-text-color);white-space:nowrap;">
                     ${esc(label)}
                 </span>
-                <button class="pl-nav-btn" id="pl-next" title="Próxima semana">›</button>
-                ${!isCurrentWeek ? `<button class="pl-today-btn" id="pl-now">hoje</button>` : ''}
+                <button class="pl-nav-btn" id="pl-next" title="${t('nextWeek')}">›</button>
+                ${!isCurrentWeek ? `<button class="pl-today-btn" id="pl-now">${t('today')}</button>` : ''}
                 <span style="font-size:14px;color:var(--muted-text-color);margin-left:auto;">
                     ${planned}/${total}
                 </span>
-                <button class="pl-icon-btn" id="pl-clear"  title="Limpar esta semana">↺</button>
-                <button class="pl-icon-btn" id="pl-reload" title="Recarregar tarefas">⟳</button>
+                ${renderSaveStatus()}
+                <button class="pl-icon-btn" id="pl-clear"  title="${t('clearWeek')}">↺</button>
+                <button class="pl-icon-btn" id="pl-reload" title="${t('reload')}">⟳</button>
+                <button class="pl-icon-btn" id="pl-roll" title="${t('duplicateWeek')}">⇥</button>
                 ${mobile ? '' : modeSwitcher()}
             </div>
 
@@ -1342,7 +1604,7 @@
             const width = col.isBacklog
                 ? (mobile ? '150px' : '180px')
                 : (mobile ? '130px' : '180px');
-            const fimDeSemana = col.label === 'Sáb' || col.label === 'Dom';
+            const fimDeSemana = col.isWeekend;
 
             html += `
             <div class="pl-col${col.isToday ? ' today' : ''}${fimDeSemana ? ' weekend' : ''}" style="width:${width};">
@@ -1355,11 +1617,12 @@
                 <div class="pl-tasks" data-col="${esc(col.key)}">
                     ${tasks.map(t => `
                     <div class="pl-task"
+                         tabindex="0" role="button" aria-label="${esc(t.text)}"
                          draggable="${!mobile}"
                          data-task-id="${esc(t.id)}"
                          data-note-id="${esc(t.noteId)}"
                          data-cb-index="${t.checkboxIndex}">
-                        <span class="pl-done-btn" title="Marcar como concluída">✓</span>
+                        <span class="pl-done-btn" tabindex="0" role="button" aria-label="${t('markDone')}" title="${t('markDone')}">✓</span>
                         <div>${esc(t.text)}</div>
                         ${renderLinkBadge(t.noteLinks)}
                         ${t.tags && t.tags.length
@@ -1370,7 +1633,7 @@
                             ? `<div class="pl-task-note" title="${esc(t.noteTitle)}">${esc(t.noteTitle)}</div>`
                             : ''}
                     </div>`).join('')}
-                    ${!tasks.length ? '<div class="pl-col-empty">solte uma tarefa aqui</div>' : ''}
+                    ${!tasks.length ? `<div class="pl-col-empty">${t('dropHere')}</div>` : ''}
                     <div class="pl-drop"></div>
                 </div>
             </div>`;
@@ -1399,11 +1662,11 @@
 
         // Collect tasks visible in the current week + backlog
         const groups = new Map(); // noteId → { noteTitle, noteId, items[] }
-        const backlogTasks = [];
+        const backlogBruto = [];
 
         for (const t of allTasks) {
             const startIso = plannerData[t.id];
-            if (!startIso) { backlogTasks.push(t); continue; }
+            if (!startIso) { backlogBruto.push(t); continue; }
 
             const startIdx = weekCols.findIndex(c => c.key === startIso);
             if (startIdx === -1) continue;
@@ -1515,18 +1778,20 @@
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
                         flex-wrap:wrap;">
-                <span style="font-size:19px;font-weight:700;">Gantt</span>
-                <button class="pl-nav-btn" id="gantt-prev" title="Semana anterior">‹</button>
+                <span style="font-size:19px;font-weight:700;">${t('gantt')}</span>
+                <button class="pl-nav-btn" id="gantt-prev" title="${t('prevWeek')}">‹</button>
                 <span style="font-size:16px;color:var(--muted-text-color);white-space:nowrap;">
                     ${esc(label)}
                 </span>
-                <button class="pl-nav-btn" id="gantt-next" title="Próxima semana">›</button>
-                ${!isCurrentWeek ? `<button class="pl-today-btn" id="gantt-now">hoje</button>` : ''}
+                <button class="pl-nav-btn" id="gantt-next" title="${t('nextWeek')}">›</button>
+                ${!isCurrentWeek ? `<button class="pl-today-btn" id="gantt-now">${t('today')}</button>` : ''}
                 <span style="font-size:14px;color:var(--muted-text-color);margin-left:auto;">
                     ${planned}/${total}
                 </span>
-                <button class="pl-icon-btn" id="gantt-clear" title="Limpar esta semana">↺</button>
-                <button class="pl-icon-btn" id="gantt-reload" title="Recarregar tarefas">⟳</button>
+                ${renderSaveStatus()}
+                <button class="pl-icon-btn" id="gantt-clear" title="${t('clearWeek')}">↺</button>
+                <button class="pl-icon-btn" id="gantt-reload" title="${t('reload')}">⟳</button>
+                <button class="pl-icon-btn" id="gantt-roll" title="${t('duplicateWeek')}">⇥</button>
                 ${mobile ? '' : modeSwitcher()}
             </div>
 
@@ -1559,8 +1824,8 @@
 
         if (groups.size === 0) {
             html += `<div class="gantt-empty" style="grid-column:1/-1;grid-row:2">
-                <div>Nenhuma tarefa agendada nesta semana</div>
-                <div class="gantt-empty-sub">Arraste tarefas do backlog para os dias no modo Semana</div>
+                <div>${t('noWeekTasks')}</div>
+                <div class="gantt-empty-sub">${t('dragFromBacklog')}</div>
             </div>`;
         }
 
@@ -1593,9 +1858,11 @@
                 html += `<div class="gantt-label" style="grid-row:${row}">
                     <div style="display:flex;align-items:center;gap:4px;">
                         <span class="gantt-task-label"
+                              tabindex="0" role="link" aria-label="${esc(item.text)}"
                               data-note-id="${esc(item.noteId)}"
                               style="cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(item.text)}</span>
                         <span class="gantt-done-btn"
+                              tabindex="0" role="button" aria-label="${t('markDone')}"
                               data-task-id="${esc(item.id)}"
                               data-note-id="${esc(item.noteId)}"
                               data-cb-index="${item.checkboxIndex}"
@@ -1609,6 +1876,7 @@
 
                 html += `<div class="gantt-cell" style="grid-column:${colStart}/${colEnd};grid-row:${row}">
                     <div class="${barClass}"
+                         tabindex="0" role="button" aria-label="${esc(item.text)}"
                          data-task-id="${esc(item.id)}"
                          data-note-id="${esc(item.noteId)}"
                          data-cb-index="${item.checkboxIndex}"
@@ -1624,19 +1892,21 @@
         html += `</div></div>`; // close grid + scroll
 
         // BACKLOG
+        const backlogTasks = ordenarBacklog(backlogBruto);
         if (backlogTasks.length) {
             html += `<div class="gantt-backlog">
                 <details>
-                    <summary>Backlog (${backlogTasks.length} tarefa${backlogTasks.length !== 1 ? 's' : ''} sem data)</summary>
+                    <summary>${t('backlog')} (${t('backlogCount', { n: backlogTasks.length })})</summary>
                     <div style="margin-top:6px;">
                     ${backlogTasks.map(t => {
                         const tagsHtml = renderTagBadges(t.tags);
-                        return `<div class="gantt-blog-item">
+                        return `<div class="gantt-blog-item" tabindex="0" role="button" aria-label="${esc(t.text)}">
                             <span class="gantt-blog-check"
+                                  tabindex="0" role="button" aria-label="${t('markDone')}"
                                   data-task-id="${esc(t.id)}"
                                   data-note-id="${esc(t.noteId)}"
                                   data-cb-index="${t.checkboxIndex}">✓</span>
-                            <span class="gantt-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
+                            <span class="gantt-blog-text" tabindex="0" role="link" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
                             ${renderLinkBadge(t.noteLinks)}
                             <span class="gantt-blog-note" title="${esc(t.noteTitle)}">${esc(t.noteTitle)}</span>
                             ${tagsHtml ? `<span class="gantt-blog-tags">${tagsHtml}</span>` : ''}
@@ -1664,20 +1934,13 @@
         $pl.find('#gantt-next').on('click',  () => { weekOffset++; renderPlanner(); });
         $pl.find('#gantt-now').on('click',   () => { weekOffset = 0; renderPlanner(); });
 
+        $pl.find('#gantt-roll').on('click', () => rolarSemana(weekCols));
+
         $pl.find('#gantt-reload').on('click', async function () {
             const $btn = $(this);
             $btn.text('…');
-            try {
-                const loaded = await loadPlannerData();
-                if (loaded.ok) plannerData = loaded.data || {};
-                await fetchTasks();
-            } catch (err) {
-                console.error('reload error:', err);
-                aviso('Falha ao recarregar: ' + (err.message || err));
-            }
+            await recarregarTarefas();
             if ($btn.parent().length) $btn.text('⟳');
-            renderPlanner();
-            renderTasks();
         });
 
         $pl.find('#gantt-clear').on('click', () => {
@@ -1720,7 +1983,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('gantt markDone error:', err); aviso('Não foi possível concluir a tarefa: ' + (err.message || err)); }
+            } catch (err) { console.error('gantt markDone error:', err); aviso(t('taskError', { err: err.message || err })); }
         });
 
         // Done on backlog items
@@ -1735,7 +1998,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('gantt blog markDone error:', err); aviso('Não foi possível concluir a tarefa: ' + (err.message || err)); }
+            } catch (err) { console.error('gantt blog markDone error:', err); aviso(t('taskError', { err: err.message || err })); }
         });
     }
 
@@ -1759,7 +2022,7 @@
         start.setDate(firstDay.getDate() - lead);
 
         const weeks = [];
-        const labels = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+        const labels = WP_DIAS[wpLang];
         let d = new Date(start);
 
         while (weeks.length < 6) {
@@ -1772,6 +2035,7 @@
                     dayNum:        d.getDate(),
                     isToday:       d.getTime() === todayBase.getTime(),
                     isCurrentMonth: d.getMonth() === month,
+                    isWeekend:     i >= 5,
                 });
                 d.setDate(d.getDate() + 1);
             }
@@ -1783,8 +2047,7 @@
     }
 
     function monthLabel(monthView) {
-        const months = ['jan','fev','mar','abr','mai','jun',
-                        'jul','ago','set','out','nov','dez'];
+        const months = WP_MESES[wpLang];
         return `${months[monthView.month]} ${monthView.year}`;
     }
 
@@ -1873,18 +2136,19 @@
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
                         flex-wrap:wrap;">
-                <span style="font-size:19px;font-weight:700;">Mês</span>
-                <button class="pl-nav-btn" id="month-prev" title="Mês anterior">‹</button>
+                <span style="font-size:19px;font-weight:700;">${t('month')}</span>
+                <button class="pl-nav-btn" id="month-prev" title="${t('prevMonth')}">‹</button>
                 <span style="font-size:16px;color:var(--muted-text-color);white-space:nowrap;text-transform:capitalize;">
                     ${esc(label)}
                 </span>
-                <button class="pl-nav-btn" id="month-next" title="Próximo mês">›</button>
-                ${!isCurrent ? `<button class="pl-today-btn" id="month-now">hoje</button>` : ''}
+                <button class="pl-nav-btn" id="month-next" title="${t('nextMonth')}">›</button>
+                ${!isCurrent ? `<button class="pl-today-btn" id="month-now">${t('today')}</button>` : ''}
                 <span style="font-size:14px;color:var(--muted-text-color);margin-left:auto;">
                     ${planned}/${total}
                 </span>
-                <button class="pl-icon-btn" id="month-clear" title="Limpar este mês">↺</button>
-                <button class="pl-icon-btn" id="month-reload" title="Recarregar tarefas">⟳</button>
+                ${renderSaveStatus()}
+                <button class="pl-icon-btn" id="month-clear" title="${t('clearMonth')}">↺</button>
+                <button class="pl-icon-btn" id="month-reload" title="${t('reload')}">⟳</button>
                 ${mobile ? '' : modeSwitcher()}
             </div>
 
@@ -1904,7 +2168,7 @@
                     'mn-cell',
                     day.isCurrentMonth ? '' : 'out',
                     day.isToday ? 'today' : '',
-                    (day.label === 'Sáb' || day.label === 'Dom') ? 'weekend' : '',
+                    day.isWeekend ? 'weekend' : '',
                 ].join(' ').replace(/\s+/g, ' ');
 
                 html += `<div class="${cls}" data-col="${esc(day.key)}">
@@ -1913,12 +2177,13 @@
                         ${tasks.map(t => {
                             const done = t.tags.some(tag => tag.type === 'status' && tag.value === 'done');
                             return `<div class="mn-task${done ? ' done' : ''}"
+                                         tabindex="0" role="button" aria-label="${esc(t.text)}"
                                          draggable="${!mobile}"
                                          data-task-id="${esc(t.id)}"
                                          data-note-id="${esc(t.noteId)}"
                                          data-cb-index="${t.checkboxIndex}"
                                          title="${esc(t.text)}">
-                                    <span class="mn-done-btn" title="Marcar como concluída">✓</span>
+                                    <span class="mn-done-btn" tabindex="0" role="button" aria-label="${t('markDone')}" title="${t('markDone')}">✓</span>
                                     ${esc(t.text)}
                                     ${renderLinkBadge(t.noteLinks)}
                                 </div>`;
@@ -1932,19 +2197,20 @@
         html += `</div>`;
 
         // Backlog do mês (tasks sem data) — também é zona de drop
-        const backlogTasks = allTasks.filter(t => !plannerData[t.id]);
+        const backlogTasks = ordenarBacklog(allTasks.filter(t => !plannerData[t.id]));
         if (backlogTasks.length) {
             html += `<div class="mn-backlog" data-col="backlog">
                 <details>
-                    <summary>Backlog (${backlogTasks.length} tarefa${backlogTasks.length !== 1 ? 's' : ''} sem data)</summary>
+                    <summary>${t('backlog')} (${t('backlogCount', { n: backlogTasks.length })})</summary>
                     <div style="margin-top:6px;">
                     ${backlogTasks.map(t => `
                         <div class="mn-blog-item"
+                             tabindex="0" role="button" aria-label="${esc(t.text)}"
                              draggable="${!mobile}"
                              data-task-id="${esc(t.id)}"
                              data-note-id="${esc(t.noteId)}"
                              data-cb-index="${t.checkboxIndex}">
-                            <span class="mn-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
+                            <span class="mn-blog-text" tabindex="0" role="link" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
                             ${renderLinkBadge(t.noteLinks)}
                             <span class="mn-blog-note" title="${esc(t.noteTitle)}">${esc(t.noteTitle)}</span>
                         </div>`).join('')}
@@ -1973,17 +2239,8 @@
         $pl.find('#month-reload').on('click', async function () {
             const $btn = $(this);
             $btn.text('…');
-            try {
-                const loaded = await loadPlannerData();
-                if (loaded.ok) plannerData = loaded.data || {};
-                await fetchTasks();
-            } catch (err) {
-                console.error('reload error:', err);
-                aviso('Falha ao recarregar: ' + (err.message || err));
-            }
+            await recarregarTarefas();
             if ($btn.parent().length) $btn.text('⟳');
-            renderPlanner();
-            renderTasks();
         });
 
         $pl.find('#month-clear').on('click', () => {
@@ -2022,7 +2279,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('month markDone error:', err); aviso('Não foi possível concluir a tarefa: ' + (err.message || err)); }
+            } catch (err) { console.error('month markDone error:', err); aviso(t('taskError', { err: err.message || err })); }
         });
 
         /* ── Desktop: drag-and-drop entre células ───────────── */
@@ -2033,11 +2290,14 @@
             $pl.find('.mn-task, .mn-blog-item').each(function () {
                 this.addEventListener('dragstart', function (e) {
                     draggingId = this.dataset.taskId;
+                    this.classList.add('was-dragged');
                     e.dataTransfer.effectAllowed = 'move';
                     setTimeout(() => this.classList.add('dragging'), 0);
                 });
                 this.addEventListener('dragend', function () {
                     this.classList.remove('dragging');
+                    const el = this;
+                    setTimeout(() => el.classList.remove('was-dragged'), 250);
                     $pl.find('.mn-cell').removeClass('drag-over');
                     $pl.find('.mn-backlog').removeClass('drag-over');
                     draggingId = null;
@@ -2112,8 +2372,7 @@
                 const allDays = [];
                 for (const week of monthView.weeks) {
                     for (const day of week) {
-                        const mm = Number(day.key.split('-')[1]);
-                        allDays.push({ key: day.key, label: `${day.dayNum}/${mm}` });
+                        allDays.push({ key: day.key, label: fmtCurto(new Date(day.key + 'T12:00:00')) });
                     }
                 }
 
@@ -2122,13 +2381,13 @@
                     <div class="pl-day-sheet">
                         <h4>${esc(taskText)}</h4>
                         <button class="pl-day-btn${current === 'backlog' ? ' active' : ''}"
-                                data-col="backlog">↩ Backlog</button>
+                                data-col="backlog">${t('backToBacklog')}</button>
                         ${allDays.map(d => `
                         <button class="pl-day-btn${current === d.key ? ' active' : ''}"
                                 data-col="${esc(d.key)}">${esc(d.label)}</button>`).join('')}
-                        <button class="pl-cancel-btn" id="month-picker-cancel">Cancelar</button>
+                        <button class="pl-cancel-btn" id="month-picker-cancel">${t('cancel')}</button>
                         <button class="pl-cancel-btn" style="margin-top:6px;" id="month-picker-open">
-                            ↗ Abrir nota
+                            ${t('openNote')}
                         </button>
                     </div>
                 </div>`);
@@ -2184,20 +2443,13 @@
         $pl.find('#pl-next').on('click', () => { weekOffset++; renderPlanner(); });
         $pl.find('#pl-now').on('click',  () => { weekOffset = 0; renderPlanner(); });
 
+        $pl.find('#pl-roll').on('click', () => rolarSemana(weekCols));
+
         $pl.find('#pl-reload').on('click', async function () {
             const $btn = $(this);
             $btn.text('…');
-            try {
-                const loaded = await loadPlannerData();
-                if (loaded.ok) plannerData = loaded.data || {};
-                await fetchTasks();
-            } catch (err) {
-                console.error('reload error:', err);
-                aviso('Falha ao recarregar: ' + (err.message || err));
-            }
+            await recarregarTarefas();
             if ($btn.parent().length) $btn.text('⟳');
-            renderPlanner();
-            renderTasks();
         });
 
         $pl.find('.pl-mode-btn').on('click', async function () {
@@ -2262,12 +2514,15 @@
                     // FIX: lê a coluna de origem diretamente do elemento pai
                     const zone = this.closest('.pl-tasks');
                     draggingFromCol = zone ? zone.dataset.col : 'backlog';
+                    this.classList.add('was-dragged');
                     e.dataTransfer.effectAllowed = 'move';
                     setTimeout(() => this.classList.add('dragging'), 0);
                 });
 
                 this.addEventListener('dragend', function () {
                     this.classList.remove('dragging');
+                    const el = this;
+                    setTimeout(() => el.classList.remove('was-dragged'), 250);
                     clearMarkers();
                     draggingId = draggingFromCol = insertBeforeId = null;
                 });
@@ -2347,12 +2602,12 @@
                         <button class="pl-day-btn${current === col.key ? ' active' : ''}"
                                 data-col="${esc(col.key)}">
                             ${col.isBacklog
-                                ? '↩ Backlog'
+                                ? t('backToBacklog')
                                 : `${esc(col.label)} <span style="opacity:.5;font-size:15px;">${esc(col.dateStr)}</span>`}
                         </button>`).join('')}
-                        <button class="pl-cancel-btn" id="pl-picker-cancel">Cancelar</button>
+                        <button class="pl-cancel-btn" id="pl-picker-cancel">${t('cancel')}</button>
                         <button class="pl-cancel-btn" style="margin-top:6px;" id="pl-picker-open">
-                            ↗ Abrir nota
+                            ${t('openNote')}
                         </button>
                     </div>
                 </div>`);
@@ -2392,7 +2647,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('markDone error:', err); aviso('Não foi possível concluir a tarefa: ' + (err.message || err)); }
+            } catch (err) { console.error('markDone error:', err); aviso(t('taskError', { err: err.message || err })); }
         });
     }
 
@@ -2402,6 +2657,7 @@
     ═══════════════════════════════════════════════════════════ */
 
     function renderTasks() {
+        const scrollSalvo = capturarScroll();
 
         const total = allTasks.length;
 
@@ -2455,7 +2711,7 @@
 
             <!-- CABEÇALHO TAREFAS -->
             <div class="tk-head">
-                <span class="tk-head-title">Tarefas</span>
+                <span class="tk-head-title">${t('tasks')}</span>
                 <span class="tk-total">${total}</span>
             </div>
 
@@ -2465,7 +2721,7 @@
 
         if (total === 0) {
             html += `
-                <p class="tk-empty">✓ Nenhuma tarefa aberta.</p>`;
+                <p class="tk-empty">${t('noOpenTasks')}</p>`;
         } else {
             for (const [, group] of grouped) {
                 const stats = cbStats[group.noteId];
@@ -2477,7 +2733,7 @@
                 html += `
                 <div class="tk-group${collapsed ? ' tk-collapsed' : ''}">
 
-                    <div class="tk-note-link" data-note-id="${esc(group.noteId)}">
+                    <div class="tk-note-link" tabindex="0" role="button" data-note-id="${esc(group.noteId)}">
                         <span class="tk-col-icon">${collapsed ? '▸' : '▾'}</span>
                         <span class="tk-note-title" title="${esc(group.noteTitle)}">${esc(group.noteTitle)}</span>
                         <span class="tk-badge${done > 0 ? ' done' : ''}">${badgeText}</span>
@@ -2497,10 +2753,10 @@
                                  data-note-id="${esc(t.noteId)}"
                                  data-cb-index="${t.checkboxIndex}">
 
-                                <span class="tk-check" title="Marcar como concluída">✓</span>
+                                <span class="tk-check" tabindex="0" role="button" aria-label="${t('markDone')}" title="${t('markDone')}">✓</span>
 
                                 <div style="flex:1;min-width:0;">
-                                    <span class="tk-task-text" data-note-id="${esc(t.noteId)}">
+                                    <span class="tk-task-text" tabindex="0" role="link" data-note-id="${esc(t.noteId)}">
                                         ${esc(t.text)}${badge}
                                     </span>
                                     ${t.tags && t.tags.length
@@ -2521,6 +2777,7 @@
         html += `</div>`;
         $tk.html(html);
         applyCompactTaskFonts();
+        restaurarScroll(scrollSalvo);
     }
 
 
@@ -2529,12 +2786,6 @@
     ═══════════════════════════════════════════════════════════ */
 
     function bindTaskEvents() {
-
-        $tk.on('mouseenter', '.tk-note-link', function () {
-            $(this).css('color', 'var(--main-text-color)');
-        }).on('mouseleave', '.tk-note-link', function () {
-            $(this).css('color', 'var(--muted-text-color)');
-        });
 
         $tk.on('click', '.tk-note-link', function (e) {
             const noteId = $(this).data('noteId');
@@ -2551,30 +2802,8 @@
             api.activateNote(noteId);
         });
 
-        $tk.on('mouseenter', '.tk-task-text', function () {
-            $(this).css('text-decoration', 'underline');
-        }).on('mouseleave', '.tk-task-text', function () {
-            $(this).css('text-decoration', 'none');
-        });
-
         $tk.on('click', '.tk-task-text', function () {
             api.activateNote($(this).data('noteId'));
-        });
-
-        $tk.on('mouseenter', '.tk-check', function () {
-            $(this).css({
-                borderColor: 'var(--main-text-color)',
-                background:  'var(--accented-background-color,#313244)',
-                color:       'var(--muted-text-color,#888)',
-            });
-        }).on('mouseleave', '.tk-check', function () {
-            if (!$(this).hasClass('completing')) {
-                $(this).css({
-                    borderColor: 'var(--main-border-color,#45475a)',
-                    background:  'transparent',
-                    color:       'transparent',
-                });
-            }
         });
 
         $tk.on('click', '.tk-check', async function () {
@@ -2600,7 +2829,7 @@
                 renderTasks();
             } catch (err) {
                 console.error('markDone error:', err);
-                aviso('Não foi possível concluir a tarefa: ' + (err.message || err));
+                aviso(t('taskError', { err: err.message || err }));
                 $check.removeClass('completing').css({
                     borderColor:   'var(--main-border-color,#45475a)',
                     background:    'transparent',
@@ -2617,13 +2846,21 @@
     ═══════════════════════════════════════════════════════════ */
 
     try {
+        // Idioma da interface (o demo é EN; o VPS é PT) — antes do primeiro render de verdade
+        try {
+            const loc = await api.runOnBackend(() => (typeof api.getOption === 'function' ? (api.getOption('locale') || '') : ''));
+            if (loc) wpLang = /^en/i.test(String(loc)) ? 'en' : 'pt';
+            $pl.html(telaCarregando());
+            $tk.html(telaCarregando());
+        } catch (_) {}
+
         const loaded = await loadPlannerData();
         plannerData = loaded.data || {};
         if (loaded.missing) {
-            aviso('Nota com a label #plannerdata não encontrada: o planejamento não será salvo. Crie uma nota de código (JSON) com as labels #plannerdata e #data.');
+            aviso(t('missingData'));
         } else if (loaded.corrupt) {
             console.error('planner-data.json ilegível (conteúdo bruto para recuperação):', loaded.raw);
-            aviso('O planner-data.json está ilegível. O planejamento abriu vazio; o conteúdo antigo está no console.');
+            aviso(t('corruptData'));
         }
         if (plannerData._viewMode === 'gantt' || plannerData._viewMode === 'kanban' || plannerData._viewMode === 'month') {
             viewMode = plannerData._viewMode;
@@ -2633,9 +2870,9 @@
     } catch (err) {
         const msg = esc(String(err.message || err));
         $pl.html(`<div style="padding:24px;color:var(--main-text-color);font-size:17px">
-            ✗ Erro ao inicializar: ${msg}
+            ${t('initError', { err: msg })}
             <div style="margin-top:14px;">
-                <button type="button" id="pl-init-retry" style="padding:6px 14px;cursor:pointer;">Tentar de novo</button>
+                <button type="button" id="pl-init-retry" style="padding:6px 14px;cursor:pointer;">${t('retry')}</button>
             </div>
         </div>`);
         $tk.html('');
@@ -2647,9 +2884,48 @@
     renderTasks();
     bindTaskEvents();
 
-    // spans role=button (barra de modo): suporte a Enter/Espaço
-    $pl.on('keydown', '.pl-mode-btn', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(this).trigger('click'); }
+    // Enter/Espaço ativam os controles focáveis (a11y)
+    $root.on('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const el = e.target;
+        if (!el || !el.matches) return;
+        if (!el.matches('.pl-mode-btn, .pl-task, .mn-task, .mn-blog-item, .pl-done-btn, .mn-done-btn, .gantt-done-btn, .gantt-blog-check, .gantt-task-label, .gantt-blog-text, .mn-blog-text, .tk-task-text, .tk-check, .gantt-bar')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        $(el).trigger('click');
     });
+
+    // Atalhos de teclado (Q8): setas navegam, "t" hoje, "r" recarrega, Esc fecha diálogos
+    window.__wpAtalhos = function (e) {
+        if (!document.body.contains($root[0])) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const alvo = e.target;
+        if (alvo && alvo.closest && alvo.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""]')) return;
+        const aberto = $root.find('#wp-confirm').length > 0 ||
+                       $root.find('#pl-picker, #month-picker').length > 0;
+        if (e.key === 'Escape') {
+            if ($root.find('#wp-confirm').length) { $root.find('#wp-confirm-cancel').trigger('click'); return; }
+            if (aberto) $root.find('#pl-picker, #month-picker').remove();
+            return;
+        }
+        if (aberto) return;
+        if (!$pl.is(':visible')) return;
+        // atalhos de navegação só com o foco dentro do plugin (não rouba setas da nota/árvore)
+        if (!$root[0].contains(document.activeElement)) return;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            const dir = e.key === 'ArrowLeft' ? -1 : 1;
+            if (viewMode === 'month') monthOffset += dir; else weekOffset += dir;
+            renderPlanner();
+            e.preventDefault();
+        } else if (e.key === 't' || e.key === 'T') {
+            weekOffset = 0; monthOffset = 0; renderPlanner();
+        } else if (e.key === 'r' || e.key === 'R') {
+            recarregarTarefas();
+        }
+    };
+    if (!window.__wpTeclasBound) {
+        window.__wpTeclasBound = true;
+        document.addEventListener('keydown', (e) => window.__wpAtalhos && window.__wpAtalhos(e));
+    }
 
 })();
