@@ -1605,7 +1605,7 @@
                 <button class="pl-icon-btn" id="pl-clear"  title="${tr('clearWeek')}">↺</button>
                 <button class="pl-icon-btn" id="pl-reload" title="${tr('reload')}">⟳</button>
                 <button class="pl-icon-btn" id="pl-roll" title="${tr('duplicateWeek')}">⇥</button>
-                modeSwitcher()
+                ${modeSwitcher()}
             </div>
 
             <!-- BOARD -->
@@ -1808,7 +1808,7 @@
                 <button class="pl-icon-btn" id="gantt-clear" title="${tr('clearWeek')}">↺</button>
                 <button class="pl-icon-btn" id="gantt-reload" title="${tr('reload')}">⟳</button>
                 <button class="pl-icon-btn" id="gantt-roll" title="${tr('duplicateWeek')}">⇥</button>
-                modeSwitcher()
+                ${modeSwitcher()}
             </div>
 
             <div class="gantt-scroll">
@@ -2160,7 +2160,7 @@
                 ${renderSaveStatus()}
                 <button class="pl-icon-btn" id="month-clear" title="${tr('clearMonth')}">↺</button>
                 <button class="pl-icon-btn" id="month-reload" title="${tr('reload')}">⟳</button>
-                modeSwitcher()
+                ${modeSwitcher()}
             </div>
 
             <div class="mn-scroll">

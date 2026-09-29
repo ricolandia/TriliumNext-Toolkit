@@ -71,13 +71,32 @@ document.head.appendChild(s);
 setTimeout(() => {
   const root = document.getElementById('wp-root');
   const html = root ? root.innerHTML : '';
-  document.getElementById('result').textContent = JSON.stringify({
+  const $ = window.jQuery;
+  const r = {
     rootExiste: !!root,
     loading: html.includes('Carregando'),
     temPlanner: !!(root && root.querySelector('.pl-board, .pl-tasks, .mn-grid, .gantt-grid')),
     erroInit: html.includes('Erro ao inicializar'),
+    botoes: $('.pl-mode-btn').length,
+    labels: $('.pl-mode-btn').map((i, el) => el.textContent.trim()).get(),
     logs,
-  });
+  };
+  // a troca de modo é assíncrona (await save) — encadeia com espera
+  setTimeout(() => {
+    $('.pl-mode-btn[data-mode="month"]').trigger('click');
+    setTimeout(() => {
+      r.temMes = $('.mn-grid').length > 0;
+      $('.pl-mode-btn[data-mode="gantt"]').trigger('click');
+      setTimeout(() => {
+        r.temGantt = $('.gantt-grid').length > 0;
+        $('.pl-mode-btn[data-mode="kanban"]').trigger('click');
+        setTimeout(() => {
+          r.voltaSemana = $('.pl-board').length > 0;
+          document.getElementById('result').textContent = JSON.stringify(r);
+        }, 400);
+      }, 400);
+    }, 400);
+  }, 200);
 }, 1800);
 </script></body></html>`);
 
@@ -107,6 +126,10 @@ ok('root do plugin existe', r.rootExiste);
 ok('saiu do "carregando"', r.loading === false);
 ok('board renderizou', r.temPlanner === true);
 ok('sem tela de erro de init', r.erroInit === false);
+ok('seletor com Semana/Mês/Gantt', r.botoes === 3, r.labels);
+ok('modo Mês renderiza', r.temMes === true);
+ok('modo Gantt renderiza', r.temGantt === true);
+ok('volta para Semana', r.voltaSemana === true);
 ok('sem erros no console', (r.logs || []).length === 0, r.logs);
 console.log(falhas === 0 ? '\n>>> SMOKE OK' : `\n>>> ${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);

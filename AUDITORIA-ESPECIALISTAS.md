@@ -352,13 +352,19 @@ não pegavam (era erro de escopo em runtime, e o primeiro render não tinha guar
 - **Correção:** helper renomeado para **`tr()`** (imune a sombreamento) + **guard
   no primeiro render** (erro vira tela de erro com "Tentar de novo", nunca mais
   loading infinito).
+- **Segundo bug (mesma rodada de deploy):** a substituição de `${modeSwitcher()}`
+  por `modeSwitcher()` no batch 4 removeu a interpolação; o seletor
+  **Semana/Mês/Gantt não renderizava em nenhuma view**. Corrigido nos 3 sites.
 - **Prevenção:** novo **`test-smoke.js`** — roda o plugin no Chrome headless com
-  stubs de `api`/jQuery e verifica que ele sai do "carregando", renderiza o board
-  e não gera erro no console.
+  stubs de `api`/jQuery e verifica que ele sai do "carregando", renderiza o board,
+  tem **3 botões de modo** e que **Mês e Gantt renderizam** ao trocar (com espera
+  do `await save`), além de console limpo.
 - **Regressão verificada:** `281485f` (batch 2) passava; `3c04fa3` (batch 3) e
-  `4aa8abf` (batch 4) falhavam; a versão corrigida passa.
+  `4aa8abf` (batch 4) falhavam; a versão corrigida passa. O smoke novo também foi
+  validado contra a versão quebrada (3 falhas: seletor ausente, mês e gantt).
 - **Lição:** todo plugin de render precisa de um smoke de runtime no CI/local —
-  testes de funções puras não cobrem escopo/ordem de execução do render.
+  testes de funções puras não cobrem escopo/ordem de execução do render nem
+  interpolação de template.
 
 ## ⏭️ Backlog residual (batch 5, se houver)
 
