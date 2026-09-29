@@ -64,7 +64,6 @@ const saida = `// ============================================================
 // CANVAS MOBILE (v9) — GERADO AUTOMATICAMENTE
 // NÃO EDITE ESTE ARQUIVO: edite mobile-launcher.src.js (UI/ações) ou
 // "Canvas tools v8.js" (engine/i18n/backends) e rode: bun build-mobile-launcher.js
-// Gerado em: ${new Date().toISOString()}
 // ============================================================
 
 ${engine}
@@ -76,5 +75,15 @@ ${constantes}
 ${src}
 `;
 
-fs.writeFileSync(OUT, saida);
-console.log(`mobile-launcher.js gerado: ${saida.length} bytes (${saida.split('\n').length} linhas), ${Object.keys(BACKENDS).length} backends`);
+const CHECK = process.argv.includes('--check');
+if (CHECK) {
+    const atual = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : '';
+    if (atual !== saida) {
+        console.error('mobile-launcher.js DESATUALIZADO — rode: bun build-mobile-launcher.js');
+        process.exit(1);
+    }
+    console.log('mobile-launcher.js em sincronia ✅');
+} else {
+    fs.writeFileSync(OUT, saida);
+    console.log(`mobile-launcher.js gerado: ${saida.length} bytes (${saida.split('\n').length} linhas), ${Object.keys(BACKENDS).length} backends`);
+}

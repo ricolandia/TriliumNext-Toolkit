@@ -2,7 +2,6 @@
 // CANVAS MOBILE (v9) — GERADO AUTOMATICAMENTE
 // NÃO EDITE ESTE ARQUIVO: edite mobile-launcher.src.js (UI/ações) ou
 // "Canvas tools v8.js" (engine/i18n/backends) e rode: bun build-mobile-launcher.js
-// Gerado em: 2026-09-29T13:11:33.730Z
 // ============================================================
 
 // ── Constantes ──────────────────────────────────────────

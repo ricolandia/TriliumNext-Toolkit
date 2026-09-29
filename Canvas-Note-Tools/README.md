@@ -10,11 +10,11 @@ A custom Canvas workflow for TriliumNext focused on visual thinking, writing flo
 * **✏️ Floating Editor:** Edit any card's linked note without leaving the canvas. The editor opens centered as a floating window with the note's title and HTML content (`contenteditable`). Closing saves directly to the note and refreshes the card.
 * **⟳ Sync Cards:** Regenerate all cards from their linked notes in one click. Title and excerpt are refreshed from the current note content (no comparison — always updates).
 * **🕸️ Smart Relations:** Detects arrow connections between cards. Auto-detects relation types from text written on arrows (`inspira`, `contradiz`, etc.) and updates labels on save.
-* **🗑️ Remove Cards:** List all linked cards and remove individual ones directly from the canvas.
+* **🗑️ Remove Cards:** List all linked cards and remove individual ones directly from the canvas (two taps to confirm — no native dialog).
 * **📄 Longform Synthesis:** Generate comprehensive documents by combining canvas cards in arrow-based order (topological sort).
 * **🪄 Flow Generator:** Turn a tiny text DSL (nodes + arrows) into a clean Excalidraw flowchart with auto layered layout (vertical or horizontal). The DSL arrows define the layers and the order — **no arrows are drawn**, so the result stays tidy even with loops (`A -> B`, `B -> A`). Draw it into the current canvas, create it as a new canvas note, or save it as a `#canvasTemplate`.
-* **🧩 Template Inserter:** List every canvas note tagged `#canvasTemplate` and insert any of them into the current canvas (element ids, arrow bindings, bound texts and frames are remapped, so nothing breaks).
-* **⌨️ Keyboard:** Press `Escape` to dismiss any open panel. Click outside panels to close them.
+* **🧩 Template Inserter:** List every canvas note tagged `#canvasTemplate` and insert any of them into the current canvas (element ids, arrow bindings, bound texts, frames and groups are remapped, so nothing breaks).
+* **⌨️ Keyboard:** Press `Escape` to dismiss any open panel (the floating editor closes saving, like the ✕) and `Enter` in the search box inserts the first result. Click outside panels to close them.
 * **⚡ Local & Fast:** Lightweight, fully local, clean floating UI with glass-morphism design.
 
 ## Installation

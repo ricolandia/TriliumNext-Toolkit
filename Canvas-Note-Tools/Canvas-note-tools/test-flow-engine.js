@@ -1,8 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const file = path.join(process.env.HOME,
-  'Documentos/31_APPS_GITHUB/TriliumNext-Toolkit/Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js');
+const file = path.join(__dirname, 'Canvas tools v8.js');
 const src = fs.readFileSync(file, 'utf8');
 
 const start = src.indexOf('// ── FLOW ENGINE (início)');
@@ -126,19 +125,25 @@ const textInside = shapes.every(s => {
 });
 check('textos: dentro da forma correspondente', textInside);
 
-// z-order válido (índice fracionário em ordem lexicográfica)
-const idxSorted = els.map(e => e.index).slice().sort();
-check('z-index: sequência válida e ordenada', idxSorted.every((v, i) => v === els.map(e => e.index)[i])
-  || idxSorted.length === els.length, 'indices=' + els.length);
+// z-order válido (índice fracionário em ordem lexicográfica: precisa estar definido e ordenado)
+const idxOrig   = els.map(e => e.index);
+const idxSorted = [...idxOrig].sort();
+check('z-index: sequência válida e ordenada',
+  idxOrig.every((v) => typeof v === 'string' && v.length > 0) && JSON.stringify(idxOrig) === JSON.stringify(idxSorted),
+  'indices=' + JSON.stringify(idxOrig.slice(0, 6)));
 
 check('bbox: dimensões positivas', built.width > 0 && built.height > 0, `${Math.round(built.width)}x${Math.round(built.height)}`);
 
-// 8. Exporta exemplo para inspeção
-fs.writeFileSync('/tmp/opencode/exemplo-fluxo-v8.excalidraw', JSON.stringify({
+// 8. Exporta exemplo para inspeção (pasta temporária portátil)
+const os = require('os');
+const dirExemplo = path.join(os.tmpdir(), 'opencode');
+fs.mkdirSync(dirExemplo, { recursive: true });
+const arquivoExemplo = path.join(dirExemplo, 'exemplo-fluxo-v8.excalidraw');
+fs.writeFileSync(arquivoExemplo, JSON.stringify({
   type: 'excalidraw', version: 2, elements: built.elements,
   appState: { gridModeEnabled: true, viewBackgroundColor: '#f8fafc' }, files: {},
 }, null, 1));
-console.log('\nExemplo exportado: /tmp/opencode/exemplo-fluxo-v8.excalidraw');
+console.log('\nExemplo exportado: ' + arquivoExemplo);
 // 9. I18N (PT/EN)
 const i18nStart = src.indexOf('// ── I18N (início)');
 const i18nEnd   = src.indexOf('// ── I18N (fim)');

@@ -1291,8 +1291,6 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         if (!document.getElementById('clw-style')) {
         const style = document.createElement('style');
         style.id = 'clw-style';
-
-        style.id = 'clw-style';
         style.textContent = /* css */`
 /* ═══════════════════ CLW — CSS ═══════════════════ */
 @keyframes clwSlideIn {
@@ -3048,7 +3046,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 return api.searchForNotes(q).slice(0, 15).map(n => ({
                     noteId: n.noteId,
                     title: n.title,
-                    excerpt: clean(n.getContent() || '', sliceLen)
+                    excerpt: clean(String(n.getContent() || ''), sliceLen)
                 }));
             }, [query.trim(), sliceLen, cleanPatterns]);
 
@@ -3268,8 +3266,14 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
         if (this._captureMode && note && note.noteId !== this._captureCanvasNoteId) {
             if (note.type === 'canvas') return;
-            await this._insertCard(note.noteId, note.title, '');
-            await api.activateNote(this._captureCanvasNoteId);
+            try {
+                await this._insertCard(note.noteId, note.title, '');
+                await api.activateNote(this._captureCanvasNoteId);
+            } catch (err) {
+                // canvas de captura pode ter sido apagado: desliga a captura em vez de quebrar
+                console.error('[CanvasLinker] capture insert error:', err);
+                this._toggleCapture();
+            }
             return;
         }
 
