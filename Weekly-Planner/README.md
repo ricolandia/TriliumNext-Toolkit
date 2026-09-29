@@ -26,12 +26,14 @@ A unified workspace for TriliumNext featuring a drag-and-drop weekly planner and
 
 ### Features
 
+- **Correções da auditoria (batch 1, 28/09/2026)**: falhas de save/reload agora avisam (`api.showMessage`) em vez de morrer no console; `markDone` usa a mesma regex da extração (marca o checkbox certo mesmo com atributos fora de ordem) e persiste a conclusão; o scan global ignora notas protegidas/arquivadas, tolera nota problemática (não derruba o fetch inteiro) e salva as datas geradas por recorrência (não se perdem mais no reload); `_order` é podada; `#total` ganhou teto de 100 e `#every`/`#upto` são validados; o pior caso de `planner-data.json` ilegível avisa em vez de sumir; o badge 🔗 agora aparece no rótulo do Gantt; ✓ visível no Mês mobile; botões de modo com `role="button"`/`aria-label`/`:focus-visible`; erro de init com botão "Tentar de novo". Testes: `test-planejador.js` (novo).
+
 - **Indicador de links internos da nota (`🔗 n`)**: quando a **nota** em que a tarefa vive tem links internos do Trilium (basta digitar `@Nota` em qualquer lugar da nota), o card mostra um badge discreto com o número de notas distintas referenciadas (únicos, com dedupe). Útil para saber que a daily journal aponta para projetos/notas relacionadas. O clique no texto continua abrindo a nota-fonte — o badge é só o indicador. Aparece no Kanban, Mês, Gantt e painel de Tarefas Abertas. Teste: `test-refs.js`.
 
 - **Mobile layout**: painéis empilhados em coluna única (planner acima, tarefas abaixo) em telas < 700px — sem espremer as duas colunas no celular
 - **Mobile Mês — backlog agendável**: no celular, tocar num item do backlog da visão Mês abre o seletor de dias (mesmo comportamento do Kanban); antes só abria a nota
 - **Mobile — barra de modo dedicada**: no celular o seletor Semana/Mês/Gantt sai do header (onde quebrava e ficava cortado à direita) e vira uma barra de largura total com 3 botões flex:1 no topo do planner — alvos de toque grandes, impossível de cortar. Desktop mantém o seletor no header.
-- **Fix mobile — detecção por `matchMedia`**: `isMobile()` usava `window.innerWidth < 700`, que pode divergir da largura real em webviews/emulação (ex.: innerWidth 875 com layout de 360px) — o CSS aplicava o mobile mas o JS achava que era desktop e a barra de modo nem era renderizada. Agora usa `matchMedia('(max-width:700px)')`, alinhado ao CSS.
+- **Fix mobile — detecção por `matchMedia`**: `isMobile()` usava `window.innerWidth < 700`, que pode divergir da largura real em webviews/emulação (ex.: innerWidth 875 com layout de 360px) — o CSS aplicava o mobile mas o JS achava que era desktop e a barra de modo nem era renderizada. Passou a usar `matchMedia` (hoje alinhado ao breakpoint de 1024px; ver entrada do breakpoint 700→1024px).
 - **Fix mobile — colunas do kanban cortadas**: `max-height: calc(100vh - Xpx)` adivinhava a altura pela viewport e estourava o painel de 62vh (corte pelo `overflow:hidden`). Agora flexbox encadeado: `.pl-board` stretch + `.pl-col` height:100%/min-height:0 + `.pl-tasks` min-height:0 com scroll interno.
 - **Fix mobile — grade do Mês cortada**: `min-width:520px` deixava as colunas finais fora da tela. Agora grade fluida (`min-width:0`, células/fontes menores no mobile) + `overflow-x:auto` de segurança.
 - **Fix mobile — colunas do kanban com altura pelo conteúdo**: revertido o esticamento full-height; colunas voltam a ter a altura do conteúdo (como no desktop), com teto `max-height:100%` do board (nunca estouram/cortam) e scroll interno só quando atingem o teto.
@@ -79,9 +81,9 @@ Tags: `#every=Nd` + `#total=N` + `#upto=MM-DD-YYYY`
 Revisar senhas #every=7d #total=4 #upto=07-21-2026
 ```
 
-- Generates **N-1 clones** of the `<li>` element, each with `#upto` spaced N days apart
-- Clones are inserted into the note's HTML and auto-assigned to their due dates
-- Mark any clone as done independently; the original keeps the `#every` tag as source
+- Generates **N-1 clones** of the `<li>` element, each with `#upto` spaced N days apart (teto de segurança: `#total` acima de 100 não expande; `#every=0d` é ignorado)
+- Clones are inserted into the note's HTML and auto-assigned to their due dates (as datas são salvas logo após a geração)
+- Mark any clone as done independently. Depois da expansão o original e os clones perdem `#every`/`#total` (evita re-expansão), então eles passam a ser tarefas comuns; mudar `#every`/`#total` depois exige limpeza manual
 - Edit the note to see all occurrences side by side
 - Changing `#every` or `#total` after expansion requires manual cleanup
 

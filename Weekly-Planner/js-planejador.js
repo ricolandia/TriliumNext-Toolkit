@@ -264,11 +264,13 @@
     async function loadPlannerData() {
         return await api.runOnBackend(() => {
             const note = api.getNoteWithLabel('plannerdata');
-            if (!note) return {};
+            if (!note) return { ok: false, missing: true, data: {} };
             try {
                 const raw = note.getContent();
-                return raw ? JSON.parse(raw) : {};
-            } catch (_) { return {}; }
+                return { ok: true, data: raw ? JSON.parse(raw) : {} };
+            } catch (e) {
+                return { ok: false, corrupt: true, raw: String(e.message || e), data: {} };
+            }
         });
     }
 
@@ -284,7 +286,13 @@
                 },
                 [data]
             );
-        } catch (err) { console.error('save error:', err); }
+            return true;
+        } catch (err) {
+            console.error('save error:', err);
+            aviso('Erro ao salvar o planejamento: ' + (err.message || err) +
+                  '. Verifique se a nota com a label #plannerdata existe.');
+            return false;
+        }
     }
 
 
@@ -359,6 +367,7 @@
             }
             /* REFS-BE (fim) */
 
+            /* REC-BE (início) — expansão de recorrentes (pura, testável) */
             function expandRecurringInContent(content, noteId) {
                 const all = [];
                 const inputRe = /<input\s[^>]*type=["']checkbox["'][^>]*>/gi;
@@ -383,16 +392,20 @@
                     const cb = all[i];
                     if (cb.isChecked || !cb.text) continue;
                     const everyMatch = cb.text.match(/#every=(\d+)\s*d\b/i);
-                    const totalMatch = cb.text.match(/#total=(\d+)/i);
+                    const totalMatch = cb.text.match(/#total=(\d+)\b/i);
                     if (!everyMatch || !totalMatch) continue;
                     const every = parseInt(everyMatch[1], 10);
                     const total = parseInt(totalMatch[1], 10);
                     if (total <= 1) continue;
+                    if (!(every >= 1)) continue;   // #every=0d não expande
+                    if (total > 100) continue;     // trava anti-explosão de clones na nota
                     const uptoMatch = cb.text.match(/#upto=(\d{2})-(\d{2})-(\d{4})/);
-                    let baseDate;
+                    let baseDate = null;
                     if (uptoMatch) {
                         baseDate = new Date(`${uptoMatch[3]}-${uptoMatch[1]}-${uptoMatch[2]}T12:00:00`);
-                    } else {
+                        if (isNaN(baseDate.getTime())) baseDate = null; // data impossível (ex. 99-99-2026)
+                    }
+                    if (!baseDate) {
                         baseDate = new Date();
                         baseDate.setHours(12, 0, 0, 0);
                     }
@@ -480,11 +493,16 @@
 
                 return { html: changed ? html : content, generated };
             }
+            /* REC-BE (fim) */
 
             const rows = api.sql.getRows(`
                 SELECT noteId, title
                 FROM notes
-                WHERE isDeleted = 0 AND type = 'text'
+                WHERE isDeleted = 0 AND isProtected = 0 AND type = 'text'
+                  AND noteId NOT IN (
+                      SELECT a.noteId FROM attributes a
+                      WHERE a.isDeleted = 0 AND a.name = 'archived'
+                  )
                 ORDER BY title COLLATE NOCASE
             `);
 
@@ -493,22 +511,32 @@
             const cbStats = {};
 
             for (const row of rows) {
-                const note = api.getNote(row.noteId);
-                if (!note) continue;
-                let content = note.getContent();
+                let note, content;
+                try {
+                    note = api.getNote(row.noteId);
+                    if (!note) continue;
+                    content = note.getContent();
+                } catch (e) {
+                    // uma nota problemática não pode derrubar o scan inteiro
+                    continue;
+                }
                 if (!content || !content.includes('checkbox')) continue;
 
                 // Links internos da nota toda (indicador 🔗 n nos cards)
                 const notaLinkCount = contarLinksDaNota(content);
 
                 // ── Expande tasks recorrentes ANTES da extração ─────────────
-                const expResult = expandRecurringInContent(content, row.noteId);
-                if (expResult.html !== content) {
-                    content = expResult.html;
-                    note.setContent(content);
-                    for (const g of expResult.generated) {
-                        genMap.set(g.noteId + '::' + g.cbIndex, g.date);
+                try {
+                    const expResult = expandRecurringInContent(content, row.noteId);
+                    if (expResult.html !== content) {
+                        note.setContent(expResult.html);
+                        content = expResult.html;
+                        for (const g of expResult.generated) {
+                            genMap.set(g.noteId + '::' + g.cbIndex, g.date);
+                        }
                     }
+                } catch (e) {
+                    // expansão falhou: segue com o conteúdo original
                 }
 
                 // ── Extrai checkboxes não marcados + estatísticas ──────────
@@ -580,6 +608,7 @@
         }
 
         // Auto-insere no plannerData tasks geradas por recorrência (datas específicas)
+        const houveGeradas = Object.keys(data.generated).length > 0;
         for (const [id, date] of Object.entries(data.generated)) {
             plannerData[id] = date;
         }
@@ -590,9 +619,18 @@
             if (key.startsWith('_')) continue;
             if (!validIds.has(key)) delete plannerData[key];
         }
+        // Poda também a ordem dos dias (ids que não existem mais)
+        if (plannerData._order && typeof plannerData._order === 'object') {
+            for (const day of Object.keys(plannerData._order)) {
+                plannerData._order[day] = (plannerData._order[day] || []).filter(id => validIds.has(id));
+            }
+        }
 
         // Estatísticas de checkboxes por nota
         cbStats = data.cbStats;
+
+        // Persiste as datas dos clones gerados (senão se perdem no próximo load)
+        if (houveGeradas) await save();
     }
 
 
@@ -645,20 +683,29 @@
     async function markDone(task) {
 
         await api.runOnBackend((noteId, cbIndex) => {
-            const note = api.getNote(noteId);
-            let content = note.getContent();
-            let count = 0;
-            content = content.replace(
-                /<input\s+type="checkbox"([^>]*?)>/gi,
-                (match, attrs) => {
-                    if (count++ === cbIndex) {
-                        if (/\bchecked\b/i.test(attrs)) return match;
-                        return `<input type="checkbox"${attrs} checked>`;
+            /* MARCAR-BE (início) — marca o checkbox de índice N (pura, testável) */
+            function marcarCheckbox(html, cbIndex) {
+                let count = 0;
+                let found = false;
+                // Mesma regex do fetchTasks (ordem de atributos e aspas livres)
+                const out = String(html || '').replace(
+                    /<input\s[^>]*type=["']checkbox["'][^>]*>/gi,
+                    (match) => {
+                        if (count++ !== cbIndex) return match;
+                        found = true;
+                        if (/\bchecked\b/i.test(match)) return match;
+                        return match.replace(/<input\b/i, '<input checked');
                     }
-                    return match;
-                }
-            );
-            note.setContent(content);
+                );
+                return { html: out, found };
+            }
+            /* MARCAR-BE (fim) */
+
+            const note = api.getNote(noteId);
+            if (!note) throw new Error('nota de origem não encontrada');
+            const res = marcarCheckbox(note.getContent(), cbIndex);
+            if (!res.found) throw new Error('checkbox de índice ' + cbIndex + ' não encontrada (a nota mudou?)');
+            note.setContent(res.html);
         }, [task.noteId, task.checkboxIndex]);
 
         // remove do estado compartilhado
@@ -669,6 +716,8 @@
         if (oldDay && plannerData._order && plannerData._order[oldDay]) {
             plannerData._order[oldDay] = plannerData._order[oldDay].filter(id => id !== task.id);
         }
+        // persiste a remoção
+        await save();
     }
 
 
@@ -720,9 +769,17 @@
        6. HELPERS GERAIS
     ═══════════════════════════════════════════════════════════ */
 
+    /* ESC (início) — escape HTML (pura, testável) */
     const esc = s => String(s)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+    /* ESC (fim) */
+
+    // Aviso visível ao usuário (falhas de save/reload não podem ser só no console)
+    function aviso(msg) {
+        try { if (api && typeof api.showMessage === 'function') api.showMessage(String(msg), 6000); } catch (_) {}
+    }
 
 
     function modeSwitcher() {
@@ -734,7 +791,9 @@
         return `<span class="pl-mode-switch">
             ${modes.map(m => `
                 <span class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
-                      tabindex="0" data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
+                      tabindex="0" role="button" aria-label="Ver ${m.label}"
+                      aria-current="${viewMode === m.id ? 'true' : 'false'}"
+                      data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
             `).join('')}
         </span>`;
     }
@@ -751,7 +810,9 @@
         return `<div class="pl-mode-bar">
             ${modes.map(m => `
                 <span class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
-                      tabindex="0" data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
+                      tabindex="0" role="button" aria-label="Ver ${m.label}"
+                      aria-current="${viewMode === m.id ? 'true' : 'false'}"
+                      data-mode="${m.id}" title="Ver ${m.label}">${m.label}</span>
             `).join('')}
         </div>`;
     }
@@ -761,6 +822,7 @@
         .pl-mode-btn { background:none;border:1px solid var(--main-border-color,#313244);border-radius:4px;
                        color:var(--muted-text-color,#888);font-size:13px;padding:2px 8px;cursor:pointer; }
         .pl-mode-btn:hover { color:var(--main-text-color); }
+        .pl-mode-btn:focus-visible { outline:2px solid var(--main-active-border-color,#89b4fa); outline-offset:2px; }
         .pl-mode-btn--active { background:var(--accented-background-color,#313244);
                                color:var(--main-text-color);font-weight:600; }
     `;
@@ -1065,6 +1127,7 @@
                 noteId:        t.noteId,
                 noteTitle:     t.noteTitle,
                 checkboxIndex: t.checkboxIndex,
+                noteLinks:     t.noteLinks || 0,
                 startIdx,
                 endIdx:        endIdx === -1 ? 6 : endIdx,
                 progress:      progTag ? progTag.value : (doneTag ? 100 : 0),
@@ -1201,7 +1264,7 @@
         if (groups.size === 0) {
             html += `<div class="gantt-empty" style="grid-column:1/-1;grid-row:2">
                 <div>Nenhuma tarefa agendada nesta semana</div>
-                <div class="gantt-empty-sub">Arraste tarefas do backlog para os dias no modo Quadro</div>
+                <div class="gantt-empty-sub">Arraste tarefas do backlog para os dias no modo Semana</div>
             </div>`;
         }
 
@@ -1306,8 +1369,17 @@
         $pl.find('#gantt-now').on('click',   () => { weekOffset = 0; renderPlanner(); });
 
         $pl.find('#gantt-reload').on('click', async function () {
-            $(this).text('…');
-            try { await fetchTasks(); } catch (_) {}
+            const $btn = $(this);
+            $btn.text('…');
+            try {
+                const loaded = await loadPlannerData();
+                if (loaded.ok) plannerData = loaded.data || {};
+                await fetchTasks();
+            } catch (err) {
+                console.error('reload error:', err);
+                aviso('Falha ao recarregar: ' + (err.message || err));
+            }
+            if ($btn.parent().length) $btn.text('⟳');
             renderPlanner();
             renderTasks();
         });
@@ -1359,7 +1431,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('gantt markDone error:', err); }
+            } catch (err) { console.error('gantt markDone error:', err); aviso('Não foi possível concluir a tarefa: ' + (err.message || err)); }
         });
 
         // Done on backlog items
@@ -1374,7 +1446,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('gantt blog markDone error:', err); }
+            } catch (err) { console.error('gantt blog markDone error:', err); aviso('Não foi possível concluir a tarefa: ' + (err.message || err)); }
         });
     }
 
@@ -1515,6 +1587,7 @@
             .mn-weekday { font-size:11px;padding:6px 0 8px; }
             .mn-daynum { font-size:11px;padding-bottom:2px; }
             .mn-task { font-size:11px;padding:2px 4px;line-height:1.4; }
+            .mn-done-btn { opacity:.5;padding:0 4px; }
         }`;
 
         let html = `<style>${css}</style>
@@ -1623,8 +1696,17 @@
         $pl.find('#month-now').on('click',   () => { monthOffset = 0; renderPlanner(); });
 
         $pl.find('#month-reload').on('click', async function () {
-            $(this).text('…');
-            try { await fetchTasks(); } catch (_) {}
+            const $btn = $(this);
+            $btn.text('…');
+            try {
+                const loaded = await loadPlannerData();
+                if (loaded.ok) plannerData = loaded.data || {};
+                await fetchTasks();
+            } catch (err) {
+                console.error('reload error:', err);
+                aviso('Falha ao recarregar: ' + (err.message || err));
+            }
+            if ($btn.parent().length) $btn.text('⟳');
             renderPlanner();
             renderTasks();
         });
@@ -1671,7 +1753,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('month markDone error:', err); }
+            } catch (err) { console.error('month markDone error:', err); aviso('Não foi possível concluir a tarefa: ' + (err.message || err)); }
         });
 
         /* ── Desktop: drag-and-drop entre células ───────────── */
@@ -1827,8 +1909,17 @@
         $pl.find('#pl-now').on('click',  () => { weekOffset = 0; renderPlanner(); });
 
         $pl.find('#pl-reload').on('click', async function () {
-            $(this).text('…');
-            try { await fetchTasks(); } catch (_) {}
+            const $btn = $(this);
+            $btn.text('…');
+            try {
+                const loaded = await loadPlannerData();
+                if (loaded.ok) plannerData = loaded.data || {};
+                await fetchTasks();
+            } catch (err) {
+                console.error('reload error:', err);
+                aviso('Falha ao recarregar: ' + (err.message || err));
+            }
+            if ($btn.parent().length) $btn.text('⟳');
             renderPlanner();
             renderTasks();
         });
@@ -2032,7 +2123,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('markDone error:', err); }
+            } catch (err) { console.error('markDone error:', err); aviso('Não foi possível concluir a tarefa: ' + (err.message || err)); }
         });
     }
 
@@ -2240,6 +2331,7 @@
                 renderTasks();
             } catch (err) {
                 console.error('markDone error:', err);
+                aviso('Não foi possível concluir a tarefa: ' + (err.message || err));
                 $check.removeClass('completing').css({
                     borderColor:   'var(--main-border-color,#45475a)',
                     background:    'transparent',
@@ -2256,18 +2348,29 @@
     ═══════════════════════════════════════════════════════════ */
 
     try {
-        plannerData = await loadPlannerData();
+        const loaded = await loadPlannerData();
+        plannerData = loaded.data || {};
+        if (loaded.missing) {
+            aviso('Nota com a label #plannerdata não encontrada: o planejamento não será salvo. Crie uma nota de código (JSON) com as labels #plannerdata e #data.');
+        } else if (loaded.corrupt) {
+            console.error('planner-data.json ilegível (conteúdo bruto para recuperação):', loaded.raw);
+            aviso('O planner-data.json está ilegível. O planejamento abriu vazio; o conteúdo antigo está no console.');
+        }
         if (plannerData._viewMode === 'gantt' || plannerData._viewMode === 'kanban' || plannerData._viewMode === 'month') {
             viewMode = plannerData._viewMode;
         }
         await fetchTasks();
         migrateIds(); // converte IDs antigos na primeira carga; inofensivo se já migrado
     } catch (err) {
-        const msg = String(err.message || err);
-        $pl.html(`<div style="padding:24px;color:#f38ba8;font-size:17px">
+        const msg = esc(String(err.message || err));
+        $pl.html(`<div style="padding:24px;color:var(--main-text-color);font-size:17px">
             ✗ Erro ao inicializar: ${msg}
+            <div style="margin-top:14px;">
+                <button type="button" id="pl-init-retry" style="padding:6px 14px;cursor:pointer;">Tentar de novo</button>
+            </div>
         </div>`);
         $tk.html('');
+        $pl.find('#pl-init-retry').on('click', () => location.reload());
         return;
     }
 
