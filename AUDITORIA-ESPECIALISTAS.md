@@ -602,3 +602,72 @@ Nenhuma correção foi aplicada no código dos plugins nesta rodada (só o conse
 `test-fountain-stats.js` e o novo `test-grade.js`, em `Fase 0`).
 
 **Próximo da lista:** Canvas-Note-Tools (rodada 3).
+
+---
+
+## ✅ Correções aplicadas — rodada 2, batches 1-3 (29/09/2026)
+
+### Batch 1 — bugs, segurança e integridade
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C1.1 + D5.1 | `marcarCenaAtiva` inexistente → `marcarAtivo(raiz, id)` (Fountain) | smoke (clique numa cena, console limpo) |
+| C2.1 | `escaparHtml` passou a escapar `"`/`'`; `data-scene` também escapado; atributos `title`/`aria-label` cobertos (Fountain + Grid) | `test-fountain-stats` (aspas), `test-grade` (aspas em atributo) |
+| C5.1 + D3.2 | Atalhos (Ctrl+=/−/0, F5, Esc) só agem com o visor montado no documento; listener novo remove o anterior (não acumula) | smoke + revisão |
+| C4.2 | Scene heading com dois espaços vira **ação** (não some mais) | `test-fountain-stats` (fixture) |
+| C4.8 + QW4 | Boneyard `/* */`: regex com flag `m` reconhece o bloco compacto; conteúdo fora das estatísticas e do PDF | `test-fountain-stats` (2 fixtures: com e sem linha em branco) |
+| C4.1 | Linhas só com espaço/NBSP normalizadas no parser (rascunho `text` não colapsa mais tudo num bloco) | `test-fountain-stats` (fixture com espaço + NBSP) |
+| C4.3 | PDF de rascunho vazio gera 1 página válida (antes `/Count 0`) | revisão |
+| C4.5 | Título com múltiplas linhas troca todos os `<br>` (antes só o 1º) | revisão |
+| C3.2 | Botão 📄 PDF desabilita e mostra "⏳ …" antes da geração síncrona (o navegador pinta) | smoke (botão existe) + revisão |
+| C1.3 | Iframe de impressão ganhou limpeza de segurança agendada fora do `onload` (não fica órfão) | revisão |
+| C1.2 | `avisar` com fallback `console.warn` quando `api.showMessage` não existe (Fountain + Grid) | revisão |
+| QW5 | `nomeSeguro` fecha com `'roteiro'` e o arquivo usa o título do roteiro (`resultado.title → rascunho → nota mãe`) | `test-fountain-stats` (`nomeSeguro`) |
+| Grid C1.1 + D5.2 | `salvarOrdem` com `try/catch` + aviso; toast "Ordem salva" só quando a ordem muda | smoke (ordem salva + aviso) |
+| Grid C1.2 + D5.1 | `#gridOrder` não-array ignorado; `renderizar` com guarda de reentrada e **erro visível com "Tentar de novo"** | smoke + revisão |
+| Grid C3.1 + C3.4 | Conteúdo das filhas carregado em paralelo, cards montados e anexados de uma vez | smoke (2 cards) |
+| Grid C5.1 + C5.3 + C5.2 | Handlers delegados com namespace `.lg` (`.off` antes de reinscrever); CSS hoist idempotente e patch de `$.fn` instalado uma vez, preservando argumentos extras (Fountain + Grid) | smoke (re-render não duplica) |
+| Grid C2.1 | `sanitizarHtml` no conteúdo compilado (remove script/iframe/on*/javascript:) | `test-grade` (5 asserções) |
+| Grid C1.3 | Nota + label `#compiledDoc` na mesma transação (`api.transactional`) — sem nota órfã sem label | revisão |
+
+### Batch 2 — UI/UX, acessibilidade e quick wins
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D3.1 | Sidebar do Fountain: as 4 seções viraram `<button aria-expanded aria-controls>` (teclado + leitor de tela) | smoke (4 botões com aria) |
+| D4.2 | Sidebar com `max-height` + scroll próprio (não corta os ATOS) | revisão |
+| D4.3 + Grid D4.2 | Alvos de toque ≥44px no mobile (botões, seções, itens) | revisão |
+| D5.2 | ⟳ Atualizar com "⏳ Atualizando…" e desabilitado durante o render | revisão |
+| D5.3 + D7.2 | Erro de render com cor do tema e botão "⟳ Tentar de novo" (Fountain) | revisão |
+| D7.3 + Grid D7/D8 | Auxiliares com `--muted-text-color` (fim das opacidades empilhadas); fallbacks de tema no Grid; `:not(:disabled):hover` | revisão |
+| D8.1 | Zoom do Fountain não sobrescreve mais o 11pt do mobile até o usuário mexer | revisão |
+| D6.1 + Grid D6.2 | `prefers-reduced-motion` nos dois; scroll suave vira "auto" quando o sistema pede (`rolarAte`) | revisão |
+| D1.1 + D2.3 | Glifos distintos: 📃 HTML × 📄 PDF; 📂 Importar | revisão |
+| D5.5 | Toast no download `.fountain` | revisão |
+| D3.4 | `aria-label` nos botões de zoom (−/100%/+); rótulo mostra o valor atual (QW10) | revisão |
+| Grid D3.1 + D4.1 | Cards focáveis (`tabindex`, `aria-label`, Enter/Espaço abre) e **botões ↑/↓** (toque/teclado); setas ↑/↓ movem o card focado | smoke (4 botões, reordenação salva) |
+| QW8 | Contagens nos cabeçalhos da sidebar (CENAS/PERSONAGENS/LOCAIS/ATOS) | revisão |
+| QW11 | Números de cena (`#1#`) na margem do PDF (paridade com a tela) | revisão |
+| QW13 | Total de palavras no cabeçalho do Grid | smoke (5 palavras) |
+
+### Batch 3 — i18n PT/EN + smokes de runtime
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C7.1 + QW7 | UI PT/EN pelo idioma do Trilium nos dois plugins (`FV_I18N`/`LG_I18N`, `tr()` com interpolação, plural simples, números por cultura; palpite por `navigator.language` + confirmação via `api.getOption('locale')`) | `test-grade` (i18n), smokes, revisão |
+| QW18 | **Smokes de runtime** (Chrome headless) nos dois: Fountain (visor renderiza, boneyard oculto, 4 seções aria, clique de cena sem erro, console limpo) e Grid (2 cards, contagem/palavras, ↑/↓ reordena e salva, console limpo) | `bun test-smoke.js` (2 arquivos) |
+| C8.1 | Testes ampliados: `test-fountain-stats` 23 asserções, `test-grade` 32 (aspas, sanitize, i18n, boneyard, ação forçada, nomeSeguro) | `bun` (todos passam) |
+| C7.4 | README atualizado (teclado, ↑/↓, boneyard, i18n, números de cena no PDF, F5 real) | revisão |
+
+**Deploy (29/09):** VPS `IlceVgXnQzxs`/`j6VU9kINZa34` e demo `NhiWdtED6sSR`/`0zZQ6aBS8Qo1`
+via ETAPI; **sha256 idêntico repo = VPS = demo = zip** (`c1d55a3a…` Fountain,
+`8b588412…` Grid); zips de export regenerados. ⚠️ **Achado do deploy:** o Fountain
+no VPS/demo estava na versão de 26/09 (sem o hoist de CSS de 27/09) — agora alinhado
+com o repo. Token novo do demo: `wrDeploy2909_…` (criado por linha em `etapi_tokens`
++ restart do container, procedimento conhecido).
+
+**Residual (não feito nesta rodada):** QW9 (filtro de cenas), QW14 (botão "abrir
+compilado"), C7.1 do Fountain (`CSS_IMPRESSAO` duplicado), C4.4 (entidades numéricas
+no `htmlParaTexto`), C4.7 (import com `confirm`), Grid C3.3 (payload da compilação em
+passos) e C4.4 (filtro por tipo/mime), C4.3 (alerta de `#compiledDoc` enganoso);
+versões `manifest` × registry (C7.3) e bump no registry ficam para o próximo release.
