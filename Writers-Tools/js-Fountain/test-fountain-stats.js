@@ -15,7 +15,12 @@ function extrairFuncao(nome) {
     return m[0];
 }
 
-const iife = src.match(/const Fountain = \(function \(\) \{[\s\S]*?\n\}\)\(\);/)[0];
+// Extrai a IIFE por marcadores de seção: a regex lazy parava no })() da IIFE
+// interna de hoist de CSS (primeira ocorrência) e o eval quebrava.
+const inicioIife = src.indexOf('const Fountain = (function () {');
+const fimIife = src.indexOf('// ── 2. CSS');
+if (inicioIife < 0 || fimIife <= inicioIife) throw new Error('não achei o bloco do Fountain');
+const iife = src.slice(inicioIife, fimIife);
 eval(
     iife + '\n' +
     extrairFuncao('extrairLocal') + '\n' +
