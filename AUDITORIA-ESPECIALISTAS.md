@@ -9,8 +9,9 @@ maior severidade. **Nenhuma correção é feita durante a auditoria** — os fix
 saem em rodada própria, após triagem do dono.
 
 **Fluxo dos residuais:** o que não entra nos batches de correção de cada rodada é
-migrado para o **`ROADMAP-RESIDUAIS.md`**. A execução do roadmap acontece **depois
-da rodada 16** (todos os plugins auditados), com uma triagem única de prioridade.
+migrado para o **`ROADMAP-RESIDUAIS.md`**. A execução do roadmap acontece **depois da
+última rodada da fila** (15 plugins após a saída do Daily-Note-Map em 29/09/2026),
+com uma triagem única de prioridade.
 
 Regra de leitura do relatório: prioridade = resultado do plugin; "verificar em
 runtime" marca o que depende de teste manual no Trilium.
@@ -83,10 +84,11 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 ### 🔁 Fila proposta (ajustável)
 
 ~~2. Writers-Tools (Fountain + Longform)~~ ✅ 29/09 · ~~3. Canvas-Note-Tools~~ ✅ 29/09 ·
-~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · **6. Daily-Note-Map (próximo)** · 7.
-Knowledge-Dashboard · 8. Attribute-GC · 9. Pomodoro · 10. Word-Counter · 11.
-Daily-Note-Navigator · 12. UI-Tweaks · 13. Kanboard · 14. Mastodon · 15.
-Canvas-Template-Loader · 16. Canvas-Templates.
+~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · ~~6. Daily-Note-Map~~ ⛔ removido da
+coleção (29/09 — o mapa nativo do Trilium cobre; decisão no `SESSION.md`) ·
+**6. Knowledge-Dashboard (próximo)** · 7. Attribute-GC · 8. Pomodoro · 9. Word-Counter ·
+10. Daily-Note-Navigator · 11. UI-Tweaks · 12. Kanboard · 13. Mastodon ·
+14. Canvas-Template-Loader · 15. Canvas-Templates.
 
 ---
 
@@ -1469,7 +1471,7 @@ sem ARIA/vivas, sem i18n, contraste/opacidade e alvos fora do padrão. Nenhuma c
 nesta rodada — batches após triagem do dono (candidatos: 1) integridade/segurança, 2) UI/a11y/estado,
 3) paridade/harness — com o `test-chat.js` + smoke entrando no pacote.
 
-**Próximo da lista:** Daily-Note-Map (rodada 6).
+**Próximo da lista:** Knowledge-Dashboard (rodada 6; o Daily-Note-Map saiu da coleção em 29/09).
 
 ---
 

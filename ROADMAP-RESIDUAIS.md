@@ -1,10 +1,10 @@
 # Roadmap de Residuais — TriliumNext Toolkit
 
 Residuais das rodadas de auditoria por especialistas (`AUDITORIA-ESPECIALISTAS.md`).
-**Regra:** durante as rodadas (3 a 16) só os achados de alto valor viram batch de
+**Regra:** durante as rodadas (3 a 15) só os achados de alto valor viram batch de
 correção; o que ficar de fora é migrado para cá. A execução deste roadmap acontece
-**depois da rodada 16** (todos os plugins auditados), com uma **triagem única** de
-prioridade.
+**depois da rodada 15** (todos os plugins auditados; a fila perdeu o Daily-Note-Map
+em 29/09/2026), com uma **triagem única** de prioridade.
 
 - **Estado:** 🔲 a fazer (nada executado ainda — o roadmap começa a ser pago só na volta).
 - **Ordem sugerida na volta:** integridade > UX > manutenção; agrupar por plugin
@@ -65,7 +65,7 @@ prioridade.
 | SN-C7.1 | Regenerar o zip a partir de uma instalação real (com `relations` e títulos do manifest) | Manutenção | M | Médio | `Shared-notes.zip` | importar no demo e conferir a relação |
 | SN-C8.1 + SN-C8.5 | Stub de jQuery com eventos reais (binds/tabs) e E2E com `--cleanup` de artefatos | Testes | M | Baixo | `test:77-88` / `test-e2e-real.js:336-339` | `bun` |
 
-## Como executar na volta (após a rodada 16)
+## Como executar na volta (após a rodada 15)
 
 1. **Triagem única:** revalidar cada item no código atual (linhas/relevância mudaram),
    descartar o que perdeu sentido e confirmar esforço/risco com o dono.
@@ -117,6 +117,9 @@ prioridade.
 
 ## Histórico
 
+- **29/09/2026** — **Daily-Note-Map removido da coleção** (decisão de uso: o mapa
+  nativo do Trilium cobre; o código fica no histórico do git): saiu do repo, do README
+  do toolkit e do registry do Plugin Manager; a fila de auditoria caiu de 16 para 15.
 - **29/09/2026** — atualizado com os residuais da rodada 5 (AI-Chat).
 - **29/09/2026** — atualizado com os residuais da rodada 4 (Shared-Notes).
 - **29/09/2026** — atualizado com os residuais da rodada 3 (Canvas-Note-Tools).
