@@ -82,6 +82,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 5 | AI-Chat (render note) | `AI-Chat/AI-Chat/AI Code.js` | 29/09/2026 | 50 achados (2C/9A/18M/17B/4S) | 40 achados (3C/11A/16M/9B/1S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/zip com sha256 idêntico; demo: instalação nova via ETAPI com sha idêntico e config pelo label; 85 chaves i18n em paridade; `test-chat.js` + `test-smoke.js`); residual no `ROADMAP-RESIDUAIS.md` |
 | 6 | Minimalist Pomodoro + Time Tracker | `Minimalist-Pomodoro/Pomodoro-mini/Pomodoro mini.js` | 29/09/2026 | 36 achados (2C/4A/16M/9B/5S) | 33 achados (1C/8A/14M/8B/3S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; `test-pomodoro.js` 35 ✅ + `test-smoke.js` 30 ✅; STOP em 2 toques que só limpa após salvar; relatório em `<tr>` com escaping e label `#pomodoro`; i18n 30 chaves em paridade); residual no `ROADMAP-RESIDUAIS.md` |
 | 7 | Word Counter | `Word-Counter/Word count.js` | 29/09/2026 | 34 achados (0C/4A/13M/13B/4S) | 29 achados (1C/6A/12M/7B/3S) | 17 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; `test-wordcount.js` 53 ✅ + `test-smoke.js` 24 ✅; semântica baseline+delta por nota; contagem com entidades; barras ARIA/meta; i18n 14 chaves; zip defasado regenerado); residual no `ROADMAP-RESIDUAIS.md` |
+| 8 | Daily-Note-Navigator | `Daily-Note-Navigator/Daily-Note-Navigator.js` | 29/09/2026 | 30 achados (2C/7A/11M/7B/3S) | 30 achados (1C/8A/11M/7B/3S) | 18 itens (S/M) | **Auditoria concluída; nenhuma correção aplicada** (batches após triagem: 1) navegação/contrato (`getDayNote`, teclado, concorrência) + datas, 2) UI/a11y/estado + i18n, 3) harness + README/captura; **decisão de produto pendente:** manter a criação do `getDayNote` × checar sem criar) |
 
 ### 🔁 Fila proposta (ajustável)
 
@@ -89,9 +90,8 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 ~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · ~~6. Daily-Note-Map~~ ⛔ removido da
 coleção (29/09 — o mapa nativo do Trilium cobre; decisão no `SESSION.md`) ·
 ~~6. Minimalist Pomodoro + Time Tracker~~ ✅ 29/09 · ~~7. Word-Counter~~ ✅ 29/09 ·
-**8. Daily-Note-Navigator (próximo — prioridade do release)** · 9. Knowledge-Dashboard ·
-10. Attribute-GC · 11. UI-Tweaks · 12. Kanboard · 13. Mastodon · 14. Canvas-Template-Loader ·
-15. Canvas-Templates.
+~~8. Daily-Note-Navigator~~ ✅ 29/09 · **9. Knowledge-Dashboard (próximo)** · 10. Attribute-GC ·
+11. UI-Tweaks · 12. Kanboard · 13. Mastodon · 14. Canvas-Template-Loader · 15. Canvas-Templates.
 
 ---
 
@@ -2037,3 +2037,186 @@ mesmo sha (o demo já rodava o sha antigo do repo; agora ambos estão na versão
 **Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Word Counter): corrida entre janelas,
 edição em split não ativo, slot `position`, tooltip da origem da meta, intervalo ISO na UI,
 QA visual de contraste, captura do README e bump de release.
+
+---
+
+## Rodada 8 — Daily-Note-Navigator (29/09/2026)
+
+**Escopo:** `Daily-Note-Navigator/Daily-Note-Navigator.js` (227 linhas), `README.md`; registry
+`daily-note-navigator`.
+**Verificação:** `bun build` (sintaxe) ✅ · **sem zip** e **sem harness de teste** · registry
+`0.8.0` com `sourceUrl` + labels (sem manifest, ok) · 3 especialistas (read-only) + conferência
+direta + **3 verificações no código do runtime 0.106** (container `trilium-demo`).
+
+**Verificações de plataforma (com evidência no fonte 0.106):**
+1. **`api.getDayNote(date, calendarRootId?)` CRIA a nota no miss** (doc: "If it doesn't exist, it is automatically created"; backend cria ano/mês/semana em transação e até a raiz "Calendar"). O `false` passado como 2º argumento é no-op (a assinatura real é `calendarRootId`) — logo o botão **não** tem modo "só ler" e o ramo `No note for …` é inalcançável.
+2. **`api.activateNote` continua válido** no 0.106 (não deprecado); a decisão antiga do `SESSION.md:168` ("usar `openTabWithNote` para evitar scrollIntoView") **não se sustenta** hoje — e trocar aqui abriria uma aba nova por dia. Manter `activateNote` e documentar.
+3. **`refreshWithNote` NÃO é chamado quando `isEnabled() === false`** ("If the widget is not enabled, it will not receive refreshWithNote updates"): o ramo de limpeza do listener global (`off('keydown.dnn')`) é **inalcançável** → as setas ficam capturadas para sempre após abrir um diário.
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 2 | 7 | 11 | 7 | 3 | 30 |
+| 🎨 UI/UX | 1 | 8 | 11 | 7 | 3 | 30 |
+| ⚡ Quick wins | — | — | — | — | — | 18 itens |
+
+**Top 5 (triagem sugerida):**
+1. **[Crítica · C4/C6 + D5]** `api.getDayNote` **cria a nota**: cada ←/→/«/»/📅 cria diário (ano/mês/semana/nota) em silêncio; a mensagem "No note for…" é código morto e o README promete o oposto. **Decisão de produto pendente** (manter a criação e documentar × checar existência sem criar via `searchForNote`).
+2. **[Crítica · C5/D3]** **Setas ←/→ globais sequestram o editor** (`$(document)` + `preventDefault` sem guarda): dentro de uma nota de diário, o cursor não anda e a navegação muda de dia; e como `refreshWithNote` não roda com o widget desabilitado, o listener **nunca é removido** (V3) e ainda acumula rebinds (`doRenderBody` sem `.off`).
+3. **[Alta · C4/D5]** **Datas em UTC + overflow de mês**: `toISOString()` faz o 📅 pular para amanhã depois das 21h (BRT) e travar em UTC+13; `setMonth` cru salta meses (31/01 → 03/03).
+4. **[Alta · C6/C7]** **Base/hook errados**: `NoteContextAwareWidget` + `doRenderBody()` só funciona no layout novo por monkey-patch do app (`new-layout=false` renderiza vazio); a doc pede `doRender()` nessa base.
+5. **[Alta · C5/C3]** Rebind acumulativo + **sem `cleanup()`** (uma seta pode chamar `_navigate` N vezes) e **navegação concorrente sem trava** (auto-repeat cria notas em cascata e ativa dia fora de ordem).
+
+**Nota de dedupe:** setas globais em Código 2/7 e UI 1; datas em Código 3/4 e UI 6; `getDayNote` em
+Código 1/12 e UI 5/17; **`--button-background-color` não existe nos temas next** (Código 17, UI 19)
+— mesma lição da rodada 3; emoji/inline/CSS em Código 16/18/29 e UI 11/12/24.
+
+### 👨‍💻 Código — achados
+
+**Crítica**
+
+- **C4.1/C6.1 · `getDayNote` cria a nota — ramo "No note" morto** (`145-155`, `168-173`, `189-194`): cada navegação cria diário em silêncio (e a árvore do mês/ano). Correção: decidir o produto (ver top 1) — se for não criar, checar com `api.searchForNote('#dateNote="YYYY-MM-DD"')`; remover o `false` enganoso. (verificar em runtime)
+- **C5.1 · Keydown global sem guarda e sem remoção** (`137-140`, `211-215`, `220-223`): sequestra ←/→ do editor/tree/inputs; o `off` está num ramo inalcançável (V3). Correção: escopar ao widget (foco dentro), `preventDefault` só quando navegar e limpar em `cleanup()`.
+
+**Alta**
+
+- **C4.2 · `_offsetDate`/`_todayIso` em UTC** (`105-109`, `116-119`): Brasil após 21h → amanhã; UTC+13/14 → dia repetido/pulado. Correção: aritmética local (`isoLocal`/`addDays`). (verificar em runtime)
+- **C4.3 · `setMonth` cru salta meses** (`161-167`): 31/01 +1 → 03/03; 31/03 +1 → 01/05. Correção: `addMonthsClamped`.
+- **C6.2/C7.1 · Base errada (`NoteContextAwareWidget` + `doRenderBody`)** (`82-85`, `121`): só renderiza no layout novo por monkey-patch. Correção: estender `api.RightPanelWidget` preenchendo `this.$body` (padrão Pomodoro/Word-Counter, que funcionam com instância exportada e `parentWidget` de instância).
+- **C5.2 · Rebind sem `.off` + `cleanup()` ausente** (`137`, `220`, `227`): handlers acumulam a cada remontagem. Correção: bind único + `cleanup()`.
+- **C3.1 · Navegação concorrente sem trava** (`137-140`, `145-194`): auto-repeat/duplo clique dispara N criações e resolve fora de ordem. Correção: ignorar `e.repeat`, guarda de in-flight ("último vence").
+- **C1.1 · Falhas silenciosas (só `console.error`)** (`156-158`, `174-176`, `184-186`): `getDayNote`/`activateNote` falhando = clique mudo. Correção: `api.showError`/estado com retry.
+- **C7.2 · Tema "next": `--button-background-color` não existe** (`18`, `29`, `50`, `61`): sem fallback os botões ficam sem fundo (demo usa `next-dark`). Correção: fallback (`--accented-background-color`) como nas rodadas 3-7. (verificar em runtime)
+
+**Média**
+
+- **C4.4/C1.2 · `#dateNote` inválido → `RangeError` engolido e label quebrada** (`105-114`). Correção: validar `\d{4}-\d{2}-\d{2}` e avisar.
+- **C3.2 · `_dayCache` sem teto/TTL/invalidação** (`89`, `190-193`): nota apagada continua servida. Correção: TTL/limite + limpar em eventos, ou ler da Froca.
+- **C6.3 · `getDayNote(iso, false)` enganoso** (`191`): 2º arg é `calendarRootId`. Correção: 1 argumento + comentário.
+- **C6.4 · `activateNote` × nota antiga do SESSION** (V2): manter e registrar a exceção (trocar abriria aba por dia).
+- **C7.3 · Sem i18n** (`16-79`, `85`, `154`, `172`; formato `DD/MM/YYYY` fixo): dicionário + `tr()` + data por locale.
+- **C7.4 · Card do widget permanece em notas não-diário no layout novo** (`93-99`; README diz que esconde): o conteúdo esconde, o header não — documentar ou avaliar widget Preact. (verificar em runtime)
+- **C7.5/D3.1 · Sem ARIA/foco/hover; alvos ~24-26px; emoji 📅** (`16-79`). Correção: `aria-label`, `role=group`, live region, ≥40px, glifos monoespaçados.
+- **C7.6/D2.1 · Estilos 100% inline** (`9-80`): extrair `CSS` + `cssBlock` com classes `dnn-*` e estados.
+- **C7.7/D7.1 · Cor de erro `#f87171` fixa** (`199`, `204`): token de perigo com variante por tema.
+- **C7.8 · `position = 100` colide com Canvas v8 e Pomodoro** (`83`): escolher slot livre.
+- **C1.3 · `refreshWithNote(note)` ignora o parâmetro** (`209-219`): usar `note` recebido (multi-context/splits).
+
+**Baixa**
+
+- **C2.1/C7.9 · IDs fixos (`#prev-day-btn`…) colidem entre instâncias** (`16-79`): prefixar/sufixar por componente.
+- **C5.3 · Namespace `keydown.dnn` fixo** (`137`, `213`, `220`): `.off` de uma instância remove o da outra. Correção: namespace por instância.
+- **C8.1 · Sem harness** (pasta): `test-dnn.js` (datas/fuso/mês com `TZ`) + smoke.
+- **C7.10 · README com claims não cumpridos** (`11-13`): "inline notifications" (morto), cache sem invalidação, "esconde" (header fica), captura antiga.
+- **C5.4 · `_resetTimer` sem cancelamento no unmount** (`90`, `196-207`).
+- **C1.4 · `refreshWithNote` aborta em silêncio sem `$label`** (`210`).
+- **C7.11 · Versões/artefatos**: sem versão no arquivo/README; `sourceUrl` sem pin; sem zip (decisão no release).
+
+**Sugestão**
+
+- **C4.5 · Atalhos não conflitantes (J/K, `t`)** (SESSION.md:251 já propõe) — resolve o sequestro com custo baixo.
+- **C7.12 · `bx bx-calendar` no lugar do emoji** + tooltip acessível.
+- **C3.3 · Prefetch dos vizinhos + cache com TTL** (coalescer in-flight).
+
+### 🎨 UI/UX — achados
+
+**Crítica**
+
+- **D3.1 · Setas globais capturam o editor** (`137-140`, `220-223`): cursor não anda em nota de diário; listener eterno (V3). (raiz em `C5.1`)
+
+**Alta**
+
+- **D3.2 · Seis botões só com `title` (EN), sem `aria-label`; glifos como nome** (`16-79`): WCAG 4.1.2. Correção: `aria-label` i18n + `aria-hidden` no glifo.
+- **D3.3/D5.1 · Data/erro sem anúncio; barra sem `role="group"`** (`10-15`, `38-46`, `196-207`): live region `role=status` para data/erro.
+- **D4.1 · Alvos ~24-31px** (`16-79`): ≥40px (44 no mobile), confirmado na captura (~26px).
+- **D5.2 · "Hoje" sem nota = silêncio absoluto** (`179-186`): falta `else` com mensagem/ação.
+- **D5.3 · `_todayIso` UTC (após 21h BRT abre amanhã)** (`116-119`). (raiz em `C4.2`)
+- **D5.4 · Falha de leitura invisível** (`156-158`, `174-176`, `184-186`): estado de erro com retry.
+- **D7.1 · `#f87171` fixo reprova no claro (~2,8:1)** (`199`): token por tema.
+- **D2.1 · i18n ausente** (`16-79`, `85`, `154`, `172`; data fixa `DD/MM/YYYY`): PT/EN por locale.
+
+**Média**
+
+- **D2.2 · Formato de data fixo** (`111-114`): `toLocaleDateString` por idioma.
+- **D2.3 · Emoji 📅 no título e no botão** (`79`, `85`): glifo monocromático.
+- **D6.1 · Estilos inline sem hover/focus/active/disabled nem `cssBlock`** (`16-79`).
+- **D4.2 · Seis controles em painel ~280px sem wrap/min-width** (`10-15`): 📅 no limite/truncado. (verificar em runtime)
+- **D1.1/D8.1 · Data (informação primária) é o menor/apagado texto (11px muted)** (`38-46` × `35`, `56`): inverter hierarquia.
+- **D5.5 · Sem estado de carregamento nem trava de duplo clique** (`131-135`, `145-194`).
+- **D3.4/D4.3 · `title` só no hover; não antecipa a data alvo** (`16-79`): `aria-label`/tooltip dinâmico.
+- **D5.6 · Estado "sem nota" efêmero (2,5s), só texto e sem ação** (`196-207`).
+- **D2.4 · Três nomes para o widget** (`85` "Day Note Nav" × README × registry "Daily Note Navigator"; mensagens "No note for/in" divergentes).
+- **D7.2 · Tokens sem fallback; `--muted-text-color` na data** (`18-21`, `30`, `41`, `51`, `62`, `73`). (raiz em `C7.2`)
+- **D5.7 · Sem indicação de "hoje" nem estado atual** (`38-46`, `70-79`, `116-119`): `aria-current="date"` + destaque sutil.
+
+**Baixa**
+
+- **D2.5 · Captura defasada (3 controles; o código tem 6)** (README 53; imagem de 16:53 × JS 17:41).
+- **D6.2 · Sem `prefers-reduced-motion`** (fix do D6.1 precisa do bloco).
+- **D8.2 · Data sem `tabular-nums`** (`38-46`): jitter a cada dígito.
+- **D2.6 · IDs globais e estilos duplicados 5×** (`16-79`).
+- **D4.4 · Label truncado sem `title`** (`38-46`).
+- **D2.7 · Cache só de notas existentes × promessa do README** (`189-194`; README 12/42).
+- **D6.3 · Sem feedback imediato no clique (data só muda após carregar)** (`131-135`, `209-223`).
+
+**Sugestão**
+
+- **D1.2 · Agrupar controles (mês × dia × hoje) e dar peso ao "hoje"** (`10-80`).
+- **D5.8 · Tooltips/aria com a data alvo calculada** (`105-109`, `16-79`).
+- **D5.9 · Ação "criar nota do dia" no estado sem nota** (`154`, `172`, `191`) — depende da decisão do top 1.
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
+|---|----------|------|-------|:-------:|:-----:|-----------|
+| 1 | Datas puras `isoLocal`/`addDays` (fuso) | `105-109`, `116-119` | Fim do dia errado/atrasado | S | Baixo | `bun` com TZ UTC-3/UTC+13 |
+| 2 | `addMonthsClamped` no «/» | `165-167` | Fim do salto de mês | S | Baixo | puras (31/01, bissexto, ano) |
+| 3 | Harness `test-dnn.js` + `test-smoke.js` | pasta | Rede de proteção | S/M | Baixo | `bun` + Chrome headless |
+| 4 | Contrato real do `getDayNote` (remover `false`; decidir criação) | `191` (+150-183) | Fim da criação silenciosa | S/M | Baixo/Médio | manual no demo + stub |
+| 5 | Falha de navegação visível | `156-158`, `174-176` | Fim do clique mudo | S | Baixo | smoke com rejeição |
+| 6 | Feedback do botão "hoje" | `179-187` | Botão deixa de "quebrado" | S | Baixo | smoke |
+| 7 | Estado "hoje" (`aria-current`) | `70-79`, `209-219` | Orientação | S | Baixo | smoke |
+| 8 | Mensagem inline com token + live region | `196-207` | A11y/contraste | S | Baixo | guarda + smoke |
+| 9 | Rótulo com dia da semana + `title` | `38-46`, `111-114` | Recupera truncamento/clareza | S | Baixo | puras + smoke |
+| 10 | Teclado escopado ao widget | `137-140`, `220-223` | Fim do sequestro do editor | S/M | Médio | smoke input × widget |
+| 11 | Atalhos `t`/PgUp/PgDn | `138-139` | Fluxo | S | Médio | smoke |
+| 12 | Binding de teclado único (`off` antes) | `137-140` × `213`, `220-223` | Fim do acúmulo | S | Baixo | guarda + smoke |
+| 13 | Alvos ≥40px + `aria-label` + foco | `16-79` | A11y/toque | S | Baixo | smoke (`rect.height`) |
+| 14 | Glifos consistentes (sem emoji) | `25`, `36`, `57`, `68`, `79` | Consistência | S | Baixo | QA visual |
+| 15 | Higiene de release (versão/zip/captura) | README/registry/`imagem/` | Consistência | S | Baixo | revisão |
+| 16 | `cssBlock` + classes `.dnn-*` | `9-80` | Manutenção/estados | M | Baixo | smoke + QA 2 temas |
+| 17 | "Ir para a data" (`input type=date`) | TPL | Fluxo | M | Médio | smoke + manual |
+| 18 | «/» cai no dia mais próximo do mês | `161-177` | Menos becos | M | Médio | stub + manual |
+
+**Descartes explícitos:** contagem "N notas no mês" (exige busca/backend e sondar com `getDayNote` criaria notas); navegação por semana ISO (o calendário nativo cobre); pré-carregar vizinhos (sondagem criaria notas — melhor cache sob demanda); poda/limite do cache (1 objeto/dia é irrelevante — documentar); botão "criar nota do dia" (redundante se a criação for mantida — ver top 1).
+
+### Claims do README × código
+
+| README | Promessa | Código | Situação |
+|---|---|---|---|
+| 7, 38 | "arrow keys" | `137-140`, `220-223` | **Parcial**: listener global com `preventDefault` sequestra o editor |
+| 8 | "« » jump between months" | `165-167` | **Parcial**: sem clamp (`31/01 → 03/03`) e UTC+13 erra o dia |
+| 9 | "📅 … return to today" | `116-119`, `179-187` | **Parcial**: UTC (após 21h BRT abre amanhã) e silêncio no vazio |
+| 11 | "Inline notifications when no note exists" | `150-155`, `168-173`, `191` | **Não cumprido**: `getDayNote` cria a nota; mensagem morta |
+| 12, 42 | "Day cache … no repeated backend calls" | `189-194` | Cumprido só para revisitas; sem invalidação |
+| 13 | "Automatically hides…" | `93-99` | **Parcial**: conteúdo esconde; o card do header fica no layout novo |
+| 53 | captura | imagem | Defasada (3 controles × 6 no código) |
+
+### Pontos fortes (não mexer)
+
+- Sem vetor de XSS (markup estático + `.text()`), 100% frontend, `try/catch` em todos os caminhos.
+- `isEnabled()` restringe a `#dateNote`; cache acelera revisitas; `activateNote` é o comando correto no 0.106.
+- Nada é gravado no conteúdo das notas; zero dependências; arquivo pequeno (227 linhas).
+
+### Veredito da rodada 8
+
+Widget pequeno e direto, mas com **dois comportamentos enganosos** (a navegação **cria** notas de
+diário em silêncio — o aviso do README nunca aparece — e as **setas sequestram o editor** de forma
+permanente, sem remoção por causa do gate do `refreshWithNote`), **datas erradas por fuso/overflow
+de mês** e um **hook/classe-base que só funciona no layout novo por sorte**. A UI está fora do
+padrão das rodadas 2-7 (i18n, ARIA, alvos, tokens sem fallback, emoji, inline styles). Nenhuma
+correção aplicada nesta rodada — batches após triagem (candidatos: 1) navegação/contrato
+(`getDayNote`, teclado, concorrência) + datas, 2) UI/a11y/estado + i18n, 3) harness + README/captura).
+
+**Próximo da lista:** Knowledge-Dashboard (rodada 9).
