@@ -46,6 +46,8 @@
     // ignorar style inline e o visual não pode depender do tema (ex.: Folio).
     (function () {
         if (typeof document === 'undefined' || typeof $ === 'undefined' || !$.fn) return;
+        if (window.__wpPatched) return; // patch global: instala uma única vez por página
+        window.__wpPatched = true;
         const getStyleEl = () => {
             let el = document.getElementById('wp-injected-css');
             if (!el) {
@@ -61,7 +63,9 @@
             const styleEl = getStyleEl();
             const re = /<style>([\s\S]*?)<\/style>/g;
             let m;
-            while ((m = re.exec(str)) !== null) styleEl.textContent += '\n' + m[1];
+            while ((m = re.exec(str)) !== null) {
+                if (!styleEl.textContent.includes(m[1])) styleEl.textContent += '\n' + m[1];
+            }
             return str.replace(re, '');
         };
         const origHtml = $.fn.html;
@@ -79,10 +83,27 @@
     // id fixo no root → especificidade de ID vence qualquer CSS global do Trilium (#app *, button…)
     $root.attr('id', 'wp-root');
 
+    // Tema claro? (brilho de --main-background-color) → as tags usam cores mais escuras
+    (function marcarTemaClaro() {
+        try {
+            const raw = String(getComputedStyle(document.body).getPropertyValue('--main-background-color') || '').trim();
+            let r = null, g = null, b = null;
+            let m = raw.match(/^#([0-9a-f]{6})$/i);
+            if (m) {
+                r = parseInt(m[1].slice(0, 2), 16); g = parseInt(m[1].slice(2, 4), 16); b = parseInt(m[1].slice(4, 6), 16);
+            } else {
+                m = raw.match(/rgba?\(([^)]+)\)/i);
+                if (m) { const p = m[1].split(',').map(s => parseFloat(s)); r = p[0]; g = p[1]; b = p[2]; }
+            }
+            if (r != null && (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.55) $root.addClass('wp-light');
+        } catch (_) {}
+    })();
+
     $root.addClass('wp-root').css({
         display:    'flex',
         height:     '100%',
         overflow:   'hidden',
+        position:   'relative',
         fontFamily: 'var(--detail-font-family,"Segoe UI",sans-serif)',
         fontSize:   '14px',
         color:      'var(--main-text-color)',
@@ -153,6 +174,13 @@
                                                  text-overflow:ellipsis !important; }
             #wp-root .pl-mode-btn { cursor:pointer; user-select:none; box-sizing:border-box; }
             #wp-root .pl-mode-switch { display:none !important; }
+
+            /* Alvos de toque maiores no mobile (webview Capacitor) */
+            #wp-root .pl-nav-btn { width:36px !important; height:34px !important; }
+            #wp-root .pl-icon-btn { padding:7px 11px !important; }
+            #wp-root .pl-done-btn { padding:2px 7px !important; font-size:18px !important; }
+            #wp-root .gantt-blog-check { width:19px !important; height:19px !important; }
+            #wp-root .tk-check { width:19px !important; height:19px !important; }
         }
 
         /* ── Indicador de links internos (@nota) nos cards ── */
@@ -207,7 +235,28 @@
             set('.tk-tasks',      'padding',      '6px 0 8px 10px');
         }
     }
-    window.addEventListener('resize', applyCompactTaskFonts);
+    // Um único listener nativo (re-execuções do render note não acumulam), com debounce e
+    // re-render quando o breakpoint desktop↔mobile é cruzado.
+    let wpUltimoMobile = null;
+    let wpResizeTimer = null;
+    function aoRedimensionar() {
+        clearTimeout(wpResizeTimer);
+        wpResizeTimer = setTimeout(() => {
+            applyCompactTaskFonts();
+            const m = isMobile();
+            if (wpUltimoMobile === null) { wpUltimoMobile = m; return; }
+            if (m !== wpUltimoMobile) {
+                wpUltimoMobile = m;
+                renderPlanner();
+                renderTasks();
+            }
+        }, 140);
+    }
+    window.__wpAoRedimensionar = aoRedimensionar;
+    if (!window.__wpResizeBound) {
+        window.__wpResizeBound = true;
+        window.addEventListener('resize', () => window.__wpAoRedimensionar && window.__wpAoRedimensionar());
+    }
 
     // painel esquerdo — Planejador (2/3)
     const $pl = $('<div class="wp-pl">').css({
@@ -216,6 +265,7 @@
         overflow:      'hidden',
         display:       'flex',
         flexDirection: 'column',
+        position:      'relative',
         borderRight:   '1px solid var(--main-border-color,#313244)',
     }).appendTo($root);
 
@@ -275,6 +325,7 @@
     }
 
     async function save() {
+        invalidarIndice();
         try {
             const data = JSON.stringify(plannerData, null, 2);
             await api.runAsyncOnBackendWithManualTransactionHandling(
@@ -367,6 +418,29 @@
             }
             /* REFS-BE (fim) */
 
+            /* SPAN-BE (início) — extrai o innerHTML do primeiro <span> balanceado a partir de pos (pura, testável) */
+            function extrairSpanDe(html, pos) {
+                const str = String(html || '');
+                const ss = str.indexOf('<span', pos != null ? pos : 0);
+                if (ss === -1) return '';
+                const abre = str.indexOf('>', ss);
+                if (abre === -1) return '';
+                let depth = 1;
+                const re = /<span\b|<!--[\s\S]*?-->|<\/span>/gi;
+                re.lastIndex = abre + 1;
+                let m;
+                while ((m = re.exec(str)) !== null) {
+                    if (m[0] === '</span>') {
+                        depth--;
+                        if (depth === 0) return str.substring(abre + 1, m.index);
+                    } else if (m[0].slice(0, 5).toLowerCase() === '<span') {
+                        depth++;
+                    }
+                }
+                return str.substring(abre + 1);
+            }
+            /* SPAN-BE (fim) */
+
             /* REC-BE (início) — expansão de recorrentes (pura, testável) */
             function expandRecurringInContent(content, noteId) {
                 const all = [];
@@ -375,13 +449,8 @@
                 let idx = 0;
                 while ((match = inputRe.exec(content)) !== null) {
                     const isChecked = /checked/i.test(match[0]);
-                    const ss = content.indexOf('<span', match.index);
-                    const se = content.indexOf('</span>', ss);
-                    let text = '';
-                    if (ss !== -1 && se !== -1) {
-                        text = content.substring(content.indexOf('>', ss) + 1, se)
-                            .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
-                    }
+                    const text = extrairSpanDe(content, match.index)
+                        .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
                     all.push({ cbIndex: idx, isChecked, text });
                     idx++;
                 }
@@ -462,13 +531,14 @@
                             .replace(/#upto=\d{2}-\d{2}-\d{4}/g, `#upto=${nmm}-${ndd}-${nyyyy}`)
                             .replace(/(<input[^>]*?)\s+checked\b/gi, '$1');
 
-                        clones += '\n' + clone;
+                        clones += '\n' + clone + '</li>';
                         pending.push({ origIdx: cb.cbIndex, cloneNum: k, date: `${nyyyy}-${nmm}-${ndd}` });
                     }
                     if (clones) {
                         // Remove #every e #total do original (evita re-expansão)
                         const stripped = liHtml.replace(/#every=\d+\s*d/gi, '').replace(/#total=\d+/gi, '');
-                        html = html.substring(0, liOpen) + stripped + clones + html.substring(liClose);
+                        // fecha o original e pula o </li> existente (cada clone fecha o próprio <li>)
+                        html = html.substring(0, liOpen) + stripped + '</li>' + clones + html.substring(liClose + 5);
                         changed = true;
                     }
                 }
@@ -550,12 +620,8 @@
                     if (/checked/i.test(m[0])) {
                         checkedCbs++;
                     } else {
-                        const ss = content.indexOf('<span', m.index);
-                        const se = content.indexOf('</span>', ss);
-                        if (ss !== -1 && se !== -1) {
-                            const raw = content.substring(
-                                content.indexOf('>', ss) + 1, se
-                            );
+                        const raw = extrairSpanDe(content, m.index);
+                        if (raw) {
                             const text = raw
                                 .replace(/<[^>]+>/g, '')
                                 .replace(/&nbsp;/g,  ' ')
@@ -599,6 +665,7 @@
                     id,
                     text:           cleanText,
                     tags,
+                    sig:            assinaturaTexto(cleanText),
                     noteLinks:      g.noteLinks || 0,
                     checkboxIndex:  task.cbIndex,
                     noteId:         g.noteId,
@@ -606,6 +673,9 @@
                 });
             }
         }
+
+        // Reconcilia datas quando a nota foi editada acima do checkbox (índices andam)
+        const recon = reconciliarDatas(allTasks, plannerData);
 
         // Auto-insere no plannerData tasks geradas por recorrência (datas específicas)
         const houveGeradas = Object.keys(data.generated).length > 0;
@@ -625,12 +695,19 @@
                 plannerData._order[day] = (plannerData._order[day] || []).filter(id => validIds.has(id));
             }
         }
+        // Poda as assinaturas de tarefas que não existem mais
+        if (plannerData._sig && typeof plannerData._sig === 'object') {
+            for (const key of Object.keys(plannerData._sig)) {
+                if (!validIds.has(key)) delete plannerData._sig[key];
+            }
+        }
 
         // Estatísticas de checkboxes por nota
         cbStats = data.cbStats;
+        invalidarIndice();
 
-        // Persiste as datas dos clones gerados (senão se perdem no próximo load)
-        if (houveGeradas) await save();
+        // Persiste as mudanças estruturais (datas geradas, reconciliações e assinaturas novas)
+        if (houveGeradas || recon.movidas || recon.adotadas) await save();
     }
 
 
@@ -642,6 +719,10 @@
     ═══════════════════════════════════════════════════════════ */
 
     function migrateIds() {
+        // Só roda se existir id no formato antigo (noteId::texto...; o novo é noteId::<números>)
+        const temLegado = Object.keys(plannerData).some(k => !k.startsWith('_') && /::(?!\d+$)/.test(k));
+        if (!temLegado) return;
+
         let changed = false;
 
         for (const task of allTasks) {
@@ -680,11 +761,11 @@
        4. MARCAR COMO CONCLUÍDA
     ═══════════════════════════════════════════════════════════ */
 
-    async function markDone(task) {
-
-        await api.runOnBackend((noteId, cbIndex) => {
-            /* MARCAR-BE (início) — marca o checkbox de índice N (pura, testável) */
-            function marcarCheckbox(html, cbIndex) {
+    async function definirCheckbox(task, marcar) {
+        await api.runOnBackend((noteId, cbIndex, marcarMarcado) => {
+            /* MARCAR-BE (início) — marca/desmarca o checkbox de índice N (pura, testável) */
+            function marcarCheckbox(html, cbIndex, marcar) {
+                const deveMarcar = marcar !== false;
                 let count = 0;
                 let found = false;
                 // Mesma regex do fetchTasks (ordem de atributos e aspas livres)
@@ -693,8 +774,10 @@
                     (match) => {
                         if (count++ !== cbIndex) return match;
                         found = true;
-                        if (/\bchecked\b/i.test(match)) return match;
-                        return match.replace(/<input\b/i, '<input checked');
+                        const estaMarcado = /\bchecked\b/i.test(match);
+                        if (deveMarcar && !estaMarcado) return match.replace(/<input\b/i, '<input checked');
+                        if (!deveMarcar && estaMarcado) return match.replace(/\s+checked(?:=(?:"[^"]*"|'[^']*'))?/i, '');
+                        return match;
                     }
                 );
                 return { html: out, found };
@@ -703,21 +786,40 @@
 
             const note = api.getNote(noteId);
             if (!note) throw new Error('nota de origem não encontrada');
-            const res = marcarCheckbox(note.getContent(), cbIndex);
+            const res = marcarCheckbox(note.getContent(), cbIndex, marcarMarcado);
             if (!res.found) throw new Error('checkbox de índice ' + cbIndex + ' não encontrada (a nota mudou?)');
             note.setContent(res.html);
-        }, [task.noteId, task.checkboxIndex]);
+        }, [task.noteId, task.checkboxIndex, marcar !== false]);
+    }
+
+    async function markDone(task) {
+        await definirCheckbox(task, true);
+
+        // snapshot para o "Desfazer"
+        const oldDay = plannerData[task.id];
+        const oldOrder = oldDay && plannerData._order && plannerData._order[oldDay]
+            ? plannerData._order[oldDay].slice() : null;
 
         // remove do estado compartilhado
         allTasks = allTasks.filter(t => t.id !== task.id);
-        const oldDay = plannerData[task.id];
         delete plannerData[task.id];
         // limpa da ordem do dia
         if (oldDay && plannerData._order && plannerData._order[oldDay]) {
             plannerData._order[oldDay] = plannerData._order[oldDay].filter(id => id !== task.id);
         }
+        invalidarIndice();
         // persiste a remoção
         await save();
+
+        oferecerDesfazer('Concluída: ' + recortar(task.text, 44), async () => {
+            await definirCheckbox(task, false);
+            if (oldDay != null) plannerData[task.id] = oldDay;
+            if (oldOrder) plannerData._order[oldDay] = oldOrder;
+            await fetchTasks();
+            await save();
+            renderPlanner();
+            renderTasks();
+        });
     }
 
 
@@ -725,8 +827,14 @@
        5. HELPERS DE CALENDÁRIO
     ═══════════════════════════════════════════════════════════ */
 
-    const todayBase = new Date();
+    let todayBase = new Date();
     todayBase.setHours(0, 0, 0, 0);
+
+    // Recalcula "hoje" a cada render (app aberto após a meia-noite não fica com o dia anterior)
+    function atualizarHoje() {
+        todayBase = new Date();
+        todayBase.setHours(0, 0, 0, 0);
+    }
 
     function getWeekCols(offset) {
         const ref = new Date(todayBase);
@@ -738,7 +846,7 @@
         return labels.map((label, i) => {
             const d = new Date(mon);
             d.setDate(mon.getDate() + i);
-            const iso = d.toISOString().slice(0, 10);
+            const iso = isoLocal(d);
             return {
                 key:     iso,
                 label,
@@ -780,6 +888,145 @@
     function aviso(msg) {
         try { if (api && typeof api.showMessage === 'function') api.showMessage(String(msg), 6000); } catch (_) {}
     }
+
+    /* DATAS (início) — data local YYYY-MM-DD (pura, testável) */
+    function isoLocal(d) {
+        const dt = d instanceof Date ? d : new Date(d);
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    }
+    /* DATAS (fim) */
+
+    /* RECON (início) — assinatura do texto + reconciliação de datas (puras, testáveis) */
+    function assinaturaTexto(s) {
+        const str = String(s || '');
+        let h = 5381;
+        for (let i = 0; i < str.length; i++) h = ((h * 33) ^ str.charCodeAt(i)) >>> 0;
+        return h.toString(36);
+    }
+
+    // Quando a nota é editada acima do checkbox os índices andam e a data ficaria na
+    // tarefa errada. A assinatura do texto identifica a tarefa original e move a data.
+    function reconciliarDatas(tasks, dados) {
+        if (!dados._sig || typeof dados._sig !== 'object') dados._sig = {};
+        const porNota = new Map();
+        for (const t of tasks) {
+            if (!porNota.has(t.noteId)) porNota.set(t.noteId, []);
+            porNota.get(t.noteId).push(t);
+        }
+        const porId = new Map(tasks.map(t => [t.id, t]));
+        let movidas = 0, adotadas = 0;
+        for (const id of Object.keys(dados)) {
+            if (id.startsWith('_')) continue;
+            const atual = porId.get(id);
+            if (!atual) continue; // órfã: a poda resolve
+            const antiga = dados._sig[id];
+            if (antiga && antiga !== atual.sig) {
+                const candidatos = (porNota.get(atual.noteId) || [])
+                    .filter(t => t.sig === antiga && dados[t.id] === undefined);
+                if (candidatos.length === 1) {
+                    const alvo = candidatos[0];
+                    dados[alvo.id] = dados[id];
+                    dados._sig[alvo.id] = antiga;
+                    delete dados[id];
+                    delete dados._sig[id];
+                    const dia = dados[alvo.id];
+                    const ordem = dados._order && dados._order[dia];
+                    if (Array.isArray(ordem)) {
+                        const i = ordem.indexOf(id);
+                        if (i !== -1) ordem[i] = alvo.id;
+                    }
+                    movidas++;
+                    continue;
+                }
+            }
+            if (dados._sig[id] !== atual.sig) { dados._sig[id] = atual.sig; adotadas++; }
+        }
+        return { movidas, adotadas };
+    }
+    /* RECON (fim) */
+
+    /* UI HELPERS (início) — recorte, confirmação estilizada e barra de desfazer */
+    function recortar(s, n) {
+        const str = String(s || '');
+        return str.length > n ? str.slice(0, n - 1) + '…' : str;
+    }
+
+    function confirmar(titulo, okLabel) {
+        return new Promise(resolve => {
+            // anexado ao $root (não ao $pl) para sobreviver a re-renders
+            $root.append(`
+                <div class="pl-day-picker" id="wp-confirm">
+                    <div class="pl-day-sheet">
+                        <h4>${esc(titulo)}</h4>
+                        <button class="pl-day-btn" id="wp-confirm-ok" style="text-align:center;font-weight:600;">${esc(okLabel)}</button>
+                        <button class="pl-cancel-btn" id="wp-confirm-cancel">Cancelar</button>
+                    </div>
+                </div>`);
+            const fechar = (val) => { $root.find('#wp-confirm').remove(); resolve(val); };
+            $root.find('#wp-confirm').on('click', function (e) { if (e.target === this) fechar(false); });
+            $root.find('#wp-confirm-cancel').on('click', () => fechar(false));
+            $root.find('#wp-confirm-ok').on('click', () => fechar(true));
+            $root.find('#wp-confirm-ok').trigger('focus');
+        });
+    }
+
+    let acaoUndo = null;
+    function oferecerDesfazer(rotulo, desfazer) {
+        if (acaoUndo && acaoUndo.timer) clearTimeout(acaoUndo.timer);
+        acaoUndo = { desfazer, timer: null };
+        // anexado ao $root (não ao $pl) para sobreviver a re-renders
+        let $bar = $root.find('#wp-undo');
+        if (!$bar.length) {
+            $root.append(`
+                <div id="wp-undo" class="wp-undo">
+                    <span class="wp-undo-text"></span>
+                    <button type="button" class="wp-undo-btn">Desfazer</button>
+                </div>`);
+            $bar = $root.find('#wp-undo');
+            $bar.on('click', '.wp-undo-btn', async function () {
+                const acao = acaoUndo;
+                if (!acao) return;
+                acaoUndo = null;
+                if (acao.timer) clearTimeout(acao.timer);
+                $root.find('#wp-undo').removeClass('wp-undo--on');
+                try { await acao.desfazer(); }
+                catch (err) { console.error('undo error:', err); aviso('Não foi possível desfazer: ' + (err.message || err)); }
+            });
+        }
+        $bar.find('.wp-undo-text').text(rotulo);
+        $bar.addClass('wp-undo--on');
+        acaoUndo.timer = setTimeout(() => {
+            $root.find('#wp-undo').removeClass('wp-undo--on');
+            acaoUndo = null;
+        }, 12000);
+    }
+
+    // Limpa as datas de um conjunto de dias com contagem + desfazer
+    async function limparPlanejamento(keys, rotulo) {
+        const afetadas = allTasks.filter(t => keys.has(plannerData[t.id])).length;
+        if (!afetadas) { aviso('Nada para limpar em ' + rotulo + '.'); return; }
+        const ok = await confirmar(`Limpar o planejamento de ${rotulo}? ${afetadas} tarefa(s) serão desagendadas.`, 'Limpar');
+        if (!ok) return;
+        const backup = JSON.parse(JSON.stringify(plannerData));
+        for (const t of allTasks) {
+            if (keys.has(plannerData[t.id])) delete plannerData[t.id];
+        }
+        if (plannerData._order) {
+            for (const k of keys) delete plannerData._order[k];
+        }
+        invalidarIndice();
+        await save();
+        renderPlanner();
+        renderTasks();
+        oferecerDesfazer('Planejamento limpo (' + afetadas + ' tarefa(s))', async () => {
+            plannerData = backup;
+            invalidarIndice();
+            await save();
+            renderPlanner();
+            renderTasks();
+        });
+    }
+    /* UI HELPERS (fim) */
 
 
     function modeSwitcher() {
@@ -840,6 +1087,12 @@
         .doing-bar  { margin-top:6px;height:5px;background:rgba(128,128,128,0.15);border-radius:2px;
                       overflow:hidden; }
         .doing-fill { height:100%;border-radius:2px;background:#f1c40f;transition:width .3s ease; }
+        /* Tema claro: tons mais escuros para manter contraste AA */
+        #wp-root.wp-light .tag-todo   { color:#a3541a; border-color:rgba(163,84,26,.45); }
+        #wp-root.wp-light .tag-doing  { color:#8a6d00; border-color:rgba(138,109,0,.45); }
+        #wp-root.wp-light .tag-done   { color:#1c7a44; border-color:rgba(28,122,68,.45); }
+        #wp-root.wp-light .tag-upto   { color:#1c6a9e; border-color:rgba(28,106,158,.45); }
+        #wp-root.wp-light .doing-fill { background:#b58900; }
     `;
 
     // Botões de navegação/header — idênticos ao modelo da guia Semana
@@ -856,6 +1109,42 @@
                        border-radius:4px;color:var(--muted-text-color);font-size:16px;
                        padding:2px 8px;cursor:pointer; }
         .pl-icon-btn:hover { color:var(--main-text-color); }
+    `;
+
+    // Modal/sheet compartilhado (picker de dia mobile, confirmações e barra de desfazer)
+    const PICKER_CSS = `
+        .pl-day-picker { position:fixed;inset:0;background:rgba(0,0,0,.6);
+                         display:flex;align-items:flex-end;z-index:9999; }
+        .pl-day-sheet  { background:var(--main-background-color,#1e1e2e);
+                         border-radius:16px 16px 0 0;padding:20px 16px 32px;
+                         width:100%;max-height:80vh;overflow-y:auto; }
+        .pl-day-sheet h4 { margin:0 0 14px;font-size:18px;font-weight:600;
+                           overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+        .pl-day-btn { display:block;width:100%;padding:11px 14px;margin-bottom:6px;
+                      background:var(--accented-background-color,#313244);border:none;
+                      border-radius:7px;color:var(--main-text-color);font-size:17px;
+                      text-align:left;cursor:pointer; }
+        .pl-day-btn:hover  { background:var(--more-accented-background-color); }
+        .pl-day-btn.active { color:var(--main-active-border-color,#89b4fa);font-weight:600; }
+        .pl-cancel-btn { display:block;width:100%;padding:11px;background:none;
+                         border:1px solid var(--main-border-color);border-radius:7px;
+                         color:var(--muted-text-color);font-size:17px;cursor:pointer;margin-top:4px; }
+        .pl-day-btn:focus-visible, .pl-cancel-btn:focus-visible {
+            outline:2px solid var(--main-active-border-color,#89b4fa); outline-offset:2px; }
+        .wp-undo { display:none; position:absolute; left:50%; bottom:16px; transform:translateX(-50%);
+                   align-items:center; gap:12px; z-index:9000; max-width:92%;
+                   background:var(--main-background-color,#1e1e2e);
+                   border:1px solid var(--main-border-color,#45475a); border-radius:8px;
+                   padding:8px 12px; font-size:14px; box-shadow:0 4px 14px rgba(0,0,0,.35); }
+        .wp-undo.wp-undo--on { display:flex; }
+        .wp-undo-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .wp-undo-btn { background:none; border:1px solid var(--main-border-color,#45475a); border-radius:5px;
+                       color:var(--main-active-border-color,#89b4fa); font-size:14px; padding:3px 10px; cursor:pointer; }
+        .wp-undo-btn:hover { background:var(--accented-background-color,#313244); }
+        @media (max-width:1024px) {
+            .pl-day-sheet h4 { font-size:16px; }
+            .pl-day-btn, .pl-cancel-btn { font-size:15px; }
+        }
     `;
 
     function renderTagBadges(tags) {
@@ -895,21 +1184,37 @@
     const isMobile   = () => window.matchMedia('(max-width:1024px)').matches;
     const getBacklog = () => allTasks.filter(t => !plannerData[t.id]);
 
-    function getDayTasks(iso) {
-        const tasks = allTasks.filter(t => plannerData[t.id] === iso);
-        const order = ((plannerData._order || {})[iso]) || [];
-        tasks.sort((a, b) => {
-            const ai = order.indexOf(a.id);
-            const bi = order.indexOf(b.id);
-            if (ai === -1 && bi === -1) return 0;
-            if (ai === -1) return 1;
-            if (bi === -1) return -1;
-            return ai - bi;
-        });
-        return tasks;
+    /* ÍNDICE (início) — tarefas por dia com ordem, recalculado só quando o estado muda */
+    let dayIndex = null;
+    function invalidarIndice() { dayIndex = null; }
+    function construirIndice() {
+        if (dayIndex) return dayIndex;
+        const porDia = new Map();
+        for (const t of allTasks) {
+            const dia = plannerData[t.id];
+            if (!dia) continue;
+            if (!porDia.has(dia)) porDia.set(dia, []);
+            porDia.get(dia).push(t);
+        }
+        for (const [dia, arr] of porDia) {
+            const ordem = (plannerData._order || {})[dia] || [];
+            const pos = new Map(ordem.map((id, i) => [id, i]));
+            arr.sort((a, b) => {
+                const ai = pos.has(a.id) ? pos.get(a.id) : Number.MAX_SAFE_INTEGER;
+                const bi = pos.has(b.id) ? pos.get(b.id) : Number.MAX_SAFE_INTEGER;
+                return ai - bi;
+            });
+        }
+        dayIndex = porDia;
+        return dayIndex;
     }
+    function getDayTasks(iso) {
+        return (construirIndice().get(iso) || []).slice();
+    }
+    /* ÍNDICE (fim) */
 
     function setOrder(col, taskId, insertBeforeId) {
+        invalidarIndice(); // o estado pode ter mudado antes do setOrder (drop)
         if (!plannerData._order) plannerData._order = {};
         let order = (plannerData._order[col] || getDayTasks(col).map(t => t.id)).slice();
         order = order.filter(id => id !== taskId);
@@ -928,6 +1233,7 @@
     ═══════════════════════════════════════════════════════════ */
 
     function renderPlanner() {
+        atualizarHoje();
         if (viewMode === 'gantt')  { renderGantt(); return; }
         if (viewMode === 'month')  { renderMonth(); return; }
 
@@ -953,6 +1259,9 @@
                         background:var(--accented-background-color,#1e1e2e);
                         max-height:calc(100vh - 190px); }
             .pl-col.today { border-color:var(--main-active-border-color,#89b4fa); }
+            .pl-col.weekend { background:rgba(128,128,128,.05); }
+            .pl-col-empty { font-size:13px;color:var(--muted-text-color,#888);opacity:.55;
+                            text-align:center;padding:10px 6px; }
             .pl-col-head  { padding:10px 12px 8px;border-bottom:1px solid var(--main-border-color,#313244);flex-shrink:0; }
             .pl-col-label { font-size:15px;font-weight:700;text-transform:uppercase;
                             letter-spacing:.08em;color:var(--muted-text-color,#888); }
@@ -976,23 +1285,8 @@
                                 background:var(--main-active-border-color,#89b4fa);
                                 margin:2px 0;pointer-events:none; }
             ${BTN_CSS}
-            /* mobile picker */
-            .pl-day-picker { position:fixed;inset:0;background:rgba(0,0,0,.6);
-                             display:flex;align-items:flex-end;z-index:9999; }
-            .pl-day-sheet  { background:var(--main-background-color,#1e1e2e);
-                             border-radius:16px 16px 0 0;padding:20px 16px 32px;
-                             width:100%;max-height:80vh;overflow-y:auto; }
-            .pl-day-sheet h4 { margin:0 0 14px;font-size:18px;font-weight:600;
-                               overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-            .pl-day-btn { display:block;width:100%;padding:11px 14px;margin-bottom:6px;
-                          background:var(--accented-background-color,#313244);border:none;
-                          border-radius:7px;color:var(--main-text-color);font-size:17px;
-                          text-align:left;cursor:pointer; }
-            .pl-day-btn:hover  { background:var(--more-accented-background-color); }
-            .pl-day-btn.active { color:var(--main-active-border-color,#89b4fa);font-weight:600; }
-            .pl-cancel-btn { display:block;width:100%;padding:11px;background:none;
-                             border:1px solid var(--main-border-color);border-radius:7px;
-                             color:var(--muted-text-color);font-size:17px;cursor:pointer;margin-top:4px; }
+            /* mobile picker + confirmação + desfazer */
+            ${PICKER_CSS}
             ${TAG_CSS}
             .pl-done-btn { position:absolute;top:6px;right:8px;font-size:16px;line-height:1;z-index:2;
                            cursor:pointer;user-select:none;color:var(--muted-text-color);opacity:0;
@@ -1009,10 +1303,9 @@
                 .pl-col-label { font-size:13px; }
                 .pl-col-sub { font-size:13px; }
                 .pl-tasks { gap:6px;min-height:0; }
+                .pl-col-empty { display:none; }
                 .task-tags { margin-top:4px; }
                 .doing-bar { margin-top:4px;height:4px; }
-                 .pl-day-sheet h4 { font-size:16px; }
-                 .pl-day-btn,.pl-cancel-btn { font-size:15px; }
              }
              ${MODE_CSS}
          </style>
@@ -1049,9 +1342,10 @@
             const width = col.isBacklog
                 ? (mobile ? '150px' : '180px')
                 : (mobile ? '130px' : '180px');
+            const fimDeSemana = col.label === 'Sáb' || col.label === 'Dom';
 
             html += `
-            <div class="pl-col${col.isToday ? ' today' : ''}" style="width:${width};">
+            <div class="pl-col${col.isToday ? ' today' : ''}${fimDeSemana ? ' weekend' : ''}" style="width:${width};">
                 <div class="pl-col-head">
                     <div class="pl-col-label">${esc(col.label)}</div>
                     <div class="pl-col-sub">
@@ -1073,9 +1367,10 @@
                             : ''}
                         ${renderDoingBar(t.tags)}
                         ${!col.isBacklog
-                            ? `<div class="pl-task-note">${esc(t.noteTitle)}</div>`
+                            ? `<div class="pl-task-note" title="${esc(t.noteTitle)}">${esc(t.noteTitle)}</div>`
                             : ''}
                     </div>`).join('')}
+                    ${!tasks.length ? '<div class="pl-col-empty">solte uma tarefa aqui</div>' : ''}
                     <div class="pl-drop"></div>
                 </div>
             </div>`;
@@ -1131,7 +1426,7 @@
                 startIdx,
                 endIdx:        endIdx === -1 ? 6 : endIdx,
                 progress:      progTag ? progTag.value : (doneTag ? 100 : 0),
-                isOverdue:     uptoTag && endIso < todayBase.toISOString().slice(0, 10),
+                isOverdue:     uptoTag && endIso < isoLocal(todayBase),
                 isDone:        !!doneTag,
             };
 
@@ -1202,6 +1497,7 @@
         .gantt-weekend-bg { background:rgba(128,128,128,0.04);pointer-events:none; }
         .gantt-hdr-weekend { background:rgba(128,128,128,0.06); }
         ${MODE_CSS}
+        ${PICKER_CSS}
         @media (max-width:1024px) {
             .gantt-grid { grid-template-columns:minmax(70px,120px) repeat(7,minmax(36px,1fr));min-width:0; }
             .gantt-label { font-size:11px;padding:3px 4px; }
@@ -1342,7 +1638,7 @@
                                   data-cb-index="${t.checkboxIndex}">✓</span>
                             <span class="gantt-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
                             ${renderLinkBadge(t.noteLinks)}
-                            <span class="gantt-blog-note">${esc(t.noteTitle)}</span>
+                            <span class="gantt-blog-note" title="${esc(t.noteTitle)}">${esc(t.noteTitle)}</span>
                             ${tagsHtml ? `<span class="gantt-blog-tags">${tagsHtml}</span>` : ''}
                         </div>`;
                     }).join('')}
@@ -1385,14 +1681,7 @@
         });
 
         $pl.find('#gantt-clear').on('click', () => {
-            if (!confirm(`Limpar planejamento de ${weekLabel(weekCols)}?`)) return;
-            const weekKeys = new Set(weekCols.map(c => c.key));
-            for (const t of allTasks) {
-                if (weekKeys.has(plannerData[t.id])) delete plannerData[t.id];
-            }
-            save();
-            renderPlanner();
-            renderTasks();
+            limparPlanejamento(new Set(weekCols.map(c => c.key)), weekLabel(weekCols));
         });
 
         $pl.find('.pl-mode-btn').on('click', async function () {
@@ -1476,7 +1765,7 @@
         while (weeks.length < 6) {
             const week = [];
             for (let i = 0; i < 7; i++) {
-                const iso = d.toISOString().slice(0, 10);
+                const iso = isoLocal(d);
                 week.push({
                     key:           iso,
                     label:         labels[i],
@@ -1564,21 +1853,7 @@
         .mn-blog-text:hover { text-decoration:underline; }
         .mn-blog-note { font-size:11px;color:var(--muted-text-color,#888);flex-shrink:0; }
         ${BTN_CSS}
-        .pl-day-picker { position:fixed;inset:0;background:rgba(0,0,0,.6);
-                         display:flex;align-items:flex-end;z-index:9999; }
-        .pl-day-sheet { background:var(--main-background-color,#1e1e2e);
-                        border-radius:16px 16px 0 0;padding:20px 16px 32px;
-                        width:100%;max-height:80vh;overflow-y:auto; }
-        .pl-day-sheet h4 { margin:0 0 14px;font-size:18px;font-weight:600;
-                           overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-        .pl-day-btn { display:block;width:100%;padding:11px 14px;margin-bottom:6px;
-                      background:var(--accented-background-color,#313244);border:none;
-                      border-radius:7px;color:var(--main-text-color);font-size:17px;
-                      text-align:left;cursor:pointer; }
-        .pl-day-btn.active { color:var(--main-active-border-color,#89b4fa);font-weight:600; }
-        .pl-cancel-btn { display:block;width:100%;padding:11px;background:none;
-                         border:1px solid var(--main-border-color);border-radius:7px;
-                         color:var(--muted-text-color);font-size:17px;cursor:pointer;margin-top:4px; }
+        ${PICKER_CSS}
         ${TAG_CSS}
         ${MODE_CSS}
         @media (max-width:1024px) {
@@ -1671,7 +1946,7 @@
                              data-cb-index="${t.checkboxIndex}">
                             <span class="mn-blog-text" data-note-id="${esc(t.noteId)}">${esc(t.text)}</span>
                             ${renderLinkBadge(t.noteLinks)}
-                            <span class="mn-blog-note">${esc(t.noteTitle)}</span>
+                            <span class="mn-blog-note" title="${esc(t.noteTitle)}">${esc(t.noteTitle)}</span>
                         </div>`).join('')}
                     </div>
                 </details>
@@ -1712,17 +1987,11 @@
         });
 
         $pl.find('#month-clear').on('click', () => {
-            if (!confirm(`Limpar planejamento de ${monthLabel(monthView)}?`)) return;
             const monthKeys = new Set();
             for (const week of monthView.weeks) {
                 for (const day of week) monthKeys.add(day.key);
             }
-            for (const t of allTasks) {
-                if (monthKeys.has(plannerData[t.id])) delete plannerData[t.id];
-            }
-            save();
-            renderPlanner();
-            renderTasks();
+            limparPlanejamento(monthKeys, monthLabel(monthView));
         });
 
         $pl.find('.pl-mode-btn').on('click', async function () {
@@ -1858,6 +2127,9 @@
                         <button class="pl-day-btn${current === d.key ? ' active' : ''}"
                                 data-col="${esc(d.key)}">${esc(d.label)}</button>`).join('')}
                         <button class="pl-cancel-btn" id="month-picker-cancel">Cancelar</button>
+                        <button class="pl-cancel-btn" style="margin-top:6px;" id="month-picker-open">
+                            ↗ Abrir nota
+                        </button>
                     </div>
                 </div>`);
 
@@ -1867,6 +2139,10 @@
                 $pl.find('#month-picker-cancel').on('click', () =>
                     $pl.find('#month-picker').remove()
                 );
+                $pl.find('#month-picker-open').on('click', () => {
+                    $pl.find('#month-picker').remove();
+                    api.activateNote(String(taskId).split('::')[0]);
+                });
 
                 $pl.find('.pl-day-btn').on('click', async function () {
                     const col = $(this).data('col');
@@ -1934,14 +2210,7 @@
         });
 
         $pl.find('#pl-clear').on('click', () => {
-            if (!confirm(`Limpar planejamento de ${weekLabel(weekCols)}?`)) return;
-            const weekKeys = new Set(weekCols.map(c => c.key));
-            for (const t of allTasks) {
-                if (weekKeys.has(plannerData[t.id])) delete plannerData[t.id];
-            }
-            save();
-            renderPlanner();
-            renderTasks();
+            limparPlanejamento(new Set(weekCols.map(c => c.key)), weekLabel(weekCols));
         });
 
         /* ── Desktop: drag-and-drop ─────────────────────────── */
@@ -2210,7 +2479,7 @@
 
                     <div class="tk-note-link" data-note-id="${esc(group.noteId)}">
                         <span class="tk-col-icon">${collapsed ? '▸' : '▾'}</span>
-                        <span class="tk-note-title">${esc(group.noteTitle)}</span>
+                        <span class="tk-note-title" title="${esc(group.noteTitle)}">${esc(group.noteTitle)}</span>
                         <span class="tk-badge${done > 0 ? ' done' : ''}">${badgeText}</span>
                     </div>
 
