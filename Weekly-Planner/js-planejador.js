@@ -79,6 +79,7 @@
             initError: '✗ Erro ao inicializar: {err}',
             retry: 'Tentar de novo',
             saving: 'salvando…', saved: 'salvo ✓', saveFailed: 'erro ✗',
+            moreTasks: 'tarefa(s)', moveHint: 'm: mover para outro dia',
         },
         en: {
             planner: 'Planner', tasks: 'Tasks',
@@ -115,6 +116,7 @@
             initError: '✗ Failed to initialize: {err}',
             retry: 'Try again',
             saving: 'saving…', saved: 'saved ✓', saveFailed: 'error ✗',
+            moreTasks: 'task(s)', moveHint: 'm: move to another day',
         },
     };
     const WP_DIAS      = { pt: ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'], en: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] };
@@ -209,8 +211,6 @@
         <style>
         /* Nunca ultrapassar a largura visível (webview/containers mais largos que a tela) */
         #wp-root { max-width:100vw !important; min-width:0 !important; }
-        /* Barra de modo (Semana/Mês/Gantt): oculta no desktop, dedicada no mobile */
-        #wp-root .pl-mode-bar { display:none !important; }
 
         /* ── Desktop (>1024px): coluna compacta + tipografia normal ──
            Seletores com especificidade alta p/ vencer o CSS global do Trilium */
@@ -246,28 +246,24 @@
             #wp-root.wp-root .wp-tk .tk-total { font-size:10px !important; }
             #wp-root.wp-root .wp-tk .tk-list { padding:6px 8px !important; }
             #wp-root.wp-root .wp-tk .tk-list .tk-empty { font-size:11px !important; }
-            #wp-root.wp-root .wp-tk .tk-list .tk-note-link { font-size:9px !important; padding:4px 8px !important; }
+            #wp-root.wp-root .wp-tk .tk-list .tk-note-link { font-size:11px !important; padding:5px 8px !important; }
             #wp-root.wp-root .wp-tk .tk-list .tk-badge { font-size:8px !important; }
             #wp-root.wp-root .wp-tk .tk-list .tk-task-text { font-size:11px !important; line-height:1.3 !important; }
             #wp-root.wp-root .wp-tk .tk-list .tk-tasks .tk-task-row { padding:2px 6px !important; }
             #wp-root.wp-root .wp-tk .tk-list .tk-day-badge { font-size:8px !important; padding:0 3px !important; }
             #wp-root.wp-root .wp-tk .tk-list .tk-tasks { margin:0 6px !important; padding:3px 0 5px 8px !important; }
             #wp-root.wp-root .wp-tk .tk-list .tk-group { margin-bottom:8px !important; }
-            #wp-root .pl-mode-bar { display:flex !important; flex-direction:row !important;
-                                    gap:4px !important; padding:7px 10px !important;
-                                    flex-shrink:0 !important; flex-wrap:nowrap !important;
-                                    min-width:0 !important; width:100% !important;
-                                    max-width:100% !important; box-sizing:border-box !important;
-                                    border-bottom:1px solid var(--main-border-color,#313244) !important; }
-            #wp-root .pl-mode-bar .pl-mode-btn { flex:1 1 0 !important; min-width:0 !important;
-                                                 max-width:100% !important;
-                                                 box-sizing:border-box !important;
-                                                 text-align:center !important; padding:6px 2px !important;
-                                                 font-size:12px !important; white-space:nowrap !important;
-                                                 overflow:hidden !important;
-                                                 text-overflow:ellipsis !important; }
+            /* Seletor de modo único: vira uma linha de largura total no fim do cabeçalho */
+            #wp-root .pl-mode-switch { display:flex !important; width:100% !important;
+                                       margin-left:0 !important; order:10 !important;
+                                       gap:4px !important; box-sizing:border-box !important; }
+            #wp-root .pl-mode-switch .pl-mode-btn { flex:1 1 0 !important; min-width:0 !important;
+                                                    max-width:100% !important; box-sizing:border-box !important;
+                                                    text-align:center !important; padding:6px 2px !important;
+                                                    font-size:12px !important; white-space:nowrap !important;
+                                                    overflow:hidden !important;
+                                                    text-overflow:ellipsis !important; }
             #wp-root .pl-mode-btn { cursor:pointer; user-select:none; box-sizing:border-box; }
-            #wp-root .pl-mode-switch { display:none !important; }
 
             /* Alvos de toque maiores no mobile (webview Capacitor) */
             #wp-root .pl-nav-btn { width:36px !important; height:34px !important; }
@@ -286,6 +282,12 @@
             vertical-align:middle; white-space:nowrap;
         }
 
+        /* "+N" — expande listas limitadas */
+        #wp-root .wp-mais { display:block; width:100%; margin-top:4px; padding:4px 6px;
+                            background:none; border:1px dashed var(--main-border-color,#45475a);
+                            border-radius:5px; color:var(--muted-text-color,#888);
+                            font-size:12px; cursor:pointer; text-align:center; }
+        #wp-root .wp-mais:hover { color:var(--main-text-color); border-color:var(--main-text-color); }
         /* Indicador salvando/salvo/erro no cabeçalho */
         #wp-root .wp-save { font-size:12px; color:var(--muted-text-color,#888); margin-left:4px; white-space:nowrap; }
         #wp-root .wp-save--ok { color:var(--active-item-background-color,#a6e3a1); }
@@ -319,48 +321,6 @@
         }
         </style>`);
 
-    // Aplica tipografia do painel de Tarefas via INLINE !important (setProperty 'important'):
-    // prioridade máxima do cascade — vence qualquer CSS global do Trilium.
-    // Mobile (≤1024px): compacta. Desktop (>1024px): tamanhos normais.
-    function applyCompactTaskFonts() {
-        const compact = isMobile();
-        const set = (sel, prop, val) => {
-            $tk.find(sel).each(function () {
-                this.style.setProperty(prop, val, 'important');
-            });
-        };
-        if (compact) {
-            set('.tk-task-text',  'font-size',    '11px');
-            set('.tk-note-link',  'font-size',     '9px');
-            set('.tk-head-title', 'font-size',    '12px');
-            set('.tk-total',      'font-size',    '10px');
-            set('.tk-badge',      'font-size',     '8px');
-            set('.tk-day-badge',  'font-size',     '8px');
-            set('.tk-empty',      'font-size',    '11px');
-            set('.tk-task-row',   'padding',      '2px 6px');
-            set('.tk-note-link',  'padding',      '4px 8px');
-            set('.tk-head',       'padding',      '6px 12px');
-            set('.tk-list',       'padding',      '6px 8px');
-            set('.tk-group',      'margin-bottom', '8px');
-            set('.tk-tasks',      'margin',       '0 6px');
-            set('.tk-tasks',      'padding',      '3px 0 5px 8px');
-        } else {
-            set('.tk-task-text',  'font-size',    '16px');
-            set('.tk-note-link',  'font-size',    '14px');
-            set('.tk-head-title', 'font-size',    '18px');
-            set('.tk-total',      'font-size',    '15px');
-            set('.tk-badge',      'font-size',    '13px');
-            set('.tk-day-badge',  'font-size',    '13px');
-            set('.tk-empty',      'font-size',    '16px');
-            set('.tk-task-row',   'padding',      '4px 8px');
-            set('.tk-note-link',  'padding',      '8px 10px');
-            set('.tk-head',       'padding',      '10px 14px');
-            set('.tk-list',       'padding',      '12px 14px');
-            set('.tk-group',      'margin-bottom', '14px');
-            set('.tk-tasks',      'margin',       '0 10px');
-            set('.tk-tasks',      'padding',      '6px 0 8px 10px');
-        }
-    }
     // Um único listener nativo (re-execuções do render note não acumulam), com debounce e
     // re-render quando o breakpoint desktop↔mobile é cruzado.
     let wpUltimoMobile = null;
@@ -368,7 +328,6 @@
     function aoRedimensionar() {
         clearTimeout(wpResizeTimer);
         wpResizeTimer = setTimeout(() => {
-            applyCompactTaskFonts();
             const m = isMobile();
             if (wpUltimoMobile === null) { wpUltimoMobile = m; return; }
             if (m !== wpUltimoMobile) {
@@ -499,6 +458,7 @@
        2b. PARSE DE TAGS (#todo, #doing=N%, #done, #upto=MM-DD-YYYY)
     ═══════════════════════════════════════════════════════════ */
 
+    /* TAGS (início) — parse das tags #todo/#doing/#done/#upto/#every/#total (pura, testável) */
     function parseTaskTags(text) {
         const tags = [];
         let cleanText = String(text);
@@ -543,6 +503,7 @@
         cleanText = cleanText.replace(/\s+/g, ' ').trim();
         return { cleanText, tags };
     }
+    /* TAGS (fim) */
 
 
     /* ═══════════════════════════════════════════════════════════
@@ -853,6 +814,7 @@
         // Estatísticas de checkboxes por nota
         cbStats = data.cbStats;
         invalidarIndice();
+        expandidos.clear();
 
         // Persiste as mudanças estruturais (datas geradas, reconciliações e assinaturas novas)
         if (houveGeradas || recon.movidas || recon.adotadas) await save();
@@ -1196,6 +1158,23 @@
             renderTasks();
         });
     }
+    /* LIMITE (início) — evita renderizar milhares de cards; "+N" expande sob demanda (C3.4) */
+    const LIMITE_COLUNA = 50;
+    const LIMITE_DIA = 8;
+    const LIMITE_GRUPO = 40;
+    const expandidos = new Set();
+    function cortarLista(tasks, limite, chave) {
+        if (tasks.length <= limite || expandidos.has(chave)) {
+            return { visiveis: tasks, ocultos: 0, chave };
+        }
+        return { visiveis: tasks.slice(0, limite), ocultos: tasks.length - limite, chave };
+    }
+    function botaoMais(ocultos, chave) {
+        if (!ocultos) return '';
+        return `<button type="button" class="wp-mais" data-expandir="${esc(chave)}">+${ocultos} ${esc(t('moreTasks'))}</button>`;
+    }
+    /* LIMITE (fim) */
+
     /* ORDENAR (início) — backlog: vencidos primeiro, sem prazo por último (pura, testável) */
     function ordenarBacklog(tasks) {
         const prazoISO = (tk) => {
@@ -1279,6 +1258,54 @@
     }
     /* SCROLL (fim) */
 
+    // Picker de dia compartilhado: toque (mobile) e tecla "m" (qualquer view)
+    function opcoesSemana() {
+        return [{ key: 'backlog', isBacklog: true },
+                ...getWeekCols(weekOffset).map(c => ({ key: c.key, label: c.label, sub: c.dateStr }))];
+    }
+    function opcoesMes() {
+        const dias = [];
+        for (const week of getMonthDays(monthOffset).weeks) {
+            for (const day of week) {
+                dias.push({ key: day.key, label: day.label, sub: fmtCurto(new Date(day.key + 'T12:00:00')) });
+            }
+        }
+        return [{ key: 'backlog', isBacklog: true }, ...dias];
+    }
+    function abrirSeletorDia(taskId, taskText, current, opcoes) {
+        $root.find('#wp-picker').remove();
+        $root.append(`
+        <div class="pl-day-picker" id="wp-picker">
+            <div class="pl-day-sheet">
+                <h4>${esc(taskText)}</h4>
+                ${opcoes.map(o => `
+                <button type="button" class="pl-day-btn${current === o.key ? ' active' : ''}"
+                        data-col="${esc(o.key)}">${o.isBacklog
+                            ? t('backToBacklog')
+                            : `${esc(o.label)} <span style="opacity:.5;font-size:15px;">${esc(o.sub || '')}</span>`}</button>`).join('')}
+                <button type="button" class="pl-cancel-btn" id="wp-picker-cancel">${t('cancel')}</button>
+                <button type="button" class="pl-cancel-btn" style="margin-top:6px;" id="wp-picker-open">${t('openNote')}</button>
+            </div>
+        </div>`);
+        $root.find('#wp-picker').on('click', function (e) { if (e.target === this) $(this).remove(); });
+        $root.find('#wp-picker-cancel').on('click', () => $root.find('#wp-picker').remove());
+        $root.find('#wp-picker-open').on('click', () => {
+            $root.find('#wp-picker').remove();
+            api.activateNote(String(taskId).split('::')[0]);
+        });
+        $root.find('#wp-picker .pl-day-btn').on('click', async function () {
+            const col = $(this).data('col');
+            if (col === 'backlog') delete plannerData[taskId];
+            else plannerData[taskId] = col;
+            $root.find('#wp-picker').remove();
+            invalidarIndice();
+            await save();
+            renderPlanner();
+            renderTasks();
+        });
+        $root.find('#wp-picker-cancel').trigger('focus');
+    }
+
     /* UI HELPERS (fim) */
 
 
@@ -1298,24 +1325,6 @@
         </span>`;
     }
 
-    // Barra de modo dedicada (mobile): largura total, botões flex:1, sem quebrar/cortar.
-    // Botões são <span role="button"> — o CSS global do Trilium (button { min-width })
-    // inflava os <button> e cortava o Gantt em telas estreitas.
-    function modeBar() {
-        const modes = [
-            { id: 'kanban', label: t('week') },
-            { id: 'month',  label: t('month') },
-            { id: 'gantt',  label: t('gantt') },
-        ];
-        return `<div class="pl-mode-bar">
-            ${modes.map(m => `
-                <span class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
-                      tabindex="0" role="button" aria-label="${t('viewMode', { label: m.label })}"
-                      aria-current="${viewMode === m.id ? 'true' : 'false'}"
-                      data-mode="${m.id}" title="${t('viewMode', { label: m.label })}">${m.label}</span>
-            `).join('')}
-        </div>`;
-    }
 
     const MODE_CSS = `
         .pl-mode-switch { display:inline-flex;gap:2px;margin-left:auto; }
@@ -1362,6 +1371,16 @@
                        border-radius:4px;color:var(--muted-text-color);font-size:16px;
                        padding:2px 8px;cursor:pointer; }
         .pl-icon-btn:hover { color:var(--main-text-color); }
+    `;
+
+    // Base compartilhada dos cards (kanban + mês) — C7.2
+    const CARD_CSS = `
+        .pl-task, .mn-task { background:linear-gradient(rgba(0,0,0,.07),rgba(0,0,0,.07)),var(--accented-background-color,#1e1e2e);
+                             border:1.5px solid transparent;border-radius:5px;cursor:grab;
+                             line-height:1.5;user-select:none;position:relative;
+                             transition:border-color .1s,opacity .15s; }
+        .pl-task:hover, .mn-task:hover { border-color:var(--main-border-color,#45475a); }
+        .pl-task.dragging, .mn-task.dragging { opacity:.35;cursor:grabbing; }
     `;
 
     // Modal/sheet compartilhado (picker de dia mobile, confirmações e barra de desfazer)
@@ -1529,12 +1548,7 @@
             .pl-col-sub   { font-size:15px;color:var(--muted-text-color,#888);margin-top:2px; }
             .pl-tasks { padding:8px;display:flex;flex-direction:column;gap:8px;
                         overflow-y:auto;flex:1;min-height:64px; }
-            .pl-task  { background:linear-gradient(rgba(0,0,0,.07),rgba(0,0,0,.07)),var(--accented-background-color,#1e1e2e);border-radius:5px;
-                        padding:10px 12px;font-size:17px;line-height:1.5;cursor:grab;
-                        border:1.5px solid transparent;transition:border-color .1s,opacity .15s;
-                        user-select:none;position:relative; }
-            .pl-task:hover   { border-color:var(--main-border-color,#45475a); }
-            .pl-task.dragging { opacity:.35;cursor:grabbing; }
+            .pl-task  { padding:10px 12px;font-size:17px; }
             .pl-task-note { font-size:14px;color:var(--muted-text-color,#888);margin-top:6px;
                             overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
             .pl-drop { display:none;height:40px;border:2px dashed var(--main-border-color,#45475a);
@@ -1545,6 +1559,7 @@
                                 background:var(--main-active-border-color,#89b4fa);
                                 margin:2px 0;pointer-events:none; }
             ${BTN_CSS}
+            ${CARD_CSS}
             /* mobile picker + confirmação + desfazer */
             ${PICKER_CSS}
             ${TAG_CSS}
@@ -1572,7 +1587,6 @@
 
         <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
 
-            ${mobile ? modeBar() : ''}
             <!-- CABEÇALHO PLANNER -->
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
@@ -1591,7 +1605,7 @@
                 <button class="pl-icon-btn" id="pl-clear"  title="${t('clearWeek')}">↺</button>
                 <button class="pl-icon-btn" id="pl-reload" title="${t('reload')}">⟳</button>
                 <button class="pl-icon-btn" id="pl-roll" title="${t('duplicateWeek')}">⇥</button>
-                ${mobile ? '' : modeSwitcher()}
+                modeSwitcher()
             </div>
 
             <!-- BOARD -->
@@ -1605,6 +1619,7 @@
                 ? (mobile ? '150px' : '180px')
                 : (mobile ? '130px' : '180px');
             const fimDeSemana = col.isWeekend;
+            const corte = cortarLista(tasks, LIMITE_COLUNA, 'kb:' + col.key);
 
             html += `
             <div class="pl-col${col.isToday ? ' today' : ''}${fimDeSemana ? ' weekend' : ''}" style="width:${width};">
@@ -1615,9 +1630,10 @@
                     </div>
                 </div>
                 <div class="pl-tasks" data-col="${esc(col.key)}">
-                    ${tasks.map(t => `
+                    ${corte.visiveis.map(t => `
                     <div class="pl-task"
                          tabindex="0" role="button" aria-label="${esc(t.text)}"
+                         title="${esc(t.text)} · ${esc(t('moveHint'))}"
                          draggable="${!mobile}"
                          data-task-id="${esc(t.id)}"
                          data-note-id="${esc(t.noteId)}"
@@ -1633,6 +1649,7 @@
                             ? `<div class="pl-task-note" title="${esc(t.noteTitle)}">${esc(t.noteTitle)}</div>`
                             : ''}
                     </div>`).join('')}
+                    ${botaoMais(corte.ocultos, corte.chave)}
                     ${!tasks.length ? `<div class="pl-col-empty">${t('dropHere')}</div>` : ''}
                     <div class="pl-drop"></div>
                 </div>
@@ -1642,7 +1659,7 @@
         html += `</div></div>`;
 
         $pl.html(html);
-        bindPlannerEvents(weekCols, allCols);
+        bindPlannerEvents(weekCols);
     }
 
 
@@ -1773,7 +1790,6 @@
         let html = `<style>${css}</style>
         <div class="gantt-wrap">
 
-            ${mobile ? modeBar() : ''}
             <!-- CABEÇALHO GANTT -->
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
@@ -1792,7 +1808,7 @@
                 <button class="pl-icon-btn" id="gantt-clear" title="${t('clearWeek')}">↺</button>
                 <button class="pl-icon-btn" id="gantt-reload" title="${t('reload')}">⟳</button>
                 <button class="pl-icon-btn" id="gantt-roll" title="${t('duplicateWeek')}">⇥</button>
-                ${mobile ? '' : modeSwitcher()}
+                modeSwitcher()
             </div>
 
             <div class="gantt-scroll">
@@ -2083,15 +2099,9 @@
                      margin-bottom:2px; }
         .mn-cell.today .mn-daynum { color:var(--main-active-border-color,#89b4fa); }
         .mn-tasks { display:flex;flex-direction:column;gap:5px;overflow:hidden;flex:1; }
-        .mn-task { background:linear-gradient(rgba(0,0,0,.07),rgba(0,0,0,.07)),var(--accented-background-color,#1e1e2e);
-                   border:1.5px solid transparent;border-radius:5px;padding:4px 8px;
-                   font-size:13px;line-height:1.5;cursor:grab;position:relative;
-                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:none;
-                   transition:border-color .1s,opacity .15s; }
-        .mn-task:hover { border-color:var(--main-border-color,#45475a); }
+        .mn-task { padding:4px 8px;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
         .mn-task.done { background:rgba(46,204,113,.12);border-color:rgba(46,204,113,.25);
                         text-decoration:line-through;opacity:.7; }
-        .mn-task.dragging { opacity:.35;cursor:grabbing; }
         .mn-done-btn { position:absolute;top:2px;right:5px;font-size:12px;opacity:0;
                        cursor:pointer;color:var(--muted-text-color);border-radius:3px;
                        padding:0 2px; }
@@ -2116,6 +2126,8 @@
         .mn-blog-text:hover { text-decoration:underline; }
         .mn-blog-note { font-size:11px;color:var(--muted-text-color,#888);flex-shrink:0; }
         ${BTN_CSS}
+        ${CARD_CSS}
+        .mn-task.done:hover { border-color:rgba(46,204,113,.35); }
         ${PICKER_CSS}
         ${TAG_CSS}
         ${MODE_CSS}
@@ -2131,7 +2143,6 @@
         let html = `<style>${css}</style>
         <div class="mn-wrap">
 
-            ${mobile ? modeBar() : ''}
             <!-- CABEÇALHO MÊS -->
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
@@ -2149,7 +2160,7 @@
                 ${renderSaveStatus()}
                 <button class="pl-icon-btn" id="month-clear" title="${t('clearMonth')}">↺</button>
                 <button class="pl-icon-btn" id="month-reload" title="${t('reload')}">⟳</button>
-                ${mobile ? '' : modeSwitcher()}
+                modeSwitcher()
             </div>
 
             <div class="mn-scroll">
@@ -2164,6 +2175,7 @@
         for (const week of monthView.weeks) {
             for (const day of week) {
                 const tasks = getDayTasks(day.key);
+                const corte = cortarLista(tasks, LIMITE_DIA, 'mn:' + day.key);
                 const cls = [
                     'mn-cell',
                     day.isCurrentMonth ? '' : 'out',
@@ -2174,10 +2186,11 @@
                 html += `<div class="${cls}" data-col="${esc(day.key)}">
                     <div class="mn-daynum">${day.dayNum}</div>
                     <div class="mn-tasks">
-                        ${tasks.map(t => {
+                        ${corte.visiveis.map(t => {
                             const done = t.tags.some(tag => tag.type === 'status' && tag.value === 'done');
                             return `<div class="mn-task${done ? ' done' : ''}"
                                          tabindex="0" role="button" aria-label="${esc(t.text)}"
+                                         title="${esc(t.text)} · ${esc(t('moveHint'))}"
                                          draggable="${!mobile}"
                                          data-task-id="${esc(t.id)}"
                                          data-note-id="${esc(t.noteId)}"
@@ -2188,6 +2201,7 @@
                                     ${renderLinkBadge(t.noteLinks)}
                                 </div>`;
                         }).join('')}
+                        ${botaoMais(corte.ocultos, corte.chave)}
                         <div class="mn-drop"></div>
                     </div>
                 </div>`;
@@ -2368,66 +2382,14 @@
         /* ── Mobile: tap no chip → sheet picker ─────────────── */
         if (isMobile()) {
 
-            function openMonthPicker(taskId, taskText, current) {
-                const allDays = [];
-                for (const week of monthView.weeks) {
-                    for (const day of week) {
-                        allDays.push({ key: day.key, label: fmtCurto(new Date(day.key + 'T12:00:00')) });
-                    }
-                }
-
-                $pl.append(`
-                <div class="pl-day-picker" id="month-picker">
-                    <div class="pl-day-sheet">
-                        <h4>${esc(taskText)}</h4>
-                        <button class="pl-day-btn${current === 'backlog' ? ' active' : ''}"
-                                data-col="backlog">${t('backToBacklog')}</button>
-                        ${allDays.map(d => `
-                        <button class="pl-day-btn${current === d.key ? ' active' : ''}"
-                                data-col="${esc(d.key)}">${esc(d.label)}</button>`).join('')}
-                        <button class="pl-cancel-btn" id="month-picker-cancel">${t('cancel')}</button>
-                        <button class="pl-cancel-btn" style="margin-top:6px;" id="month-picker-open">
-                            ${t('openNote')}
-                        </button>
-                    </div>
-                </div>`);
-
-                $pl.find('#month-picker').on('click', function (e2) {
-                    if (e2.target === this) $(this).remove();
-                });
-                $pl.find('#month-picker-cancel').on('click', () =>
-                    $pl.find('#month-picker').remove()
-                );
-                $pl.find('#month-picker-open').on('click', () => {
-                    $pl.find('#month-picker').remove();
-                    api.activateNote(String(taskId).split('::')[0]);
-                });
-
-                $pl.find('.pl-day-btn').on('click', async function () {
-                    const col = $(this).data('col');
-                    if (col === 'backlog') delete plannerData[taskId];
-                    else plannerData[taskId] = col;
-                    await save();
-                    $pl.find('#month-picker').remove();
-                    renderPlanner();
-                    renderTasks();
-                });
-            }
-
             $pl.find('.mn-task').on('click', function () {
-                openMonthPicker(
-                    $(this).data('taskId'),
-                    $(this).text().replace('✓', '').trim(),
-                    plannerData[$(this).data('taskId')] || 'backlog'
-                );
+                const taskId = $(this).data('taskId');
+                abrirSeletorDia(taskId, $(this).text().replace('✓', '').trim(), plannerData[taskId] || 'backlog', opcoesMes());
             });
 
             $pl.find('.mn-blog-item').on('click', function () {
-                openMonthPicker(
-                    $(this).data('taskId'),
-                    $(this).find('.mn-blog-text').text().trim(),
-                    'backlog'
-                );
+                const taskId = $(this).data('taskId');
+                abrirSeletorDia(taskId, $(this).find('.mn-blog-text').text().trim(), 'backlog', opcoesMes());
             });
         }
     }
@@ -2437,7 +2399,7 @@
         8. EVENTOS DO PLANEJADOR
     ═══════════════════════════════════════════════════════════ */
 
-    function bindPlannerEvents(weekCols, allCols) {
+    function bindPlannerEvents(weekCols) {
 
         $pl.find('#pl-prev').on('click', () => { weekOffset--; renderPlanner(); });
         $pl.find('#pl-next').on('click', () => { weekOffset++; renderPlanner(); });
@@ -2586,52 +2548,10 @@
 
         /* ── Mobile: tap → sheet picker ─────────────────────── */
         if (isMobile()) {
-
             $pl.find('.pl-task').on('click', function () {
-
                 const taskId   = $(this).data('taskId');
-                const noteId   = $(this).data('noteId');
                 const taskText = $(this).find('div').first().text();
-                const current  = plannerData[taskId] || 'backlog';
-
-                $pl.append(`
-                <div class="pl-day-picker" id="pl-picker">
-                    <div class="pl-day-sheet">
-                        <h4>${esc(taskText)}</h4>
-                        ${allCols.map(col => `
-                        <button class="pl-day-btn${current === col.key ? ' active' : ''}"
-                                data-col="${esc(col.key)}">
-                            ${col.isBacklog
-                                ? t('backToBacklog')
-                                : `${esc(col.label)} <span style="opacity:.5;font-size:15px;">${esc(col.dateStr)}</span>`}
-                        </button>`).join('')}
-                        <button class="pl-cancel-btn" id="pl-picker-cancel">${t('cancel')}</button>
-                        <button class="pl-cancel-btn" style="margin-top:6px;" id="pl-picker-open">
-                            ${t('openNote')}
-                        </button>
-                    </div>
-                </div>`);
-
-                $pl.find('#pl-picker').on('click', function (e) {
-                    if (e.target === this) $(this).remove();
-                });
-                $pl.find('#pl-picker-cancel').on('click', () =>
-                    $pl.find('#pl-picker').remove()
-                );
-                $pl.find('#pl-picker-open').on('click', () => {
-                    $pl.find('#pl-picker').remove();
-                    api.activateNote(noteId);
-                });
-
-                $pl.find('.pl-day-btn').on('click', async function () {
-                    const col = $(this).data('col');
-                    if (col === 'backlog') delete plannerData[taskId];
-                    else plannerData[taskId] = col;
-                    await save();
-                    $pl.find('#pl-picker').remove();
-                    renderPlanner();
-                    renderTasks();
-                });
+                abrirSeletorDia(taskId, taskText, plannerData[taskId] || 'backlog', opcoesSemana());
             });
         }
 
@@ -2729,6 +2649,7 @@
                 const totalCbs = stats ? stats.total : group.tasks.length;
                 const badgeText = done > 0 ? `${done}/${totalCbs}` : `${group.tasks.length}`;
                 const collapsed = collapsedNotes.has(group.noteId);
+                const corte = cortarLista(group.tasks, LIMITE_GRUPO, 'tk:' + group.noteId);
 
                 html += `
                 <div class="tk-group${collapsed ? ' tk-collapsed' : ''}">
@@ -2740,7 +2661,7 @@
                     </div>
 
                     <div class="tk-tasks"${collapsed ? ' style="display:none;"' : ''}>
-                        ${group.tasks.map(t => {
+                        ${corte.visiveis.map(t => {
 
                             const day = plannerData[t.id];
                             const badge = day
@@ -2768,6 +2689,7 @@
 
                             </div>`;
                         }).join('')}
+                        ${botaoMais(corte.ocultos, corte.chave)}
                     </div>
 
                 </div>`;
@@ -2776,7 +2698,6 @@
 
         html += `</div>`;
         $tk.html(html);
-        applyCompactTaskFonts();
         restaurarScroll(scrollSalvo);
     }
 
@@ -2895,17 +2816,23 @@
         $(el).trigger('click');
     });
 
+    // "+N": expande a lista limitada de cards (C3.4)
+    $root.on('click', '.wp-mais', function () {
+        expandidos.add(String($(this).data('expandir')));
+        renderPlanner();
+        renderTasks();
+    });
+
     // Atalhos de teclado (Q8): setas navegam, "t" hoje, "r" recarrega, Esc fecha diálogos
     window.__wpAtalhos = function (e) {
         if (!document.body.contains($root[0])) return;
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         const alvo = e.target;
         if (alvo && alvo.closest && alvo.closest('input, textarea, select, [contenteditable="true"], [contenteditable=""]')) return;
-        const aberto = $root.find('#wp-confirm').length > 0 ||
-                       $root.find('#pl-picker, #month-picker').length > 0;
+        const aberto = $root.find('#wp-confirm').length > 0 || $root.find('#wp-picker').length > 0;
         if (e.key === 'Escape') {
             if ($root.find('#wp-confirm').length) { $root.find('#wp-confirm-cancel').trigger('click'); return; }
-            if (aberto) $root.find('#pl-picker, #month-picker').remove();
+            if (aberto) $root.find('#wp-picker').remove();
             return;
         }
         if (aberto) return;
@@ -2921,6 +2848,16 @@
             weekOffset = 0; monthOffset = 0; renderPlanner();
         } else if (e.key === 'r' || e.key === 'R') {
             recarregarTarefas();
+        } else if (e.key === 'm' || e.key === 'M') {
+            const el = document.activeElement;
+            if (el && el.matches && el.matches('.pl-task, .mn-task')) {
+                const taskId = el.dataset.taskId;
+                if (taskId) {
+                    abrirSeletorDia(taskId, el.textContent.trim(), plannerData[taskId] || 'backlog',
+                                    viewMode === 'month' ? opcoesMes() : opcoesSemana());
+                    e.preventDefault();
+                }
+            }
         }
     };
     if (!window.__wpTeclasBound) {

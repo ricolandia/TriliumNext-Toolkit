@@ -139,5 +139,21 @@ ok('formato MM-DD-YYYY também ordena', ordenarBacklog(bc2).map(t => t.id).join(
 ok('não muta a lista original', ordenarBacklog(bc).length === 4 && bc.map(t => t.id).join(',') === 'a,b,c,d');
 ok('lista sem prazos mantém a ordem', ordenarBacklog([mk('p'), mk('q')]).map(t => t.id).join(',') === 'p,q');
 
+console.log('9) parseTaskTags() — tags e texto limpo');
+eval(extrair('TAGS') + '\nglobalThis.parseTaskTags = parseTaskTags;');
+const pt1 = parseTaskTags('Revisar proposta #todo #upto=09-30-2026');
+ok('remove as tags do texto', pt1.cleanText === 'Revisar proposta', pt1.cleanText);
+ok('#todo → status todo', pt1.tags.some(x => x.type === 'status' && x.value === 'todo'), pt1.tags);
+ok('#upto → deadline YYYY-MM-DD', pt1.tags.some(x => x.type === 'deadline' && x.value === '2026-09-30'), pt1.tags);
+const pt2 = parseTaskTags('Estudar #doing=150% #every=7d #total=4');
+ok('#doing clampa em 100', pt2.tags.find(x => x.type === 'progress').value === 100, pt2.tags);
+ok('#every guarda o número', pt2.tags.find(x => x.type === 'recur').value === 7);
+ok('#total guarda o número', pt2.tags.find(x => x.type === 'total').value === 4);
+ok('#done → status done', parseTaskTags('Concluído #done').tags.some(x => x.type === 'status' && x.value === 'done'));
+const pt4 = parseTaskTags('Sem tags aqui');
+ok('sem tags → texto intacto', pt4.cleanText === 'Sem tags aqui' && pt4.tags.length === 0, pt4);
+ok('normaliza espaços e apara', parseTaskTags('  espaços   demais  #todo ').cleanText === 'espaços demais');
+ok('case-insensitive (#TODO)', parseTaskTags('x #TODO').tags.some(x => x.value === 'todo'));
+
 console.log(falhas === 0 ? '\n>>> TODOS OS TESTES PASSARAM' : `\n>>> ${falhas} FALHA(S)`);
 process.exit(falhas === 0 ? 0 : 1);
