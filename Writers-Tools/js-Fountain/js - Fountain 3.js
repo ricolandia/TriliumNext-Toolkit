@@ -129,6 +129,7 @@ const Fountain = (function () {
         const blocks = script
             .replace(regex.boneyard,     '\n$1\n')
             .replace(regex.standardizer, '\n')
+            .replace(/^[ \t\u00a0]+$/gm, '')   // linhas só com espaço/NBSP não separam blocos
             .replace(regex.cleaner,      '')
             .replace(regex.whitespacer,  '')
             .split(regex.splitter);
@@ -255,7 +256,7 @@ const Fountain = (function () {
                 // Title page
                 case 'title':
                     titleHtml.push(`<h1>${t.text}</h1>`);
-                    title = t.text.replace('<br />', ' ').replace(/<[^>]*>/g, '');
+                    title = t.text.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '');
                     break;
                 case 'credit':    titleHtml.push(`<p class="credit">${t.text}</p>`);    break;
                 case 'author':
@@ -1219,6 +1220,9 @@ function imprimirRoteiro(titulo, htmlRoteiro) {
         }
     };
 
+    // Rede de segurança: mesmo que o load/onafterprint nunca disparem, o iframe não fica órfão
+    setTimeout(remover, 15 * 60 * 1000);
+
     document.body.appendChild(iframe);
     iframe.srcdoc = doc;
 }
@@ -1423,7 +1427,8 @@ function pdfGerar(tokens) {
             }
 
             case 'page_break':
-                fecharPagina();
+    fecharPagina();
+    if (!paginas.length) paginas.push([]); // rascunho vazio ainda gera um PDF de 1 página válido
                 linha = 0;
                 break;
 
@@ -1701,15 +1706,23 @@ async function renderizar() {
             renderizar();
         });
 
-        api.$container.find('#fv-btn-pdf').on('click', () => {
-            try {
-                const bytes = pdfMontar(pdfGerar(resultado.tokens || []));
-                const base64 = bytesParaBase64(bytes);
-                baixarArquivo(nomeArquivo + '.pdf', 'data:application/pdf;base64,' + base64, base64);
-                avisar(tr('pdfGerado'));
-            } catch (e) {
-                avisar(tr('erroPdf'));
-            }
+        api.$container.find('#fv-btn-pdf').on('click', function () {
+            const $btn = $(this);
+            if ($btn.prop('disabled')) return;
+            // Deixa o navegador pintar o "gerando" antes da geração (que é síncrona)
+            $btn.prop('disabled', true).text('⏳ …');
+            setTimeout(() => {
+                try {
+                    const bytes = pdfMontar(pdfGerar(resultado.tokens || []));
+                    const base64 = bytesParaBase64(bytes);
+                    baixarArquivo(nomeArquivo + '.pdf', 'data:application/pdf;base64,' + base64, base64);
+                    avisar(tr('pdfGerado'));
+                } catch (e) {
+                    avisar(tr('erroPdf'));
+                } finally {
+                    $btn.prop('disabled', false).text(tr('pdf'));
+                }
+            }, 0);
         });
 
         api.$container.find('#fv-btn-print').on('click', () => {

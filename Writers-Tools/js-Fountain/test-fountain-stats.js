@@ -118,6 +118,11 @@ ok('o heading forçado virou token de ação',
     rf.tokens.some((t) => t.type === 'action' && (t.text || '').includes('INT. CASA - DIA')),
     rf.tokens.map((t) => t.type + (t.text ? ':' + t.text : '')));
 
+console.log('\n5b) parágrafos separados por linha só com espaço/NBSP (nota text)');
+const rws = Fountain.parse(['INT. SALA - DIA', ' ', 'AÇÃO UM', '\u00a0', 'AÇÃO DOIS'].join('\n'), true);
+ok('os dois blocos continuam separados (2 ações)', rws.tokens.filter((t) => t.type === 'action').length === 2,
+    rws.tokens.map((t) => t.type));
+
 console.log('\n6) nomeSeguro (nome de arquivo) e escaparHtml');
 ok('nomeSeguro("!!!") → "roteiro"', nomeSeguro('!!!') === 'roteiro', nomeSeguro('!!!'));
 ok('nomeSeguro("") → "roteiro"', nomeSeguro('') === 'roteiro', nomeSeguro(''));
