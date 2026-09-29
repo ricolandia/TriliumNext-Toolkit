@@ -70,7 +70,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 
 | # | Plugin | Arquivo(s) | Data | 👨‍💻 Código | 🎨 UI/UX | ⚡ Quick wins | Veredito |
 |---|--------|------------|------|-----------|----------|---------------|----------|
-| 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batch 1 aplicado (28/09)**: 25 correções/quick wins; testes novos (18 asserções). Resto no batch 2 |
+| 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1+2 aplicados (28/09)**: ~40 correções/quick wins; `test-planejador.js` com 35 asserções. Resto no batch 3 |
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/`, `Writers-Tools/js-grid/` | ⏭️ **próximo** | | | | |
 
 ### 🔁 Fila proposta (ajustável)
@@ -277,9 +277,38 @@ a11y básica e quick wins baratos). Nada de mudança de modelo de dados.
 **Testes:** `test-planejador.js` (novo, 18 asserções, extrai `esc`, `MARCAR-BE` e
 `REC-BE` do fonte real) + `test-refs.js` (8 asserções) passando + sintaxe OK.
 
-## ⏭️ Deferido para o batch 2 (triagem sugerida)
+## ✅ Correções aplicadas — batch 2 (28/09/2026)
 
-- **Integridade/modelo de dados:** C4.1 (IDs por `cbIndex` × edição da nota), C4.2 (datas UTC), C4.3 (extração de spans), C4.7 (clones/`<li>`), C4.9 (hoje congelado).
-- **Performance:** C3.3 (`getDayTasks` × 42 no mês), C3.4 (render sem virtualização), C5.1 (listener de resize/patch global), C3.6 (debounce).
-- **Manutenção:** C7.1 (i18n PT/EN como o resto do toolkit), C7.2 (refactor de CSS/views), C1.6 (`migrateIds`), C7.3 (versões), C8.1 (suite completa de testes puros).
-- **UI/UX:** D3.1/D3.2 (teclado completo + alternativa ao drag), D4.1 (alvos de toque ≥40px), D2.1/D2.2 (seletor único + fim de semana), D7.1 (tags no tema claro), D8.1 (tipografia única), D5.3/D6.4 (diálogo próprio com desfazer no lugar dos `confirm()`), além dos quick wins Q2, Q4, Q5, Q8-Q14.
+Critério: integridade de dados, performance, robustez de eventos e UI de uso
+diário. Inclui uma pequena evolução de estado (`plannerData._sig`), aplicada de
+forma transparente (preenchida no primeiro fetch, podada junto com os órfãos).
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C4.1 | Datas seguem a tarefa quando a nota é editada acima do checkbox: assinatura do texto (`assinaturaTexto`) + `reconciliarDatas()` movem data, `_sig` e `_order` para a tarefa original | `test-planejador.js` (7 asserções) |
+| C4.2 | Datas locais (`isoLocal`) no kanban, mês e `isOverdue` (fim do deslocamento UTC em fusos positivos) | `test-planejador.js` (3 asserções) |
+| C4.3 | Extração de texto com `<span>` balanceado (`extrairSpanDe`, bloco `SPAN-BE`), usada no scan e na recorrência | `test-planejador.js` (3 asserções) |
+| C4.7 | Clones de recorrência fecham o próprio `</li>` (HTML balanceado) | `test-planejador.js` (balanceamento) |
+| C4.9 | "Hoje" recalculado a cada render (`atualizarHoje`) | revisão |
+| C1.6 | `migrateIds` só roda se existir ID legado (fim do O(n²) por carga) | revisão |
+| C3.3 | Índice de tarefas por dia (`construirIndice`, invalidado a cada mutação): o mês não filtra 42× mais | revisão (mesmo resultado visual) |
+| C3.6 + C5.1 + C2.3 | Listener de `resize` e patch de `$.fn.html/.append` instalados uma única vez (não acumulam re-execuções), com debounce; CSS hoistado sem duplicar | revisão |
+| D5.3 + D6.4 + Q5 | "Limpar" com contagem e diálogo próprio (fim dos `confirm()` nativos) | revisão |
+| Q4 | "Desfazer" para concluir tarefa e para limpar planejamento (barra por 12 s; desmarca o checkbox e restaura datas/ordem) | revisão em runtime pendente |
+| Q12 | Picker do Mês mobile com "↗ Abrir nota" (paridade com o Kanban) | revisão |
+| Q13 | Tooltips nos nomes truncados (kanban, mês, gantt e painel) + dica "solte uma tarefa aqui" em coluna vazia | revisão |
+| Q14 | Re-render automático ao cruzar o breakpoint desktop↔mobile | revisão em runtime pendente |
+| D4.1 | Alvos de toque maiores no mobile (‹ › ↺ ⟳, ✓, checkboxes) | revisão |
+| D7.1 | Cores de tag/barra com variante para tema claro (contraste AA), detectado pelo brilho de `--main-background-color` | revisão visual pendente |
+| D2.2 (parcial) | Fim de semana com tom próprio no Kanban (paridade com mês/gantt) | revisão |
+
+**Testes:** `test-planejador.js` com **35 asserções** (ESC, MARCAR-BE com
+marcar/desmarcar, REC-BE com teto/validações/`</li>`, SPAN-BE, DATAS, RECON) +
+`test-refs.js` (8) passando; `bun build` OK.
+
+## ⏭️ Deferido para o batch 3 (triagem sugerida)
+
+- **Performance/view:** C3.4 (virtualização/limite de cards) e C7.2 (refactor de CSS/views compartilhados).
+- **Manutenção:** C7.1 (i18n PT/EN como o resto do toolkit), C7.3 (versões manifest × registry), C7.5 (comentários vencidos), C8.1 (suite completa de funções puras).
+- **UI/UX:** D2.1 (seletor de modo único responsivo), D3.1/D3.2 (operação por teclado + alternativa ao drag), D5.3 (toast de sucesso), D6.2 (hover/foco em CSS), D6.3 (`prefers-reduced-motion`), D8.1/D8.2 (tipografia única e piso de 11-12 px), D1.x/D2.x/D4.3 (hierarquia, terminologia e drag em trackpads), C4.8/D6.1 (`was-dragged` morto).
+- **Quick wins restantes:** Q2 (indicador "salvando/salvo"), Q8 (atalhos de teclado), Q9 (scroll preservado), Q10 (duplicar semana), Q11 (ordenar backlog por `#upto`).
