@@ -37,6 +37,9 @@ const SN_H = {
         'err.metodo':      'Método não permitido.',
         'err.json':        'JSON inválido.',
         'err.payload':     'Payload inválido. Necessário: inviteToken, from, replies[].',
+        'err.token_formato': 'Token de convite em formato inválido.',
+        'err.from_longo':  'Nome do remetente muito longo (máx. 80 caracteres).',
+        'err.item_invalido': 'Item de resposta inválido (precisa ser objeto com title/content em texto).',
         'err.replytoken':  'replyToken inválido.',
         'err.token':       'Token de convite inválido ou não encontrado.',
         'err.expirado':    'Convite expirado.',
@@ -56,6 +59,9 @@ const SN_H = {
         'err.metodo':      'Method not allowed.',
         'err.json':        'Invalid JSON.',
         'err.payload':     'Invalid payload. Required: inviteToken, from, replies[].',
+        'err.token_formato': 'Invite token has an invalid format.',
+        'err.from_longo':  'Sender name too long (max. 80 characters).',
+        'err.item_invalido': 'Invalid reply item (must be an object with text title/content).',
         'err.replytoken':  'Invalid replyToken.',
         'err.token':       'Invalid invite token or not found.',
         'err.expirado':    'Invite expired.',
@@ -112,8 +118,13 @@ function validarEndpoint(raw) {
     return { ok: true, url };
 }
 
-// Só aceita POST
+// Só aceita POST (OPTIONS responde para diagnóstico/preflight)
+if (req.method === 'OPTIONS') {
+    res.setHeader('Allow', 'POST, OPTIONS');
+    return res.status(204).send('');
+}
 if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST, OPTIONS');
     return reply(405, { error: hT('err.metodo') });
 }
 
@@ -127,9 +138,20 @@ try {
 
 const { inviteToken, from, replies, replyEndpoint, replyToken } = body;
 
-// ── 1. Validação básica ────────────────────────────────────────────────────
-if (!inviteToken || !from || typeof from !== 'string' || from.length > 80
-    || !Array.isArray(replies) || replies.length === 0) {
+// ── 1. Validação básica (campo a campo, com motivo específico) ────────────
+const fromLimpo = (typeof from === 'string' ? from : '')
+    .replace(/[\r\n\t\u0000-\u001F]+/g, ' ').trim();
+
+if (!inviteToken || typeof inviteToken !== 'string' || !/^[A-Za-z0-9+/=_-]{4,128}$/.test(inviteToken)) {
+    return reply(400, { error: hT('err.token_formato') });
+}
+if (!fromLimpo) {
+    return reply(400, { error: hT('err.payload') });
+}
+if (fromLimpo.length > 80) {
+    return reply(400, { error: hT('err.from_longo') });
+}
+if (!Array.isArray(replies) || replies.length === 0 || replies.length > 200) {
     return reply(400, { error: hT('err.payload') });
 }
 
@@ -145,13 +167,14 @@ if (replyEndpoint) {
     endpointOk = check.url;
 }
 
-// ── 2. Localiza a gate note pelo token ────────────────────────────────────
+// ── 2. Localiza a gate note pelo token (lookup direto, com fallback) ──────
 let gate = null;
-const candidates = api.searchForNotes(`#inviteGate`);
-for (const c of candidates) {
-    if (c.getLabelValue('inviteToken') === inviteToken) {
-        gate = c;
-        break;
+try {
+    gate = api.getNotesWithLabel('inviteToken', inviteToken).find(n => n.hasLabel('inviteGate')) || null;
+} catch(e) { gate = null; }
+if (!gate) {
+    for (const c of api.searchForNotes(`#inviteGate`)) {
+        if (c.getLabelValue('inviteToken') === inviteToken) { gate = c; break; }
     }
 }
 
@@ -159,76 +182,91 @@ if (!gate) {
     return reply(404, { error: hT('err.token') });
 }
 
-// ── 3. Verifica expiração (7 dias) ────────────────────────────────────────
+// ── 3. Verifica expiração (label corrompida = expirado, nunca eterno) ─────
 const expiresRaw = gate.getLabelValue('inviteExpires');
 if (expiresRaw) {
     const expiresAt = parseInt(expiresRaw, 10);
-    if (!isNaN(expiresAt) && Date.now() > expiresAt) {
+    if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) {
         return reply(410, { error: hT('err.expirado') });
     }
 }
 
 // ── 4. Valida vínculo com a nota âncora ───────────────────────────────────
 const parentNoteId = gate.getLabelValue('inviteParentNoteId');
-if (!parentNoteId) {
-    return reply(500, { error: hT('err.gate_vinculo') });
+if (!parentNoteId || !(gate.parentNoteIds || []).includes(parentNoteId)) {
+    return reply(409, { error: hT('err.gate_vinculo') });
 }
 
 const originalNote = api.getNote(parentNoteId);
-if (!originalNote) {
+if (!originalNote || originalNote.isDeleted) {
     return reply(404, { error: hT('err.nota_original') });
 }
 
-// ── 5. Cria as notas filhas de resposta ───────────────────────────────────
-const ts       = new Date().toLocaleString(HLANG === 'pt' ? 'pt-BR' : 'en-US');
-const isoNow   = new Date().toISOString();
-const created  = [];
-const errors   = [];
+// ── 5–7. Cria as notas filhas, registra uso e responde (com rede de segurança) ──
+try {
+    const ts        = new Date().toLocaleString(HLANG === 'pt' ? 'pt-BR' : 'en-US');
+    const isoNow    = new Date().toISOString();
+    const created   = [];
+    const errors    = [];
+    const sourceIds = [];
 
-for (const r of replies) {
-    try {
-        const title = hT('resposta', { from, data: ts, titulo: r.title || hT('sem_titulo') });
-        const content = r.content || '';
+    for (const r of replies) {
+        const tituloItem = (r && typeof r === 'object' && typeof r.title === 'string') ? r.title : '';
+        try {
+            if (!r || typeof r !== 'object'
+                || (r.title != null && typeof r.title !== 'string')
+                || (r.content != null && typeof r.content !== 'string')) {
+                errors.push((tituloItem || '?') + ': ' + hT('err.item_invalido'));
+                continue;
+            }
 
-        const { note: child } = api.createNewNote({
-            parentNoteId: originalNote.noteId,
-            title:        title,
-            content:      content,
-            type:         'text'
-        });
+            const title   = hT('resposta', { from: fromLimpo, data: ts, titulo: tituloItem || hT('sem_titulo') });
+            const content = r.content || '';
 
-        child.setLabel('sharedReply', '');
-        child.setLabel('replyFrom',   from);
-        child.setLabel('replyDate',   isoNow);
+            const { note: child } = api.createNewNote({
+                parentNoteId: originalNote.noteId,
+                title:        title,
+                content:      content,
+                type:         'text'
+            });
 
-        created.push(child.noteId);
-    } catch(e) {
-        errors.push((r.title || '?') + ': ' + e.message);
+            child.setLabel('sharedReply', '');
+            child.setLabel('replyFrom',   fromLimpo);
+            child.setLabel('replyDate',   isoNow);
+
+            created.push(child.noteId);
+            if (r.noteId && typeof r.noteId === 'string') sourceIds.push(r.noteId);
+        } catch(e) {
+            errors.push((tituloItem || '?') + ': ' + ((e && e.message) || e));
+        }
     }
-}
 
-if (created.length === 0) {
-    return reply(500, { error: hT('err.nenhuma', { erros: errors.join('; ') }) });
-}
+    if (created.length === 0) {
+        return reply(422, { error: hT('err.nenhuma', { erros: errors.join('; ') }) });
+    }
 
-// ── 6. Guarda o canal de retorno do peer na nota âncora ───────────────────
-if (endpointOk) {
-    originalNote.setLabel('replyEndpoint', endpointOk);
-}
-if (replyToken) {
-    originalNote.setLabel('replyToken', replyToken);
-}
+    // ── 6. Guarda o canal de retorno do peer na nota âncora ───────────────
+    if (endpointOk) {
+        originalNote.setLabel('replyEndpoint', endpointOk);
+    }
+    if (replyToken) {
+        originalNote.setLabel('replyToken', replyToken);
+    }
 
-// Registro de uso + feedback visual na árvore
-gate.setLabel('inviteLastUsed', isoNow);
-gate.setLabel('inviteLastFrom', from);
-gate.title = hT('respostas_de', { from, data: ts });
-gate.save();
+    // Registro de uso + feedback visual na árvore (a atribuição de título
+    // já persiste na transação — sem save() redundante)
+    gate.setLabel('inviteLastUsed', isoNow);
+    gate.setLabel('inviteLastFrom', fromLimpo);
+    gate.title = hT('respostas_de', { from: fromLimpo, data: ts });
 
-// ── 7. Responde com sucesso ────────────────────────────────────────────────
-reply(200, {
-    ok:       true,
-    received: created.length,
-    errors:   errors,
-    noteIds:  created
-});
+    // ── 7. Responde com sucesso (sourceIds = quais itens do remetente foram criados) ──
+    reply(200, {
+        ok:        true,
+        received:  created.length,
+        errors:    errors,
+        noteIds:   created,
+        sourceIds: sourceIds
+    });
+} catch(e) {
+    try { reply(500, { error: hT('err.nenhuma', { erros: (e && e.message) || e }) }); } catch(e2) { /* já respondido */ }
+}

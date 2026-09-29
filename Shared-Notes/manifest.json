@@ -20,7 +20,7 @@
         {
           "title": "Shared Notes Config",
           "type": "text",
-          "content": "Configure #myName e #myEndpoint na label desta nota."
+          "content": "Configure as labels desta nota: #myName (seu nome no convite) e #myEndpoint (URL desta instância Trilium, ex.: https://trilium.exemplo.org). Opcional: #inviteExpireDays (validade do convite em dias, padrão 7). Requer backend scripting habilitado na instância (ver README)."
         }
       ]
     }
@@ -71,12 +71,12 @@
     {
       "note": "Shared Notes Config",
       "name": "myName",
-      "value": "yourname"
+      "value": ""
     },
     {
       "note": "Shared Notes Config",
       "name": "myEndpoint",
-      "value": "http://yoururl/"
+      "value": ""
     }
   ]
 }

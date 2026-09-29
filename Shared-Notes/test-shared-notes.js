@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { EventEmitter } = require('events');
 
-const DIR = '/home/ricardo/Documentos/31_APPS_GITHUB/TriliumNext-Toolkit/Shared-Notes';
+const DIR = __dirname;
 const widgetSrc = fs.readFileSync(path.join(DIR, 'shared-notes-widget.js'), 'utf8');
 const handlerSrc = fs.readFileSync(path.join(DIR, 'shared-notes-handler.js'), 'utf8');
 
@@ -28,6 +28,7 @@ class Note {
         this.inst = inst; this.id = id; this.title = title;
         this.content = content; this.type = type || 'text';
         this.labels = {}; this.children = [];
+        this.parentNoteIds = []; this.isDeleted = false;
     }
     get noteId() { return this.id; }
     hasLabel(n) { return n in this.labels; }
@@ -45,7 +46,10 @@ class Instance {
         const id = this.name + '-' + (++this.seq);
         const n = new Note(this, id, title, content, type);
         this.notes[id] = n;
-        if (parentId && this.notes[parentId]) this.notes[parentId].children.push(id);
+        if (parentId && this.notes[parentId]) {
+            this.notes[parentId].children.push(id);
+            n.parentNoteIds = [parentId];
+        }
         return n;
     }
     search(q) {
@@ -65,6 +69,9 @@ class Instance {
             createNewNote: ({ parentNoteId, title, content, type }) => ({ note: self.createNote(parentNoteId, title, content, type) }),
             searchForNotes: (q) => self.search(q),
             searchForNote: (q) => self.search(q)[0],
+            getOption: () => ({ value: 'pt_BR' }),
+            getNotesWithLabel: (name, value) => Object.values(self.notes)
+                .filter(n => n.hasLabel(name) && (value === undefined || n.getLabelValue(name) === String(value))),
         };
     }
 }
@@ -79,6 +86,7 @@ function makeJq() {
             text(t) { this._text = t; return this; },
             html(h) { this._html = h; return this; },
             prop(k, v) { this['_' + k] = v; return this; },
+            attr(k, v) { if (v === undefined) return this['@' + k]; this['@' + k] = v; return this; },
             show() { this._shown = true; return this; },
             hide() { this._shown = false; return this; },
             toggleClass() { return this; },
@@ -128,7 +136,12 @@ global.fetch = async (url, opts) => {
     const inst = rotas[u.hostname];
     if (!inst) throw new Error('ENOTFOUND ' + u.hostname);
     const out = runHandler(inst, JSON.parse(opts.body));
-    return { status: out.status, json: async () => out.data };
+    return {
+        status: out.status,
+        headers: { get: () => null },
+        json: async () => out.data,
+        text: async () => JSON.stringify(out.data),
+    };
 };
 
 function frontNote(inst, n) {
@@ -223,7 +236,9 @@ const wb = makeWidget(B);
     const T_A2 = p2.inviteToken;
     global.api = B.api();
     wb.$widget.find('#sn-convite-in').val(convite2);
-    await wb._aceitar();
+    await wb._aceitar(); // 1º clique: pede confirmação de substituição
+    ok(wb.$widget.find('#sn-aceitar-status')._html.includes('SUBSTITUIR'), 'update pede confirmação (2 toques)');
+    await wb._aceitar(); // 2º clique: aplica
     ok(recebida.getContent() === '<p>conteúdo v2</p>', 'conteúdo atualizado in-place');
     ok(recebida.title.includes('[v2]') && recebida.title.includes('Alice'), 'título com versão: ' + recebida.title);
     ok(recebida.getLabelValue('inviteToken') === T_A2, 'inviteToken de B renovado (T_A2)');
@@ -291,6 +306,93 @@ const wb = makeWidget(B);
     try { wb.doRenderBody(); } catch(e) { okBody = false; errBody = e.message; }
     ok(okBody, 'doRenderBody roda sem erro' + (errBody ? ' (' + errBody + ')' : ''));
     ok(!!wb._bodyHtml && wb._bodyHtml.includes('sn-wrap'), 'HTML do widget montado');
+
+    console.log('\n[12] Handler robusto (entradas hostis, sourceIds, expiração)');
+    {
+        const C = new Instance('C');
+        const notaC = C.createNote(null, 'Âncora', '<p>x</p>');
+        const tokC = 'tok-robusto-123';
+        const gateC = C.createNote(notaC.id, 'Gate', '');
+        gateC.setLabel('inviteGate', '');
+        gateC.setLabel('inviteToken', tokC);
+        gateC.setLabel('inviteParentNoteId', notaC.id);
+        gateC.setLabel('inviteExpires', String(Date.now() + 86400000));
+
+        const r1 = runHandler(C, { inviteToken: tokC, from: 'Peer', replies: [
+            { title: 'ok', content: 'a', noteId: 'child-1' }, null, { title: 123 }
+        ] });
+        ok(r1.status === 200, 'item nulo/inválido não derruba (200 com erros) → ' + JSON.stringify(r1));
+        ok(JSON.stringify(r1.data.sourceIds) === JSON.stringify(['child-1']), 'sourceIds traz só o item confirmado → ' + JSON.stringify(r1.data.sourceIds));
+        ok(Array.isArray(r1.data.errors) && r1.data.errors.length === 2, 'errors conta os 2 inválidos → ' + JSON.stringify(r1.data.errors));
+
+        const r2 = runHandler(C, { inviteToken: tokC, from: 'Peer', replies: [null] });
+        ok(r2.status === 422 && !!r2.data.error, 'só inválidos → 422 (sem crash) → ' + JSON.stringify(r2));
+
+        const r3 = runHandler(C, { inviteToken: 'x'.repeat(5000), from: 'Peer', replies: [{ title: 'a', content: 'b' }] });
+        ok(r3.status === 400, 'token gigante → 400 antes da varredura → ' + JSON.stringify(r3));
+
+        gateC.setLabel('inviteExpires', 'abc');
+        const r4 = runHandler(C, { inviteToken: tokC, from: 'Peer', replies: [{ title: 'a', content: 'b' }] });
+        ok(r4.status === 410, 'expiração corrompida → 410 (nunca eterno) → ' + JSON.stringify(r4));
+        gateC.setLabel('inviteExpires', String(Date.now() + 86400000));
+
+        gateC.parentNoteIds = ['outra'];
+        const r5 = runHandler(C, { inviteToken: tokC, from: 'Peer', replies: [{ title: 'a', content: 'b' }] });
+        ok(r5.status === 409, 'gate sem vínculo → 409 → ' + JSON.stringify(r5));
+        gateC.parentNoteIds = [notaC.id];
+
+        const r6 = runHandler(C, { inviteToken: tokC, from: 'Eve\ninject', replies: [{ title: 'a', content: 'b' }] });
+        ok(r6.status === 200, 'from com newline é sanitizado → status ' + r6.status);
+    }
+
+    console.log('\n[13] Aceite: downgrade rejeitado, nota vazia aceita, link-local em https');
+    global.api = B.api();
+    wb._sharedNote = frontNote(B, recebida);
+    {
+        const antes = recebida.content;
+        const payloadV1 = Object.assign({}, basePayload, {
+            noteId: recebida.getLabelValue('sharedNoteId'),
+            snapshotVersion: 1,
+            endpoint: 'https://peer.example.com',
+            inviteToken: 'tok-x',
+        });
+        wb.$widget.find('#sn-convite-in').val(b64(payloadV1));
+        await wb._aceitar();
+        ok(wb.$widget.find('#sn-aceitar-status')._html.includes('mais antiga'), 'aviso de versão mais antiga → ' + wb.$widget.find('#sn-aceitar-status')._html);
+        ok(recebida.content === antes, 'conteúdo intacto (sem rollback)');
+    }
+    {
+        const payloadVazia = Object.assign({}, basePayload, {
+            noteId: 'n-vazia-1', noteTitle: '', noteContent: '',
+            endpoint: 'https://peer.example.com', inviteToken: 'tok-vazio',
+        });
+        wb.$widget.find('#sn-convite-in').val(b64(payloadVazia));
+        await wb._aceitar();
+        ok(wb.$widget.find('#sn-aceitar-status')._html.includes('criada'), 'nota com título/conteúdo vazios é aceita → ' + wb.$widget.find('#sn-aceitar-status')._html);
+    }
+    {
+        wb.$widget.find('#sn-convite-in').val(b64(Object.assign({}, basePayload, {
+            noteId: 'n-ll-https', endpoint: 'https://169.254.169.254/latest',
+        })));
+        await wb._aceitar();
+        ok(wb.$widget.find('#sn-aceitar-status')._html.includes('169.254'), 'bloqueia link-local também em https → ' + wb.$widget.find('#sn-aceitar-status')._html);
+    }
+
+    console.log('\n[14] Guard de boot do handler + paridade i18n');
+    {
+        let lancou = false;
+        try { new Function('api', handlerSrc)({}); } catch(e) { lancou = true; }
+        ok(!lancou, 'handler sem req/res retorna cedo sem lançar');
+
+        const { SN_I18N } = require(path.join(DIR, 'shared-notes-widget.js'));
+        const pt = Object.keys(SN_I18N.pt).sort();
+        const en = Object.keys(SN_I18N.en).sort();
+        const faltamEn = pt.filter(k => !SN_I18N.en[k]);
+        const faltamPt = en.filter(k => !SN_I18N.pt[k]);
+        ok(faltamEn.length === 0 && faltamPt.length === 0,
+            `paridade PT/EN (${pt.length} chaves)`,
+            { faltamEn, faltamPt });
+    }
 
     console.log('\n' + (fails === 0 ? '>>> TODOS OS TESTES PASSARAM' : '>>> ' + fails + ' FALHA(S)'));
     process.exit(fails === 0 ? 0 : 1);

@@ -29,6 +29,7 @@ const STYLE = `<style>
 .sn-tabs {
     display: flex; gap: 2px; padding: 5px 12px 0;
     border-bottom: 1px solid var(--main-border-color);
+    flex-wrap: wrap;
 }
 .sn-tab {
     padding: 6px 14px; cursor: pointer;
@@ -36,44 +37,70 @@ const STYLE = `<style>
     border: 1px solid transparent; border-bottom: none;
     color: var(--muted-text-color);
     background: transparent; font-size: .84rem; line-height: 1.5;
+    min-height: 40px;
+    transition: color .12s, background .12s;
 }
+.sn-tab:hover { color: var(--main-text-color); background: var(--hover-item-background-color, rgba(128,128,128,.08)); }
 .sn-tab.active {
     background: var(--main-background-color);
     border-color: var(--main-border-color);
     color: var(--main-text-color); font-weight: 600;
 }
 .sn-tab.hidden { display: none; }
+.sn-refresh-btn {
+    margin-left: auto; background: transparent; border: 1px solid transparent;
+    color: var(--muted-text-color); cursor: pointer; min-width: 40px; min-height: 40px;
+    border-radius: 4px; font-size: .95rem;
+}
+.sn-refresh-btn:hover { color: var(--main-text-color); background: var(--hover-item-background-color, rgba(128,128,128,.08)); }
 .sn-panel { display: none; padding: 10px 14px 12px; }
 .sn-panel.active { display: block; }
 .sn-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
 .sn-textarea {
     width: 100%; box-sizing: border-box;
     padding: 6px 10px;
-    background: var(--input-background-color, #1a1a2e);
+    background: var(--input-background-color, var(--accented-background-color, #1a1a2e));
     border: 1px solid var(--main-border-color);
     color: var(--main-text-color);
-    border-radius: 4px; font-size: .84rem;
+    border-radius: 4px; font-size: .85rem;
     font-family: monospace; resize: vertical; margin-bottom: 6px;
 }
-.sn-textarea:focus { outline: none; border-color: #7c3aed; }
+.sn-textarea:focus { outline: none; border-color: var(--button-background-color, #7c3aed); }
 .sn-btn {
     padding: 7px 16px;
     background: var(--button-background-color);
     color: var(--button-text-color);
     border: 1px solid var(--button-border-color);
-    border-radius: 4px; cursor: pointer; font-size: .84rem; white-space: nowrap; line-height: 1.4;
+    border-radius: 4px; cursor: pointer; font-size: .85rem; white-space: nowrap; line-height: 1.4;
+    min-height: 40px;
 }
 .sn-btn:hover { opacity: .85; }
-.sn-btn.primary { background: #7c3aed; color: #fff; border-color: #7c3aed; transition: background .15s, opacity .15s; }
-.sn-btn.primary:hover { background: #6d28d9; }
+.sn-btn.primary {
+    background: var(--button-background-color, #7c3aed);
+    color: var(--button-text-color, #fff);
+    border-color: var(--button-background-color, #7c3aed);
+    transition: background .15s, opacity .15s;
+}
+.sn-btn.primary:hover { filter: brightness(1.12); }
 .sn-btn:disabled { opacity: .45; cursor: not-allowed; transition: none; }
-.sn-status { font-size: .82rem; margin-top: 4px; min-height: 1.2rem; color: var(--muted-text-color); }
-.sn-status.ok   { color: #4ade80; }
-.sn-status.err  { color: #f87171; }
-.sn-status.warn { color: #facc15; }
-.sn-badge { display: inline-block; padding: 3px 10px; font-size: .78rem; background: #14532d; color: #4ade80; border-radius: 10px; }
-.sn-info { font-size: .82rem; color: var(--muted-text-color); line-height: 1.5; margin-bottom: 8px; }
+.sn-tab:focus-visible, .sn-btn:focus-visible, .sn-textarea:focus-visible {
+    outline: 2px solid var(--active-item-background-color, var(--main-text-color));
+    outline-offset: 2px;
+}
+.sn-status { font-size: .85rem; margin-top: 4px; min-height: 1.2rem; color: var(--muted-text-color); }
+.sn-wrap { --sn-ok: #4ade80; --sn-err: #f87171; --sn-warn: #facc15; }
+.sn-wrap.sn-light { --sn-ok: #15803d; --sn-err: #b91c1c; --sn-warn: #a16207; }
+.sn-status.ok   { color: var(--sn-ok); }
+.sn-status.err  { color: var(--sn-err); }
+.sn-status.warn { color: var(--sn-warn); }
+.sn-badge { display: inline-block; padding: 3px 10px; font-size: .78rem; background: rgba(46,204,113,.15); color: var(--sn-ok); border-radius: 10px; }
+.sn-info { font-size: .85rem; color: var(--muted-text-color); line-height: 1.5; margin-bottom: 8px; }
 .sn-icon { vertical-align: middle; margin-right: 4px; }
+@media (prefers-reduced-motion: reduce) {
+    .sn-wrap *, .sn-wrap *::before, .sn-wrap *::after {
+        transition: none !important; animation: none !important;
+    }
+}
 </style>`;
 
 const ICONS = {
@@ -119,11 +146,12 @@ function snValidarEndpoint(raw, lang) {
     if (u.protocol !== 'https:' && u.protocol !== 'http:') {
         return { ok: false, erro: snTranslate(lang, 'endpoint.protocolo') };
     }
-    if (u.protocol === 'https:') return { ok: true, url, aviso: '' };
     const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+    // link-local (metadados de nuvem) bloqueado em qualquer protocolo
     if (/^169\.254\./.test(h)) {
         return { ok: false, erro: snTranslate(lang, 'endpoint.linklocal') };
     }
+    if (u.protocol === 'https:') return { ok: true, url, aviso: '' };
     const ehLocal = h === 'localhost' || h === '127.0.0.1' || h === '::1' ||
         /^10\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
         /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h);
@@ -159,6 +187,7 @@ function snCopiar(texto) {
 const SN_I18N = {
     pt: {
         'widget.title':       'Compartilhar nota',
+        'btn.refresh':        'Atualizar (recontar respostas e pendências)',
         'tab.gerar':          'Gerar convite',
         'tab.aceitar':        'Aceitar convite',
         'tab.enviar':         'Responder',
@@ -176,6 +205,7 @@ const SN_I18N = {
         'gerar.endpoint_missing': 'Configure #myEndpoint na nota #sharedNotesConfig.',
         'gerar.endpoint_invalido': '#myEndpoint inválido: {msg}',
         'gerar.pronto':       'Convite gerado!',
+        'gerar.expira':       'Expira em {data}.',
         'gerar.string_grande': 'String grande ({kb} KB) — prefira enviar por email.',
         'gerar.tamanho':      ' ({kb} KB)',
         'aceitar.info':       'Cole a string recebida. A nota será criada em <strong>📥 Shared Inbox</strong> com o conteúdo original.',
@@ -188,6 +218,8 @@ const SN_I18N = {
         'aceitar.versao_nova':'String gerada por uma versão mais nova do plugin. Atualize o widget.',
         'aceitar.criada':     'Nota criada em 📥 Shared Inbox (v{versao})! Crie notas filhas e use "↩️ Responder". O canal de retorno já está ativo: o remetente poderá responder de volta.',
         'aceitar.atualizada': 'Nota atualizada para versão {versao}!',
+        'aceitar.mais_antiga': 'Este convite é da versão {recebida}, mais antiga que a sua (v{atual}). Nada foi alterado.',
+        'aceitar.confirmar_substituir': 'Já existe uma cópia local: isto vai SUBSTITUIR o conteúdo atual pela versão {versao}. Toque em "Aceitar" de novo para confirmar.',
         'aceitar.erro':       'Erro: {msg}',
         'enviar.info':        'Crie notas filhas desta nota como suas respostas.<br>O envio é <strong>cumulativo</strong> — apenas notas não enviadas serão transmitidas.',
         'enviar.btn':         'Enviar respostas',
@@ -198,12 +230,16 @@ const SN_I18N = {
         'enviar.erro_conexao':'Erro de conexão: {msg}',
         'enviar.expirado':    'Convite expirado (mais de 7 dias).',
         'enviar.erro_http':   'Erro HTTP {status}',
+        'enviar.recusado':    'O destino recusou o envio (nenhuma resposta foi criada).',
         'enviar.marcar_falhou':'Respostas enviadas, mas falha ao marcar localmente: {msg}',
+        'enviar.falhas':      '{n} resposta(s) falharam no destino — serão reenviadas na próxima tentativa.',
+        'enviar.puladas':     '{n} filha(s) ignorada(s) (não são texto/código ou estão protegidas).',
         'enviar.sucesso':     '{n} resposta(s) enviada(s) com sucesso!',
         'enviar.inesperado':  'Erro inesperado: {msg}',
         'enviar.me_invalido': '#myEndpoint inválido: o peer não poderá responder de volta.',
         'enviar.sem_endpoint':'Sem #myEndpoint configurado: o peer não poderá responder de volta.',
         'enviar.todas_enviadas': 'Todas as notas filhas já foram enviadas.',
+        'enviar.crie_filhas':    'Crie notas filhas desta para responder.',
         'enviar.pendentes':   '{n} nota(s) filha(s) não enviada(s).',
         'notif.respostas':   '{n} resposta(s) recebida(s)',
         'backend.off':       'Backend scripting está desabilitado nesta instância. Ative em Options → Security (ou [Security] backendScriptingEnabled=true) para o plugin funcionar.',
@@ -223,6 +259,7 @@ const SN_I18N = {
     },
     en: {
         'widget.title':       'Share note',
+        'btn.refresh':        'Refresh (recount replies and pending notes)',
         'tab.gerar':          'Generate invite',
         'tab.aceitar':        'Accept invite',
         'tab.enviar':         'Reply',
@@ -240,6 +277,7 @@ const SN_I18N = {
         'gerar.endpoint_missing': 'Set #myEndpoint on the #sharedNotesConfig note.',
         'gerar.endpoint_invalido': '#myEndpoint is invalid: {msg}',
         'gerar.pronto':       'Invite generated!',
+        'gerar.expira':       'Expires on {data}.',
         'gerar.string_grande': 'Large string ({kb} KB) — prefer sending by email.',
         'gerar.tamanho':      ' ({kb} KB)',
         'aceitar.info':       'Paste the received string. The note will be created in <strong>📥 Shared Inbox</strong> with the original content.',
@@ -252,6 +290,8 @@ const SN_I18N = {
         'aceitar.versao_nova':'String generated by a newer version of the plugin. Update the widget.',
         'aceitar.criada':     'Note created in 📥 Shared Inbox (v{versao})! Create child notes and use "↩️ Reply". The return channel is already active: the sender will be able to reply back.',
         'aceitar.atualizada': 'Note updated to version {versao}!',
+        'aceitar.mais_antiga': 'This invite is version {recebida}, older than yours (v{atual}). Nothing was changed.',
+        'aceitar.confirmar_substituir': 'A local copy already exists: this will REPLACE the current content with version {versao}. Click "Accept" again to confirm.',
         'aceitar.erro':       'Error: {msg}',
         'enviar.info':        'Create child notes of this note as your replies.<br>Sending is <strong>cumulative</strong> — only unsent notes will be transmitted.',
         'enviar.btn':         'Send replies',
@@ -262,12 +302,16 @@ const SN_I18N = {
         'enviar.erro_conexao':'Connection error: {msg}',
         'enviar.expirado':    'Invite expired (more than 7 days).',
         'enviar.erro_http':   'HTTP error {status}',
+        'enviar.recusado':    'The destination refused the send (no reply was created).',
         'enviar.marcar_falhou':'Replies sent, but failed to mark them locally: {msg}',
+        'enviar.falhas':      '{n} reply(ies) failed at the destination — they will be retried next time.',
+        'enviar.puladas':     '{n} child note(s) skipped (not text/code or protected).',
         'enviar.sucesso':     '{n} reply(ies) sent successfully!',
         'enviar.inesperado':  'Unexpected error: {msg}',
         'enviar.me_invalido': '#myEndpoint is invalid: the peer will not be able to reply back.',
         'enviar.sem_endpoint':'No #myEndpoint configured: the peer will not be able to reply back.',
         'enviar.todas_enviadas': 'All child notes have already been sent.',
+        'enviar.crie_filhas':    'Create child notes under this one to reply.',
         'enviar.pendentes':   '{n} unsent child note(s).',
         'notif.respostas':   '{n} reply(ies) received',
         'backend.off':       'Backend scripting is disabled on this instance. Enable it in Options → Security (or [Security] backendScriptingEnabled=true) for the plugin to work.',
@@ -312,46 +356,47 @@ function snHtml(lang) {
     const t = (k, v) => snTranslate(lang, k, v);
     return `${STYLE}
 <div class="sn-wrap">
-  <div class="sn-tabs">
-    <button class="sn-tab active" data-tab="gerar">${ICONS.share} ${t('tab.gerar')}</button>
-    <button class="sn-tab"        data-tab="aceitar">${ICONS.inbox} ${t('tab.aceitar')}</button>
-    <button class="sn-tab hidden" data-tab="enviar" id="sn-tab-enviar">${ICONS.reply} ${t('tab.enviar')}</button>
+  <div class="sn-tabs" role="tablist">
+    <button class="sn-tab active" role="tab" aria-selected="true" aria-controls="sn-panel-gerar" id="sn-tabbtn-gerar" data-tab="gerar">${ICONS.share} ${t('tab.gerar')}</button>
+    <button class="sn-tab" role="tab" aria-selected="false" aria-controls="sn-panel-aceitar" id="sn-tabbtn-aceitar" data-tab="aceitar">${ICONS.inbox} ${t('tab.aceitar')}</button>
+    <button class="sn-tab hidden" role="tab" aria-selected="false" aria-controls="sn-panel-enviar" id="sn-tab-enviar" data-tab="enviar">${ICONS.reply} ${t('tab.enviar')}</button>
+    <button class="sn-refresh-btn" id="sn-refresh" title="${t('btn.refresh')}" aria-label="${t('btn.refresh')}">⟳</button>
   </div>
 
   <!-- PAINEL 1: Gerar convite -->
-  <div class="sn-panel active" data-panel="gerar">
-    <div id="sn-reply-notif" style="display:none;margin-bottom:6px;padding:6px 10px;background:rgba(46,204,113,0.15);color:#4ade80;border-radius:4px;font-size:13px;"></div>
+  <div class="sn-panel active" data-panel="gerar" id="sn-panel-gerar" role="tabpanel" aria-labelledby="sn-tabbtn-gerar">
+    <div id="sn-reply-notif" role="status" aria-live="polite" style="display:none;margin-bottom:6px;padding:6px 10px;background:rgba(46,204,113,0.15);color:var(--sn-ok,#4ade80);border-radius:4px;font-size:13px;"></div>
     <p class="sn-info">${t('gerar.info')}</p>
     <div class="sn-row">
       <button class="sn-btn primary" id="sn-gerar-btn">${t('gerar.btn')}</button>
       <button class="sn-btn" id="sn-copiar-btn" style="display:none">${ICONS.copy} ${t('gerar.copiar')}</button>
     </div>
     <textarea class="sn-textarea" id="sn-convite-out" rows="3"
-      placeholder="${t('gerar.placeholder')}" readonly></textarea>
-    <p class="sn-status" id="sn-gerar-status"></p>
+      placeholder="${t('gerar.placeholder')}" aria-label="${t('gerar.placeholder')}" readonly></textarea>
+    <p class="sn-status" id="sn-gerar-status" role="status" aria-live="polite"></p>
   </div>
 
   <!-- PAINEL 2: Aceitar convite -->
-  <div class="sn-panel" data-panel="aceitar">
+  <div class="sn-panel" data-panel="aceitar" id="sn-panel-aceitar" role="tabpanel" aria-labelledby="sn-tabbtn-aceitar">
     <p class="sn-info">${t('aceitar.info')}</p>
     <textarea class="sn-textarea" id="sn-convite-in" rows="3"
-      placeholder="${t('aceitar.placeholder')}"></textarea>
+      placeholder="${t('aceitar.placeholder')}" aria-label="${t('aceitar.placeholder')}"></textarea>
     <div class="sn-row">
       <button class="sn-btn primary" id="sn-aceitar-btn">${t('aceitar.btn')}</button>
     </div>
-    <p class="sn-status" id="sn-aceitar-status"></p>
+    <p class="sn-status" id="sn-aceitar-status" role="status" aria-live="polite"></p>
   </div>
 
   <!-- PAINEL 3: Responder (notas com replyEndpoint) -->
-  <div class="sn-panel" data-panel="enviar">
+  <div class="sn-panel" data-panel="enviar" id="sn-panel-enviar" role="tabpanel" aria-labelledby="sn-tab-enviar">
     <div id="sn-enviar-form">
       <p class="sn-info" style="color:var(--muted-text-color)">${t('enviar.info')}</p>
       <div class="sn-row">
-        <span class="sn-status" id="sn-replies-count" style="margin:0"></span>
+        <span class="sn-status" id="sn-replies-count" aria-live="polite" style="margin:0"></span>
         <button class="sn-btn primary" id="sn-enviar-btn">${t('enviar.btn')}</button>
       </div>
     </div>
-    <p class="sn-status" id="sn-enviar-status"></p>
+    <p class="sn-status" id="sn-enviar-status" role="status" aria-live="polite"></p>
   </div>
 </div>`;
 }
@@ -374,6 +419,11 @@ class SharedNotesWidget extends api.RightPanelWidget {
             this._lang = snNormalizeLang(typeof navigator !== 'undefined' ? navigator.language : '');
         }
         this.$body.html(snHtml(this._lang));
+        try {
+            this._rootWrap = (this.body && this.body.querySelector) ? this.body.querySelector('.sn-wrap')
+                : (typeof document !== 'undefined' ? document.querySelector('.sn-wrap') : null);
+        } catch(e) { this._rootWrap = null; }
+        this._aplicarTema();
         this._bindTabs();
         this._bindGerar();
         this._bindAceitar();
@@ -403,6 +453,8 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
     async refreshWithNote(note) {
         if (!note) return;
+        const trocouNota = this._notaAnterior !== note.noteId;
+        this._notaAnterior = note.noteId;
         this._sharedNote = note;
 
         const hasReplyEp = note.hasLabel('replyEndpoint');
@@ -410,27 +462,39 @@ class SharedNotesWidget extends api.RightPanelWidget {
         // Aba "Responder" aparece quando há endpoint de reply (B ou A podem responder)
         this.$widget.find('#sn-tab-enviar').toggleClass('hidden', !hasReplyEp);
 
-        // Uma única chamada: pendentes de envio (ignora gates e respostas recebidas)
-        // + respostas recebidas (notificação)
+        // Troca de nota: limpa convite/contadores antigos e mantém uma aba válida
+        if (trocouNota) {
+            this._limparEstado();
+            if (!hasReplyEp) this._trocarAba('gerar');
+            ['gerar','aceitar','enviar'].forEach(p => this._status(p, ''));
+        }
+
+        // Nota sem nenhum rótulo do plugin: não precisa ir ao backend
+        const relevante = hasReplyEp || note.hasLabel('inviteToken') || note.hasLabel('sharedNoteId')
+            || note.hasLabel('myReplyToken');
+        if (!relevante) return;
+
+        // Uma única chamada: pendentes + respostas recebidas + total respondível
         const counters = await api.runOnBackend((nid) => {
             const n = api.getNote(nid);
-            if (!n) return { pending: 0, received: 0 };
+            if (!n) return { pending: 0, received: 0, total: 0 };
             const filhas = n.getChildNotes();
-            const responde = (c) => c.getLabelValue('snSent') === 'true'
-                || c.getLabelValue('inviteGate') !== null
-                || c.getLabelValue('sharedReply') !== null;
+            const respondivel = (c) => c.getLabelValue('inviteGate') === null
+                && c.getLabelValue('sharedReply') === null;
             return {
-                pending:  filhas.filter(c => !responde(c)).length,
-                received: filhas.filter(c => c.getLabelValue('sharedReply') !== null).length
+                pending:  filhas.filter(c => respondivel(c) && c.getLabelValue('snSent') !== 'true').length,
+                received: filhas.filter(c => c.getLabelValue('sharedReply') !== null).length,
+                total:    filhas.filter(respondivel).length
             };
         }, [note.noteId]);
 
         if (hasReplyEp) {
-            this.$widget.find('#sn-replies-count').text(
-                counters.pending === 0
+            const texto = counters.total === 0
+                ? this._t('enviar.crie_filhas')
+                : counters.pending === 0
                     ? this._t('enviar.todas_enviadas')
-                    : this._t('enviar.pendentes', { n: counters.pending })
-            );
+                    : this._t('enviar.pendentes', { n: counters.pending });
+            this.$widget.find('#sn-replies-count').text(texto);
         }
 
         const $notif = this.$widget.find('#sn-reply-notif');
@@ -439,9 +503,6 @@ class SharedNotesWidget extends api.RightPanelWidget {
         } else {
             $notif.hide();
         }
-
-        // Limpa status ao trocar de nota
-        ['gerar','aceitar','enviar'].forEach(p => this._status(p, ''));
     }
 
     // Backend scripting é requisito do plugin (Options → Security / config.ini)
@@ -457,13 +518,50 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
     // ── Tabs ──────────────────────────────────────────────────────────────────
 
-    _bindTabs() {        this.$widget.find('.sn-tab').on('click', (e) => {
+    _bindTabs() {
+        this.$widget.find('.sn-tab').on('click', (e) => {
             const tab = $(e.currentTarget).data('tab');
-            this.$widget.find('.sn-tab').removeClass('active');
-            this.$widget.find('.sn-panel').removeClass('active');
-            $(e.currentTarget).addClass('active');
-            this.$widget.find(`[data-panel="${tab}"]`).addClass('active');
+            this._trocarAba(tab);
         });
+        this.$widget.find('#sn-refresh').on('click', () => {
+            if (this._sharedNote) this.refreshWithNote(this._sharedNote);
+        });
+        // Cópia facilitada: clicar no convite gerado já seleciona tudo
+        this.$widget.find('#sn-convite-out').on('click', function () {
+            try { this.select(); } catch(e) { /* readonly sem seleção */ }
+        });
+    }
+
+    _trocarAba(tab) {
+        this.$widget.find('.sn-tab').removeClass('active').attr('aria-selected', 'false');
+        this.$widget.find('.sn-panel').removeClass('active');
+        const $alvo = this.$widget.find(`.sn-tab[data-tab="${tab}"]`);
+        $alvo.addClass('active').attr('aria-selected', 'true');
+        this.$widget.find(`[data-panel="${tab}"]`).addClass('active');
+    }
+
+    _limparEstado() {
+        this.$widget.find('#sn-convite-out').val('');
+        this.$widget.find('#sn-copiar-btn').hide();
+        this.$widget.find('#sn-replies-count').text('');
+        this.$widget.find('#sn-reply-notif').hide();
+    }
+
+    /** Tema claro pelo brilho de --main-background-color (classe .sn-light no wrap) */
+    _aplicarTema() {
+        try {
+            if (typeof getComputedStyle !== 'function' || typeof document === 'undefined') return;
+            const raw = String(getComputedStyle(document.body).getPropertyValue('--main-background-color') || '').trim();
+            let r = null, g = null, b = null;
+            let m = raw.match(/^#([0-9a-f]{6})$/i);
+            if (m) { r = parseInt(m[1].slice(0, 2), 16); g = parseInt(m[1].slice(2, 4), 16); b = parseInt(m[1].slice(4, 6), 16); }
+            else {
+                m = raw.match(/rgba?\(([^)]+)\)/i);
+                if (m) { const p = m[1].split(',').map((v) => parseFloat(v)); r = p[0]; g = p[1]; b = p[2]; }
+            }
+            const claro = r != null && (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.55;
+            if (this._rootWrap) this._rootWrap.classList.toggle('sn-light', claro);
+        } catch(e) { /* mantém o padrão escuro */ }
     }
 
     // ── Gerar convite ─────────────────────────────────────────────────────────
@@ -494,9 +592,11 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 // prefere a nota com #myName/#myEndpoint (evita colisão com outros plugins)
                 const c = lista.find(n => n.getLabelValue('myName') || n.getLabelValue('myEndpoint')) || lista[0];
                 if (!c) return { error: 'gerar.config_missing' };
+                const diasRaw = parseInt(c.getLabelValue('inviteExpireDays') || '', 10);
                 return {
                     myName:     c.getLabelValue('myName')     || 'sem_nome',
-                    myEndpoint: c.getLabelValue('myEndpoint') || ''
+                    myEndpoint: c.getLabelValue('myEndpoint') || '',
+                    expireDays: Number.isFinite(diasRaw) && diasRaw > 0 ? diasRaw : 7
                 };
             }, []);
             if (cfg.error) { this._status('gerar', 'err', this._t(cfg.error)); return; }
@@ -507,7 +607,7 @@ class SharedNotesWidget extends api.RightPanelWidget {
 
             // 2) Cria a gate note (rastreia uso e revogação) + lê o conteúdo
             const localeBcp = this._lang === 'pt' ? 'pt-BR' : 'en-US';
-            const result = await api.runOnBackend((nid, token, sGate, locale) => {
+            const result = await api.runOnBackend((nid, token, sGate, locale, diasVal) => {
                 const note = api.getNote(nid);
                 if (!note) return { error: 'gerar.nota_missing' };
 
@@ -522,8 +622,9 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 // Canal de retorno: o peer usa este token para responder de volta
                 note.setLabel('myReplyToken', token);
 
-                // Expiração: 7 dias
-                const expiresAt = (Date.now() + 7 * 24 * 60 * 60 * 1000).toString();
+                // Expiração configurável (#inviteExpireDays; padrão 7 dias)
+                const dias = Number.isFinite(diasVal) && diasVal > 0 ? diasVal : 7;
+                const expiresAt = (Date.now() + dias * 24 * 60 * 60 * 1000).toString();
 
                 // Gate note filha — rastreia uso do convite
                 const { note: gate } = api.createNewNote({
@@ -537,8 +638,8 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 gate.setLabel('inviteParentNoteId',    nid);
                 gate.setLabel('inviteExpires',         expiresAt);
 
-                return { ok: true, noteTitle, noteContent, snapshotVersion: snapVer };
-            }, [noteId, inviteToken, this._t('nota.convite'), localeBcp]);
+                return { ok: true, noteTitle, noteContent, snapshotVersion: snapVer, expiresAt };
+            }, [noteId, inviteToken, this._t('nota.convite'), localeBcp, cfg.expireDays]);
 
             if (result.error) {
                 this._status('gerar', 'err', this._t(result.error));
@@ -571,7 +672,8 @@ class SharedNotesWidget extends api.RightPanelWidget {
             const avisoTam = str.length > 5000
                 ? this._t('gerar.string_grande', { kb })
                 : this._t('gerar.tamanho', { kb });
-            const aviso = [epCheck.aviso, avisoTam].filter(Boolean).join(' ');
+            const expiraEm = new Date(Number(result.expiresAt)).toLocaleDateString();
+            const aviso = [epCheck.aviso, avisoTam, this._t('gerar.expira', { data: expiraEm })].filter(Boolean).join(' ');
             this._status('gerar', epCheck.aviso ? 'warn' : 'ok', this._t('gerar.pronto') + aviso);
 
         } catch(e) {
@@ -608,14 +710,23 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 return;
             }
 
-            // Validação mínima do payload
+            // Validação mínima do payload (presença + tipos; título/conteúdo vazios são válidos)
             const required = ['v','from','noteId','noteTitle','noteContent','endpoint','inviteToken'];
-            const missing  = required.filter(k => !payload[k]);
+            const missing  = required.filter(k => payload[k] == null);
             if (missing.length) {
                 this._status('aceitar', 'err', this._t('aceitar.incompleta', { campos: missing.join(', ') }));
                 return;
             }
-            if (payload.v > 2) {
+            const vNum = parseInt(payload.v, 10);
+            if (!Number.isFinite(vNum)
+                || typeof payload.from !== 'string' || typeof payload.noteId !== 'string'
+                || typeof payload.endpoint !== 'string' || typeof payload.inviteToken !== 'string'
+                || (payload.noteContent != null && typeof payload.noteContent !== 'string')
+                || (payload.noteTitle != null && typeof payload.noteTitle !== 'string')) {
+                this._status('aceitar', 'err', this._t('aceitar.invalida'));
+                return;
+            }
+            if (vNum > 2) {
                 this._status('aceitar', 'err', this._t('aceitar.versao_nova'));
                 return;
             }
@@ -642,8 +753,23 @@ class SharedNotesWidget extends api.RightPanelWidget {
             }, [payload]);
 
             if (existing) {
-                // Atualiza nota existente (mesmo sharedNoteId)
-                const newVer = payload.snapshotVersion || existing.version + 1;
+                // Atualiza nota existente — nunca aceita versão mais antiga (rollback silencioso)
+                const verAtual    = Number.isFinite(existing.version) && existing.version > 0 ? existing.version : 1;
+                const verRecebida = Number.isFinite(parseInt(payload.snapshotVersion, 10))
+                    ? parseInt(payload.snapshotVersion, 10) : 0;
+                if (verRecebida && verRecebida < verAtual) {
+                    this._status('aceitar', 'err', this._t('aceitar.mais_antiga', { recebida: verRecebida, atual: verAtual }));
+                    return;
+                }
+                // Substituir o conteúdo local exige confirmação (2 toques)
+                if (this._confirmarAceite !== existing.noteId) {
+                    this._confirmarAceite = existing.noteId;
+                    this._status('aceitar', 'warn',
+                        this._t('aceitar.confirmar_substituir', { versao: verRecebida || verAtual + 1 }));
+                    return;
+                }
+                this._confirmarAceite = null;
+                const newVer = verRecebida || verAtual + 1;
                 const localeBcp = this._lang === 'pt' ? 'pt-BR' : 'en-US';
                 const upResult = await api.runOnBackend((nid, p, endpoint, ver, meuToken, sRecebida, sRetorno, locale) => {
                     const note = api.getNote(nid);
@@ -787,23 +913,29 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 };
             }, []);
 
-            // Coleta apenas notas filhas NÃO enviadas (ignora gates e respostas recebidas)
-            const children = await api.runOnBackend((nid) => {
+            // Coleta as filhas NÃO enviadas (ignora gates/respostas recebidas);
+            // só texto/código, sem notas protegidas e com getContent isolado por nota
+            const coletadas = await api.runOnBackend((nid) => {
                 const note = api.getNote(nid);
-                if (!note) return [];
-                return note.getChildNotes()
+                if (!note) return { children: [], puladas: 0 };
+                const novas = note.getChildNotes()
                     .filter(c => c.getLabelValue('snSent') !== 'true'
                               && c.getLabelValue('inviteGate') === null
-                              && c.getLabelValue('sharedReply') === null)
-                    .map(c => ({
-                        noteId:  c.noteId,
-                        title:   c.title,
-                        content: c.getContent()
-                    }));
+                              && c.getLabelValue('sharedReply') === null);
+                const uteis = novas.filter(c => (c.type === 'text' || c.type === 'code') && !c.isProtected);
+                const children = uteis.map(c => {
+                    let content = '';
+                    try { content = c.getContent() || ''; } catch(e) { content = ''; }
+                    return { noteId: c.noteId, title: c.title, content };
+                });
+                return { children, puladas: novas.length - uteis.length };
             }, [noteId]);
+            const children = coletadas.children || [];
+            const puladas  = coletadas.puladas || 0;
 
             if (!children.length) {
-                this._status('enviar', 'warn', this._t('enviar.vazio'));
+                this._status('enviar', 'warn', this._t('enviar.vazio')
+                    + (puladas ? ' ' + this._t('enviar.puladas', { n: puladas }) : ''));
                 $btn.prop('disabled', false);
                 return;
             }
@@ -845,10 +977,16 @@ class SharedNotesWidget extends api.RightPanelWidget {
                             method:  'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body,
-                            signal:  controller.signal
+                            signal:  controller.signal,
+                            redirect: 'error' // não segue redirect: o POST não pode vazar para outro host
                         });
+                        const cl = parseInt(resp.headers.get('content-length') || '0', 10);
+                        if (cl > 1000000) {
+                            return { status: resp.status, error: 'Resposta grande demais do peer (limite 1 MB).' };
+                        }
+                        const raw = await resp.text();
                         let data;
-                        try { data = await resp.json(); } catch(e) { data = {}; }
+                        try { data = JSON.parse(raw); } catch(e) { data = { raw: String(raw || '').slice(0, 200) }; }
                         return { status: resp.status, data };
                     } catch(e) {
                         const msg = (e && e.name === 'AbortError')
@@ -875,13 +1013,21 @@ class SharedNotesWidget extends api.RightPanelWidget {
                 return;
             }
             if (result.status !== 200) {
-                const msg = result.data?.error || this._t('enviar.erro_http', { status: result.status });
+                const conhecido = result.status === 422 ? this._t('enviar.recusado') : null;
+                const msg = conhecido || result.data?.error || result.data?.raw
+                    || this._t('enviar.erro_http', { status: result.status });
                 this._status('enviar', 'err', msg);
                 $btn.prop('disabled', false);
                 return;
             }
 
-            // Marca como enviadas apenas as notas efetivamente transmitidas
+            // Marca como enviadas APENAS as notas que o destino confirmou
+            // (sourceIds); peer antigo sem o campo → mantém o comportamento antigo
+            const idsMarcar = Array.isArray(result.data?.sourceIds)
+                ? result.data.sourceIds.filter((id) => children.some(c => c.noteId === id))
+                : children.map(c => c.noteId);
+
+            let avisoMarcacao = '';
             try {
                 await api.runOnBackend((nid, ids) => {
                     const note = api.getNote(nid);
@@ -890,15 +1036,19 @@ class SharedNotesWidget extends api.RightPanelWidget {
                     note.getChildNotes().forEach(c => {
                         if (alvo.has(c.noteId)) c.setLabel('snSent', 'true');
                     });
-                }, [noteId, children.map(c => c.noteId)]);
+                }, [noteId, idsMarcar]);
             } catch(e) {
-                this._status('enviar', 'warn', this._t('enviar.marcar_falhou', { msg: e.message }));
+                avisoMarcacao = this._t('enviar.marcar_falhou', { msg: (e && e.message) || e });
             }
 
-            const received = result.data?.received ?? children.length;
-            const avisoTxt = [epCheck.aviso, aviso].filter(Boolean).join(' ');
-            this._status('enviar', avisoTxt ? 'warn' : 'ok',
-                this._t('enviar.sucesso', { n: received }) + (avisoTxt ? ' ' + avisoTxt : ''));
+            const received = result.data?.received ?? idsMarcar.length;
+            const falhas   = Array.isArray(result.data?.errors) ? result.data.errors.length : 0;
+            const avisoTxt = [epCheck.aviso, aviso, avisoMarcacao,
+                puladas ? this._t('enviar.puladas', { n: puladas }) : ''].filter(Boolean).join(' ');
+            const msgFinal = this._t('enviar.sucesso', { n: received })
+                + (falhas ? ' ' + this._t('enviar.falhas', { n: falhas }) : '')
+                + (avisoTxt ? ' ' + avisoTxt : '');
+            this._status('enviar', (avisoTxt || falhas) ? 'warn' : 'ok', msgFinal);
 
             // Atualiza contagem de não-enviadas
             const remaining = await api.runOnBackend((nid) => {

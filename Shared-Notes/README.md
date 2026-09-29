@@ -8,7 +8,7 @@ No external server. No CORS. ETAPI token never exposed.
 - **Secure invite** — ephemeral UUID token per invite; ETAPI token never shared
 - **Bidirectional replies** — A and B can reply to each other, multiple rounds (the return channel is created on accept)
 - **Cumulative sending** — only new child notes are transmitted each round; gates and received replies are ignored
-- **Versioned snapshots** — A can send updated versions of a note; B's copy updates in-place and the reply token is renewed
+- **Versioned snapshots** — A can send updated versions of a note; B's copy updates in-place and the invite token is renewed
 - **Multi-use invite + instant revoke** — the invite works for the whole conversation; delete the gate note to revoke
 - **7-day invite expiration** — checked by the handler on every use
 - **Bilingual UI (PT/EN)** — follows the Trilium interface language (`locale` option), like Canvas Tools
@@ -44,27 +44,44 @@ Tracking:
 
 ## Installation
 
-1. Import the `Shared-notes.zip` into Trilium: right-click a folder → Import into note (Trilium reads the export format inside the zip). Alternatively, create the notes manually and paste the contents of `shared-notes-widget.js` and `shared-notes-handler.js`.
+**Requirements**
 
-2. Verify the `shared-notes-handler` note:
+* **Backend scripting enabled** on both instances (`config.ini`: `[Security] backendScriptingEnabled = true`, or the env var `TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED=true`). The widget shows a clear warning when it is off.
+* A configuration note with `#sharedNotesConfig` (created by the Plugin Manager / manifest import).
+
+**Installation**
+
+1. **Recommended:** install through the **Plugin Manager** (`manifest.json`) — it creates the render note, the widget, the handler and the config note with the right labels and the `~renderNote` relation.
+2. **Zip import:** import `Shared-notes.zip` (right-click a folder → Import into note). The zip is an older export: it does **not** include the `~renderNote` relation nor the final note titles — after importing, rename the notes to match the manifest and add a **relation `renderNote`** from the "Shared Notes" note to `shared-notes-widget` (otherwise the widget does not show).
+3. Alternatively, create the notes manually and paste the contents of `shared-notes-widget.js` and `shared-notes-handler.js`.
+
+4. Verify the `shared-notes-handler` note:
    - Type: Code
    - MIME: `application/javascript;env=backend`
    - Label: `#customRequestHandler = shared-notes-reply`
 
-3. Verify the `shared-notes-widget` note:
+5. Verify the `shared-notes-widget` note:
    - Type: Code
    - MIME: `application/javascript;env=frontend`
    - Label: `#widget`
 
-4. Create a configuration note (both users):
+6. Create a configuration note (both users):
    Add the label `#sharedNotesConfig` with:
    - `#myName = Your Name` (required for both)
    - `#myEndpoint = https://yourtrilium.com` (required to **send and receive** replies)
+   - `#inviteExpireDays = 7` (optional: invite validity in days, default 7)
    - `http://` endpoints are accepted only for localhost, private networks or Tailscale (LAN/tailnet tests)
 
-5. Restart Trilium → F5
+7. Restart Trilium → F5
 
 > Migration note: if you installed AI Chat before Sep/2026, remove the `#sharedNotesConfig` label from its "AI Chat Config" note (an old manifest used that label by mistake).
+
+### Tests
+
+```bash
+bun test-shared-notes.js                                      # simulated A/B harness (no instance needed)
+E2E_A_TOKEN=<token> E2E_B_TOKEN=<token> bun test-e2e-real.js  # real E2E over ETAPI (two instances)
+```
 
 ## Usage
 
@@ -156,27 +173,44 @@ Rastreamento:
 
 ## Instalação
 
-1. Importar o `Shared-notes.zip` no Trilium: botão direito numa pasta → Import into note (o Trilium lê o formato de export dentro do zip). Alternativa: criar as notas manualmente e colar o conteúdo de `shared-notes-widget.js` e `shared-notes-handler.js`.
+**Requisitos**
 
-2. Verificar nota `shared-notes-handler`:
+* **Backend scripting habilitado** nas duas instâncias (`config.ini`: `[Security] backendScriptingEnabled = true`, ou a env `TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED=true`). O widget avisa claramente quando está desligado.
+* Uma nota de configuração com `#sharedNotesConfig` (criada pelo Plugin Manager / import do manifest).
+
+**Instalação**
+
+1. **Recomendado:** instalar pelo **Plugin Manager** (`manifest.json`) — ele cria a render note, o widget, o handler e a nota de config com os labels certos e a relation `~renderNote`.
+2. **Import do zip:** importar o `Shared-notes.zip` (botão direito numa pasta → Import into note). O zip é um export antigo: **não** inclui a relation `~renderNote` nem os títulos finais — após importar, renomeie as notas para bater com o manifest e adicione uma **relation `renderNote`** da nota "Shared Notes" para `shared-notes-widget` (senão o widget não aparece).
+3. Alternativa: criar as notas manualmente e colar o conteúdo de `shared-notes-widget.js` e `shared-notes-handler.js`.
+
+4. Verificar nota `shared-notes-handler`:
    - Tipo: Code
    - MIME: `application/javascript;env=backend`
    - Label: `#customRequestHandler = shared-notes-reply`
 
-3. Verificar nota `shared-notes-widget`:
+5. Verificar nota `shared-notes-widget`:
    - Tipo: Code
    - MIME: `application/javascript;env=frontend`
    - Label: `#widget`
 
-4. Criar nota de configuração (ambos os usuários):
+6. Criar nota de configuração (ambos os usuários):
    Label `#sharedNotesConfig` com:
    - `#myName = Seu Nome` (obrigatório para ambos)
    - `#myEndpoint = https://seutrilium.com` (obrigatório para **enviar e receber** respostas)
+   - `#inviteExpireDays = 7` (opcional: validade do convite em dias, padrão 7)
    - Endpoints `http://` só são aceitos para localhost, rede privada ou Tailscale (testes na LAN/tailnet)
 
-5. Reiniciar o Trilium → F5
+7. Reiniciar o Trilium → F5
 
 > Migração: se você instalou o AI Chat antes de set/2026, remova o label `#sharedNotesConfig` da nota "AI Chat Config" dele (um manifest antigo usava esse label por engano).
+
+### Testes
+
+```bash
+bun test-shared-notes.js                                      # harness A/B simulado (sem instância)
+E2E_A_TOKEN=<token> E2E_B_TOKEN=<token> bun test-e2e-real.js  # E2E real via ETAPI (duas instâncias)
+```
 
 ## Uso
 
