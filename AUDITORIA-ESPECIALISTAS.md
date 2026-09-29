@@ -71,14 +71,15 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | # | Plugin | Arquivo(s) | Data | 👨‍💻 Código | 🎨 UI/UX | ⚡ Quick wins | Veredito |
 |---|--------|------------|------|-----------|----------|---------------|----------|
 | 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados + fix pós-batch 4** (`t`→`tr` + guard do render + `test-smoke.js`): ~65 correções/refactors; 49 asserções + smoke. Residual no batch 5 |
-| 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/`, `Writers-Tools/js-grid/` | ⏭️ **próximo** | | | | |
+| 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Relatório publicado** (29/09); correções em batches após triagem do dono |
 
 ### 🔁 Fila proposta (ajustável)
 
-2. Writers-Tools (Fountain + Longform) · 3. Canvas-Note-Tools · 4. Shared-Notes ·
-5. AI-Chat · 6. Daily-Note-Map · 7. Knowledge-Dashboard · 8. Attribute-GC ·
-9. Pomodoro · 10. Word-Counter · 11. Daily-Note-Navigator · 12. UI-Tweaks ·
-13. Kanboard · 14. Mastodon · 15. Canvas-Template-Loader · 16. Canvas-Templates.
+~~2. Writers-Tools (Fountain + Longform)~~ ✅ 29/09 · **3. Canvas-Note-Tools
+(próximo)** · 4. Shared-Notes · 5. AI-Chat · 6. Daily-Note-Map · 7.
+Knowledge-Dashboard · 8. Attribute-GC · 9. Pomodoro · 10. Word-Counter · 11.
+Daily-Note-Navigator · 12. UI-Tweaks · 13. Kanboard · 14. Mastodon · 15.
+Canvas-Template-Loader · 16. Canvas-Templates.
 
 ---
 
@@ -371,3 +372,233 @@ não pegavam (era erro de escopo em runtime, e o primeiro render não tinha guar
 
 - **UI/UX:** D1.x/D2.x/D4.3 (hierarquia, terminologia, drag em trackpads), D5.3 (toast de sucesso dedicado; hoje o Desfazer cobre), D2.4 (título por view e glifos no WebView), D1.2 (densidade do mês).
 - **Manutenção:** C7.3 (versões `manifest` × registry publicado — junto do próximo release), C8.1 restante (`getWeekCols`/`getMonthDays`, `migrateIds`, `setOrder`) e virtualização real caso o vault cresça muito (hoje o limite + "+N" segura).
+
+---
+
+## Rodada 2 — Writers-Tools (Fountain + Longform) (29/09/2026)
+
+**Escopo:** `Writers-Tools/js-Fountain/js - Fountain 3.js` (1.645 linhas),
+`Writers-Tools/js-grid/js - grade.js` (398 linhas), `manifest.json` dos dois,
+`Writers-Tools/README.md`, testes e entradas do registry (`fountain-renderer` e
+`longform-compiler` 0.8.2).
+**Verificação:** `bun test-fountain-stats.js` 11/11 ✅ (extração do IIFE
+consertada — a regex lazy parava na IIFE interna de hoist de CSS; agora extrai
+por marcadores de seção) · `bun test-grade.js` (**novo**, 25 asserções) ✅ ·
+`bun build` (sintaxe) ✅ · greps de padrões + 3 especialistas (read-only) +
+**conferência direta dos achados graves** (parser rodado com fixture de
+boneyard; marcações conferidas linha a linha).
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 0 | 5 | 16 | 13 | 4 | 38 |
+| 🎨 UI/UX | 1 | 5 | 13 | 10 | 3 | 32 |
+| ⚡ Quick wins | — | — | — | — | — | 18 itens |
+
+**Top 5 (triagem sugerida):**
+1. **[Alta · Código]** `marcarCenaAtiva` não existe: todo clique numa cena da sidebar lança `ReferenceError` (`1630`; a função certa é `marcarAtivo`, `979`). Correção de 1 linha.
+2. **[Alta · Código]** Injeção de atributo: `escaparHtml` não escapa aspas e o resultado entra em atributos com texto do rascunho (`data-scene`, `title`) — `85-90`; `260`, `1418`, `1424`. Um `.fountain` de terceiros executa JS.
+3. **[Alta · Código]** Atalhos globais `Ctrl+=`/`−`/`0` na `document` sem guarda de visibilidade nem remoção: sequestram o zoom do Trilium/Electron em qualquer nota depois de abrir o visor (`1348-1353`).
+4. **[Alta · Código]** Rascunho `text` com parágrafos vazios (`<p>&nbsp;</p>`) colapsa o roteiro num bloco único — render/stats/PDF só mostram a primeira cena (`746-760` × splitter `76`); verificar o HTML real do CKEditor em runtime.
+5. **[Crítica · UI]** Grid sem operação por teclado/leitor de tela (cards são `<div draggable>` sem `role`/`tabindex`, `240-244`) e o drag não funciona no toque do Capacitor (`265-325`) — no celular não há como reordenar.
+
+### 👨‍💻 Código — achados
+
+#### Fountain (`js - Fountain 3.js`)
+
+**Alta**
+
+- **C1.1 · `marcarCenaAtiva` inexistente** (`1630` × `979`): clique numa cena da sidebar lança `ReferenceError` sem captura; a rolagem até ocorre, mas o destaque e o resto do handler quebram. Correção: chamar `marcarAtivo(api.$container[0], id)`.
+- **C2.1 · `escaparHtml` sem aspas → injeção em atributo** (`85-90`; usos `260`, `1418`, `1424`): `data-scene="${t.scene_number}"` e `title="${…}"` recebem texto do rascunho; um heading `INT. CASA #1" onmouseover="…"# - DIA` injeta atributo/JS. Correção: escapar `"`/`'` (ou setar via `.attr()`).
+- **C5.1 · Atalhos de zoom globais** (`1348-1353`): `keydown` na `document` com `preventDefault` mesmo com o visor fora de foco; o zoom do app inteiro deixa de funcionar e o listener nunca é removido (re-execuções empilham). Correção: só agir com `#fv-root` conectado e registrar uma única vez.
+- **C4.1 · Rascunho `text` colapsa blocos** (`746-760` × `76`): `&nbsp;` vira espaço e linhas com só espaço não separam parágrafos; o roteiro vira 1 bloco no parse (só a 1ª cena sobrevive). Correção: aparar espaço/NBSP por linha antes do split; verificar o HTML real do CKEditor.
+
+**Média**
+
+- **C3.1 · Hoist de CSS acumula a cada render** (`30-38`, chamado em `1432-1433`): `textContent +=` duplica ~13 KB em `#fv-styles` a cada ⟳/import/troca de rascunho (idem no Grid, `grade:29-32`). Correção: hoist idempotente.
+- **C5.2 · Patch global de `$.fn.html`/`$.fn.append`** (`39-48`; `grade:37-44`): encadeia com os patches dos outros plugins e `.append(a, b)` perde os argumentos extras (só o 1º é repassado). Correção: helper local de injeção de CSS.
+- **C5.3 · Re-execução do script sem guarda** (`1348`, `1356`; `grade:265-394`): o refresh nativo remonta a nota e empilha listeners/wrappers (zoom soma +1 por cópia; no Grid cada clique/`dragend` roda N vezes). Correção: flag `window.__fv*`/`__lg*` + `.off()`.
+- **C4.2 · Scene heading com dois espaços no fim é descartado** (`150`): o comentário diz "força action", mas o `continue` joga a linha fora — a cena some do render. Correção: emitir token `action`.
+- **C4.3 · PDF de rascunho vazio sai com 0 páginas** (`1150`, `1261`, `1278-1313`): `/Count 0`, inválido em vários leitores. Correção: garantir 1 página em branco.
+- **C3.2 · Gerar PDF é síncrono e sem feedback** (`1508-1517`): trava a UI em roteiros longos; botão não desabilita nem mostra progresso. Correção: desabilitar + "gerando…".
+- **C4.8 · Boneyard vaza para estatísticas/PDF** (`66`, `118`, `214-217`, `299-300`): o trecho entre `/*` e `*/` é tokenizado como ação normal — o HTML o esconde em comentário, mas `calcularStats`/`pdfGerar` não pulam as linhas internas (conferido com fixture: `action:ESCONDIDO` nos tokens). Correção: `emBoneyard` ignorando os tokens internos.
+
+**Baixa**
+
+- **C2.2 · Placeholders literais `[STAR]`/`[UL]`** (`107-113`): texto literal vira `*`/`_` no output. Correção: sentinelas improváveis.
+- **C4.4 · `htmlParaTexto` decodifica só uma lista fixa de entidades** (`751-757`): entidades numéricas (`&#8217;`) ficam literais. Correção: decodificar via `DOMParser`/`textarea`.
+- **C4.5 · Título multi-linha perde separação e mantém `&amp;`** (`246`; usado em `1023`, `1558`). Correção: trocar todos `<br/>` e decodificar.
+- **C4.6 · `nomeSeguro` pode devolver vazio; nome do arquivo vem da nota-mãe** (`763-769`, uso `1401`): título só de símbolos gera arquivo sem nome (ex.: `fountainrenderer.*`). Correção: fallback `'roteiro'` + preferir o título do script.
+- **C1.2 · `avisar` engole a falha** (`772-774`; `grade:146-149`): sem `api.showMessage` nenhuma mensagem chega (ex.: download bloqueado). Correção: `console.warn` no catch.
+- **C5.4 · Renders concorrentes podem vazar `IntersectionObserver`** (`1006-1008` × `1633`; `renderizar()` sem guarda). Correção: guarda de "render em andamento".
+- **C4.7 · Import grava texto cru em nota `text` com `confirm()` nativo** (`1575-1591`): a re-serialização do editor cai no problema do C4.1 e contraria o padrão de diálogos do repo. Correção: diálogo próprio + aviso sobre rascunho `code/plain`.
+- **C1.3 · Iframe de impressão pode vazar** (`1041-1058`): o timeout de limpeza só é agendado no `onload`; se nunca disparar, o iframe fica no DOM. Correção: agendar a limpeza antes do `srcdoc`.
+
+**Sugestão**
+
+- **C7.1 · `CSS` × `CSS_IMPRESSAO` duplicados** (`331-689` × `693-735`): regras espelhadas; ajuste em um lado regride no outro. Correção: gerar a impressão da mesma fonte.
+- **C7.2 · UI 100% PT hardcoded** (`1384-1503`, etc.): o repo já tem i18n PT/EN por locale (Weekly Planner, Canvas v8). Correção: dicionário + `api.getOption('locale')`.
+- **C8.1 · Cobertura estreita** (`test-fountain-stats.js` 11): parser (diálogo/dual/title/ênfases), PDF e DOM sem teste. Correção: casos do parser + smoke (ver quick wins).
+
+#### Grid (`js - grade.js`)
+
+**Alta**
+
+- **C1.1 · Falha ao salvar a ordem é silenciosa** (`252-262`, `318-325`): `dragend` faz `await salvarOrdem()` sem `try/catch`; a rejeição sobe sem tratamento e o toast "Ordem salva" é incondicional — a UI mente e o usuário só descobre no reload. Correção: try/catch com aviso e só avisar quando a ordem mudou.
+
+**Média**
+
+- **C1.2 · `#gridOrder` com JSON válido não-array derruba o render** (`183-199`; boot `398`): o try cobre só o parse; uma string JSON tem `.length` e `forEach` lança fora do try — container vazio sem nenhum aviso. Correção: `Array.isArray` + catch no render inicial.
+- **C3.1 · `getNoteComplement()` sequencial por filha** (`224-225`, `354-358`): N idas ao backend no render + N na compilação, sem cache. Correção: paralelizar com limite/reaproveitar o texto.
+- **C5.1 · Refresh concorrente duplica cards** (`178-247`, `333`): dois cliques rápidos em ⟳ intercalam renders no mesmo `#grid`. Correção: desabilitar/guarda de reentrada.
+- **C2.1 · Compilação injeta HTML bruto das filhas** (`357`): `<script>`/`onerror` de nota importada executa no documento compilado. Correção: sanitizar (allowlist) ou compilar como texto.
+- **C1.3 · Criação do compilado sem atomicidade** (`374-381`): se `setLabel('compiledDoc')` falhar, a nota vira card e pode ser compilada dentro de si (duplicação em cascata). Correção: transação/rollback.
+- **C3.2 + C5.2 · CSS hoist acumula + patch global de `$`** (`29-32`, `37-44`, `201-202`): mesma família dos achados do Fountain.
+- **C5.3 · Re-execução duplica handlers delegados** (`265-394`): cada clique abre a nota N vezes; cada `dragend` salva N vezes. Correção: namespace/flag de inicialização.
+- **C4.1 · Drag & drop sem fallback de toque** (`265-316`): só eventos de mouse; no Capacitor reordenar não funciona (verificar em runtime). Correção: Pointer Events ou botões ↑/↓.
+- **C3.3 · Payload grande no `runOnBackend` da compilação** (`362-382`): manuscritos grandes serializam todo o HTML numa chamada. Correção: escrever em passos.
+
+**Baixa**
+
+- **C4.2 · `dragend` salva sem mudança e em arraste cancelado** (`318-325`): escrita + toast desnecessários. Correção: comparar com a ordem atual.
+- **C4.3 · Qualquer `#compiledDoc` desaparece do grid e o título é sobrescrito** (`158-160`, `369-370`): label por engano esconde a nota; título custom se perde. Correção: alertar/preservar título.
+- **C4.4 · Notas não-JS/CSS viram cards e entram no compilado como texto cru** (`152-155`, `224-234`): JSON/canvas/imagem entram no documento. Correção: filtrar por tipo/mime.
+- **C3.4 · Append de card a card em loop** (`239-245`): N appends/relayouts. Correção: montar tudo e anexar 1×.
+- **C4.5 · Ordem inteira em um label** (`185`, `258`): o JSON cresce e aparece nos atributos. Correção: nota `#data` quando crescer.
+
+**Sugestão**
+
+- **C8.1 · Testes não cobrem o que dói** (`test-grade.js` 25): merge da ordem salva, `renderizar` e `gerarDocumento` sem teste; extrair a ordenação para função pura.
+
+### 🎨 UI/UX — achados
+
+#### Fountain
+
+**Alta**
+
+- **D3.1 · Cabeçalhos da sidebar não são controles** (`1466-1493`, handler `1616-1622`): divs clicáveis sem `role`/`tabindex`/`aria-expanded`; teclado não recolhe/expande e o leitor de tela lê texto solto. Correção: `<button aria-expanded aria-controls>`.
+- **D3.2 · Ctrl+=/−/0 sequestram o zoom do app** (`1348-1353`; mesma raiz do C5.1): quem usa o zoom do sistema perde os atalhos em qualquer nota. Correção: escopar ao visor (ou remover os atalhos, mantendo os botões).
+- **D7.1 · Impressão Ctrl+P no tema escuro tende a sair ilegível** (`649-657` × `552-553`): o `@media print` não força `color`/`background`; texto claro sobre papel branco. Correção: fixar preto no branco no print. (verificar em runtime)
+
+**Média**
+
+- **D5.1 · `marcarCenaAtiva` não existe** (`1630`): clique em cena pode não marcar nada se o scrollspy não disparar (mesmo achado do C1.1).
+- **D3.3 + D4.1 · Nome comprido só recuperável por `title`** (`1421`, `1424`; CSS `523-524`): `title` não aparece no toque nem com foco (item não focável). Correção: quebra em 2 linhas/tooltip acionável.
+- **D4.2 · Sidebar sticky sem teto de altura** (`458-467`; listas `38vh` em `490`): com as 4 seções expandidas o ATOS fica cortado sem scroll próprio. Correção: `max-height`/`overflow:auto`.
+- **D4.3 · Alvos de toque < 40px** (`668-669`; itens `495-508`): botões ~34-36px e itens ~29px no mobile. Correção: `min-height: 44px`.
+- **D5.2 · Atualizar/Importar/seletor sem estado de carregamento** (`1506`, `1591`, `1603`; render `1370`): cliques repetidos disparam renders concorrentes. Correção: desabilitar + "Atualizando…".
+- **D5.3 + D7.2 · Erro de render sem recuperação e com `color:red` fixo** (`1636-1642`): contraste ruim no escuro e sem retry. Correção: token de erro + botão "⟳".
+- **D7.3 · Contraste de auxiliares por opacidade empilhada** (`505`, `522`, `525`, `356`): `.fv-num` (0.55 sobre link 0.75) e afins abaixo de 3:1 no claro. Correção: `--muted-text-color` sólido.
+- **D2.2 + D5.4 · "F5 também atualiza" não é verdade** (`1438`; README:20): não há handler de F5 no plugin; no navegador recarrega o app. Correção: implementar (escopado) ou remover a promessa. (verificar atalho nativo do Trilium)
+
+**Baixa**
+
+- **D8.1 · O 11pt do mobile nunca vale** (`678` × `1342`/`1634`): `aplicarZoom()` grava inline depois do render e vence a media query. Correção: zoom por classe/variável.
+- **D1.1 + D2.3 · Glifos duplicados e 8 botões de mesmo peso** (`1443-1462`): "HTML" e "PDF" com o mesmo 📄; Atualizar/PDF enterrados. Correção: ícones distintos + primário.
+- **D5.5 · Download `.fountain` silencioso** (`1526-1529` × avisos em `1513`/`1565`). Correção: toast.
+- **D6.1 · Sem `prefers-reduced-motion`** (`1543`, `1598`, `1629`; transições `369`, `509`). Correção: media query.
+- **D3.4 · Nomes acessíveis fracos** (`1443-1444`): zoom-out só "−", reset "100%", emojis sem `aria-hidden`. Correção: `aria-label`.
+
+**Sugestão**
+
+- **D1.2 · Estatísticas não selecionáveis e sombra fixa** (`537`, `555`): `user-select:none` impede copiar contagens; sombra some no escuro.
+
+#### Grid
+
+**Crítica**
+
+- **D3.1 · Cards inacessíveis por teclado e leitor de tela** (`240-244`, clique `328-331`): sem `tabindex`/`role`/nome; abrir e reordenar só com mouse. Correção: `role="button"` + Enter/Espaço + botões mover ↑/↓.
+
+**Alta**
+
+- **D4.1 · Drag & drop não funciona por toque** (`240`, `265-325`): HTML5 DnD não emite eventos no WebView touch — no celular "arraste para ordenar" (promessa do README) falha em silêncio. Correção: Pointer Events/alças. (verificar em runtime)
+- **D5.1 · `renderizar()` sem tratamento de erro** (`178-247`, boot `398`): falha de API deixa o painel vazio sem mensagem nem retry. Correção: try/catch com estado de erro.
+
+**Média**
+
+- **D5.2 · "Ordem salva" exibido mesmo se falhar/sem mudança** (`252-262`, `318-325`; mesmo achado do C1.1/C4.2). Correção: toast de erro + condicionar.
+- **D6.1 + D1.1 · Posição de drop ambígua** (`294-298`; realce `104`): decide antes/depois pela metade horizontal, sem linha de inserção; em grid multi-coluna o usuário não sabe onde cai. Correção: indicador de linha.
+- **D5.3 · "Atualizar" sem bloqueio durante render/generate** (`333` × `339-341`): pode rodar em paralelo com "⏳ Gerando…". Correção: desabilitar ambos.
+- **D7.1 + D8.1 · Auxiliares com contraste baixo** (`108`, `63`, `116`): footer 11px/0.55, info 12px/0.6, vazio 13px/0.55 falham AA no claro. Correção: cores sólidas do tema.
+- **D4.2 · Alvos de toque no mobile** (`125`, `123`): botões ~35px. Correção: `min-height: 44px`.
+
+**Baixa**
+
+- **D2.1 + D4.3 · "arraste" sem aviso do toque; métricas divergentes** (`206`; README:7; `70-73` × Fountain `361-362`): paddings/raios diferentes entre irmãos. Correção: alinhar tokens.
+- **D5.4 · Botão desabilitado ainda reage ao hover** (`76-77`). Correção: `:not(:disabled):hover`.
+- **D7.2 · Variáveis de tema sem fallback** (`67-68`, `91`, `104`): realce de drop some em tema que não defina as vars. Correção: fallbacks (o Fountain já tem).
+- **D3.2 · Sem `:focus-visible` e sem foco nos cards** (`66-78`, `240`). (verificar em runtime)
+- **D6.2 · Sem `prefers-reduced-motion`** (`87`, `100`, `104`).
+
+**Sugestão**
+
+- **D1.2 · Cards de altura irregular e grid sem `max-width`** (`94-108`, `80-84`): footer não fixado; em telas largas estica demais.
+- **D5.5 · Estado vazio só textual** (`220`): sem ação de criar nota.
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Plugin | Ganho | Esforço | Risco | Onde | Validação |
+|---|----------|--------|-------|:-------:|:-----:|------|-----------|
+| 1 | Corrigir clique de cena (`marcarAtivo`) | Fountain | Console limpo + destaque imediato | S | Baixo | `1630` × `979` | `bun` (cruzamento) + manual |
+| 2 | F5 prometido, escopado ao visor | Fountain | Cumpre `README:20` | S | Baixo/Médio | `1438`, `1348-1366` | manual (split view) |
+| 3 | Escopar Ctrl+=/−/0 ao visor montado | Fountain | Devolve o zoom do app | S | Baixo | `1348-1353` | manual (outra nota) |
+| 4 | Boneyard fora das stats/PDF | Fountain | Conteúdo escondido não infla páginas/duração | S | Baixo | `66`, `214-217`, `948`, `1257` | `bun` (fixture) |
+| 5 | Nome do arquivo pelo título do roteiro + fallback | Fountain | Exportações deixam de sair como `fountainrenderer.*` | S | Baixo | `1401`, `763-769` | `bun` (`nomeSeguro`) |
+| 6 | Aspas no `escaparHtml` (e decodificar nos limpadores) | Ambos | Fim da injeção em atributos | S | Baixo | F `85-90`; G `134-139` | `bun` (atualizar asserções) |
+| 7 | i18n PT/EN por locale | Ambos | Paridade com o toolkit | M | Baixo/Médio | F `1384-1503`; G `206-215` | estático + smoke |
+| 8 | Contagens nos cabeçalhos da sidebar | Fountain | Orientação em roteiro longo | S | Baixo | `1466-1493` | manual + asserção |
+| 9 | Filtro de cenas na sidebar | Fountain | Achar cena sem scroll | S | Baixo | `1465-1472` | manual |
+| 10 | Botão de zoom mostra o valor (`12pt`) | Fountain | Feedback do nível | S | Baixo | `1444`, `1340-1353` | manual |
+| 11 | Números de cena no PDF | Fountain | Draft de produção numerado | M | Baixo | `154`, `1208-1212` | `pdftotext` |
+| 12 | `try/catch` no render do grid + estado de erro | Grid | Filha problemática não deixa o grid pela metade | S/M | Baixo | `178-247` | manual |
+| 13 | Total de palavras no header | Grid | Tamanho do documento de relance | S | Baixo | `204-215`, `236-243` | `bun` (soma pura) |
+| 14 | Botão "Abrir compilado" | Grid | Não caçar a nota na árvore | S | Baixo | `179-180`, `162-167` | manual |
+| 15 | Falha/corrupção do `#gridOrder` visível | Grid | "Ordem salva" não mente | S | Baixo | `183-187`, `252-262` | manual |
+| 16 | Reordenar sem mouse (↑/↓) | Grid | Toque e teclado sem DnD | M | Médio | `239-245`, `265-331` | manual (touch) |
+| 17 | `Promise.all` no carregamento das filhas | Grid | Grid abre mais rápido | S/M | Baixo | `224-225` | manual cronometrado |
+| 18 | Smoke de runtime dos dois render notes | Ambos | Pega erro de escopo/runtime (classe do C1.1) | M | Baixo | novos `test-smoke.js` | rodar (falharia hoje no clique da cena) |
+
+**Notas dos 5 primeiros:** (1) trocar a chamada por `marcarAtivo(api.$container[0], id)`;
+(2) `keydown` de F5 com `preventDefault` + `renderizar()`, atrás da mesma guarda de
+visibilidade do item 3; (3) sair cedo nos dois handlers quando `#fv-root` não estiver
+conectado, antes de qualquer `preventDefault`; (4) `emBoneyard` em `calcularStats` e
+`pdfGerar` ignorando os tokens internos (o HTML já usa comentário); (5) preferir o
+título do script e fechar `nomeSeguro` com `|| 'roteiro'`.
+
+**Descartes explícitos:** poda de ids órfãos do `#gridOrder` (invisível hoje);
+persistir zoom/seções recolhidas (estado de sessão, sem ganho); autosave/edição do
+rascunho no visor (contra o desenho leitura); modal próprio para o Import (fluxo
+raro); virtualização/"+N" nas listas da sidebar (o `max-height` com scroll segura e
+"+N" conflitaria com o scrollspy e as âncoras `#cena-N`).
+
+### Pontos fortes (não mexer)
+
+- Escaping antes do lexer: todo texto de token vira HTML escapado (`238-240`) — a lacuna é só em atributos (C2.1).
+- Callbacks de `api.runOnBackend` exemplares: auto-contidos, args em array, `return` correto (`1582-1584`, `1606-1608`, `362-382`).
+- PDF proprietário funciona e é honesto (Courier/WinAnsi, capa, números de página) — o furo é o rascunho vazio.
+- CSS 100% escopado em `#fv-root`/`#lg-root`, com teste automatizado de vazamento (`test-grade.js`).
+- Parser: dual dialogue, acentos (`\p{Lu}` + `/u`), title page, seções e page break — exercitados nesta rodada.
+- `#compiledDoc` com atualização in place (`grade:364-372`) — resolve duplicatas sem drama.
+- Guarda de 250 ms para o clique pós-drag (`grade:327-331`); estados de drag nomeados.
+- Fountain: impressão autossuficiente preto-no-branco (CSS próprio + PDF), modo foco com Esc, empty state com instruções, números de cena na margem.
+- README fiel ao comportamento real; zips em dia (md5 do JS dentro dos zips = fonte; registry 0.8.2 nas duas entradas).
+
+### Versões/registry/README
+
+- `registry.json`: `fountain-renderer` e `longform-compiler` 0.8.2, `meta.updated` 27/09; manifests sem campo `version` (padrão do repo) — sem divergência de versão.
+- Ajustes finos de descrição: o registry diz que o Longform "aggregates a subtree", mas o plugin compila **filhas diretas** (`grade:179`); o Fountain é descrito com tag `comics`/"panel descriptions" enquanto o README fala de roteiro audiovisual.
+
+### Veredito da rodada 2
+
+Dois plugins maduros (escaping consistente fora de atributos, sandbox correto, CSS
+escopado, PDF/impressão próprios) com riscos concentrados em: (a) **um bug certo de
+runtime** no Fountain (`marcarCenaAtiva` — C1.1/D5.1); (b) **injeção por atributo**
+via `escaparHtml` sem aspas (C2.1); (c) **atalhos globais** que sequestram o zoom e
+listeners que se acumulam (C5.1/C5.3); (d) **acessibilidade e toque** no Grid
+(crítica D3.1) e do Fountain (D3.1); (e) **falhas silenciosas** de persistência
+(Grid C1.1, `#gridOrder` C1.2) e de parse (Fountain C4.1 — verificar em runtime).
+Nenhuma correção foi aplicada no código dos plugins nesta rodada (só o conserto do
+`test-fountain-stats.js` e o novo `test-grade.js`, em `Fase 0`).
+
+**Próximo da lista:** Canvas-Note-Tools (rodada 3).
