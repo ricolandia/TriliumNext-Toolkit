@@ -365,6 +365,7 @@ não pegavam (era erro de escopo em runtime, e o primeiro render não tinha guar
 - **Lição:** todo plugin de render precisa de um smoke de runtime no CI/local —
   testes de funções puras não cobrem escopo/ordem de execução do render nem
   interpolação de template.
+- **✅ Validado pelo Ricardo (28/09):** Semana/Mês/Gantt e o carregamento ok após o F5.
 
 ## ⏭️ Backlog residual (batch 5, se houver)
 
