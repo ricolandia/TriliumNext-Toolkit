@@ -83,6 +83,20 @@ ok('sem abortController global', src.indexOf('let abortController') === -1 && sr
 ok('payload sem metadados (mapeia role/content)', src.indexOf('return { role: m.role, content: m.content }') !== -1);
 
 // ─────────────────────────────────────────────────────────────
+console.log('4) i18n — paridade PT/EN');
+const blocoI18n = src.match(/const AIC_I18N = (\{[\s\S]*?\n\});/);
+if (!blocoI18n) { falhas++; console.log('  ✗ não achei o bloco AIC_I18N'); }
+else {
+    const dict = eval('(' + blocoI18n[1] + ')');
+    const pt = Object.keys(dict.pt).sort();
+    const en = Object.keys(dict.en).sort();
+    const faltamEn = pt.filter((k) => !(k in dict.en));
+    const sobramEn = en.filter((k) => !(k in dict.pt));
+    ok('mesmas chaves em PT e EN (' + pt.length + ' chaves)', faltamEn.length === 0 && sobramEn.length === 0, { faltamEn, sobramEn });
+    ok('nenhum valor vazio', pt.every((k) => typeof dict.pt[k] === 'string' && dict.pt[k].length > 0 && typeof dict.en[k] === 'string' && dict.en[k].length > 0));
+}
+
+// ─────────────────────────────────────────────────────────────
 console.log('');
 if (falhas) { console.log(falhas + ' falha(s)'); process.exit(1); }
 console.log('todas as asserções passaram');
