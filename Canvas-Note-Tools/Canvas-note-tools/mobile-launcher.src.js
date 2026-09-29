@@ -79,6 +79,7 @@
       #clwm-root .clwm-x {
         border: none; background: transparent; color: inherit;
         font-size: 18px; padding: 4px 8px; cursor: pointer;
+        min-width: 44px; min-height: 44px;
       }
       #clwm-root .clwm-info {
         padding: 8px 14px 0; font-family: monospace; font-size: 11px;
@@ -89,10 +90,21 @@
         flex: 1; padding: 10px 4px; font-size: 12px; border-radius: 8px;
         border: 1px solid var(--main-border-color, #ccc);
         background: transparent; color: inherit; cursor: pointer;
+        min-height: 44px;
+        transition: background .12s, border-color .12s;
       }
       #clwm-root .clwm-tab.ativo {
         background: var(--active-item-background-color, #ddd);
         font-weight: bold;
+      }
+      /* Feedback de ponteiro e foco (o launcher roda também em desktop/web) */
+      #clwm-root .clwm-x:hover,
+      #clwm-root .clwm-tab:hover,
+      #clwm-root .clwm-item:hover,
+      #clwm-root .clwm-btn:hover { background: var(--hover-item-background-color, rgba(0,0,0,.06)); }
+      #clwm-root button:focus-visible {
+        outline: 2px solid var(--active-item-background-color, #4a90d9);
+        outline-offset: 2px;
       }
       #clwm-root .clwm-body { padding: 12px 14px; overflow: auto; }
       #clwm-root .clwm-painel { display: none; }
@@ -157,9 +169,10 @@
 
     /* ── Templates (#canvasTemplate) ─────────────────────── */
     let templates = null;
+    let interagiu = false;
 
     async function carregarTemplates() {
-        if (templates) return templates;
+        // sem cache permanente: templates novos aparecem ao reabrir a aba
         templates = await api.runOnBackend(() => api.searchForNotes('#canvasTemplate')
             .map((n) => ({ noteId: n.noteId, title: n.title })));
         return templates;
@@ -198,6 +211,9 @@
             renderTemplates();
         } catch (e) {
             status('❌ ' + ((e && e.message) || e));
+            // não deixa o "…" para sempre: mostra o erro na própria lista
+            const lista = document.getElementById('clwm-tpl-lista');
+            if (lista) lista.innerHTML = '<div class="clwm-vazio">' + escapeHtml(t('tpl.empty_hint')) + '</div>';
         }
     }
 
@@ -263,7 +279,7 @@
             if (!notas.length) {
                 const d = document.createElement('div');
                 d.className = 'clwm-vazio';
-                d.textContent = '—';
+                d.textContent = t('search.empty');
                 lista.appendChild(d);
                 return;
             }
@@ -334,7 +350,10 @@
             const cards = await listarCards(nota.noteId);
             if (!cards.length) { status('ℹ️ ' + t('sync.none')); return; }
             let n = 0;
+            let i = 0;
             for (const c of cards) {
+                i++;
+                status(t('sync.running') + ' ' + i + '/' + cards.length);
                 n += await api.runOnBackend(CLW_BE_SYNC, [nota.noteId, c.noteId, CARD_CONFIG, getCleanPatterns(), backendLabels()]);
             }
             status(t('sync.done', { n }));
@@ -413,6 +432,12 @@
                 <input type="text" id="clwm-ed-titulo" value="${escapeHtml(dados.title || '')}" autocomplete="off">
                 <div class="clwm-ed-conteudo" id="clwm-ed-conteudo" contenteditable="true" spellcheck="false">${sanitizarHtml(dados.content || '')}</div>
                 <button class="clwm-btn" id="clwm-ed-salvar">💾 ${escapeHtml(t('editor.save'))}</button>`;
+
+            // guarda o estado inicial para o "Voltar" detectar alterações não salvas
+            const $edConteudo = document.getElementById('clwm-ed-conteudo');
+            const $edTitulo   = document.getElementById('clwm-ed-titulo');
+            if ($edConteudo) $edConteudo.dataset.original = $edConteudo.innerHTML;
+            if ($edTitulo)   $edTitulo.dataset.original   = $edTitulo.value;
 
             document.getElementById('clwm-ed-salvar').addEventListener('click', async () => {
                 const titulo = (document.getElementById('clwm-ed-titulo').value || '').trim() || t('common.untitled');
@@ -545,7 +570,10 @@
     }
 
     /* ── Diálogo ─────────────────────────────────────────── */
+    let fecharComEsc = null;
+
     function remover() {
+        if (fecharComEsc) { document.removeEventListener('keydown', fecharComEsc); fecharComEsc = null; }
         const el = document.getElementById('clwm-root');
         if (el) el.remove();
     }
@@ -557,20 +585,20 @@
         root.id = 'clwm-root';
         root.innerHTML = `
             <style>${CSS}</style>
-            <div class="clwm-box">
+            <div class="clwm-box" role="dialog" aria-modal="true" aria-labelledby="clwm-titulo">
                 <div class="clwm-head">
-                    <h2>🎨 Canvas Mobile</h2>
-                    <button class="clwm-x" id="clwm-fechar">✖</button>
+                    <h2 id="clwm-titulo">🎨 Canvas Mobile</h2>
+                    <button class="clwm-x" id="clwm-fechar" aria-label="${escapeHtml(t('common.close'))}">✖</button>
                 </div>
                 <div class="clwm-info" id="clwm-info"></div>
-                <div class="clwm-tabs">
-                    <button class="clwm-tab ativo" data-painel="fluxo">🪄 Fluxo</button>
-                    <button class="clwm-tab" data-painel="tpl">🧩 Templates</button>
-                    <button class="clwm-tab" data-painel="inserir">🔗 Inserir</button>
-                    <button class="clwm-tab" data-painel="mais">🛠️ Mais</button>
+                <div class="clwm-tabs" role="tablist">
+                    <button class="clwm-tab ativo" id="clwm-tab-fluxo" role="tab" aria-selected="true" aria-controls="clwm-p-fluxo" data-painel="fluxo">🪄 Fluxo</button>
+                    <button class="clwm-tab" id="clwm-tab-tpl" role="tab" aria-selected="false" aria-controls="clwm-p-tpl" data-painel="tpl">🧩 Templates</button>
+                    <button class="clwm-tab" id="clwm-tab-inserir" role="tab" aria-selected="false" aria-controls="clwm-p-inserir" data-painel="inserir">🔗 Inserir</button>
+                    <button class="clwm-tab" id="clwm-tab-mais" role="tab" aria-selected="false" aria-controls="clwm-p-mais" data-painel="mais">🛠️ Mais</button>
                 </div>
                 <div class="clwm-body">
-                    <div class="clwm-painel ativo" id="clwm-p-fluxo">
+                    <div class="clwm-painel ativo" id="clwm-p-fluxo" role="tabpanel" aria-labelledby="clwm-tab-fluxo">
                         <textarea id="clwm-dsl" spellcheck="false"></textarea>
                         <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
                             <label style="font-size:13px">${escapeHtml(t('flow.direction'))}</label>
@@ -581,16 +609,16 @@
                         </div>
                         <button class="clwm-btn" id="clwm-gerar">🪄 ${escapeHtml(t('flow.generate'))}</button>
                     </div>
-                    <div class="clwm-painel" id="clwm-p-tpl">
+                    <div class="clwm-painel" id="clwm-p-tpl" role="tabpanel" aria-labelledby="clwm-tab-tpl">
                         <input type="text" id="clwm-tpl-filtro" placeholder="${escapeHtml(t('tpl.filter'))}" autocomplete="off">
                         <div class="clwm-lista" id="clwm-tpl-lista"></div>
                     </div>
-                    <div class="clwm-painel" id="clwm-p-inserir">
+                    <div class="clwm-painel" id="clwm-p-inserir" role="tabpanel" aria-labelledby="clwm-tab-inserir">
                         <input type="text" id="clwm-busca" placeholder="${escapeHtml(t('search.title'))}" autocomplete="off">
                         <button class="clwm-btn" id="clwm-buscar">🔍 ${escapeHtml(t('btn.insert'))}</button>
                         <div class="clwm-lista" id="clwm-busca-lista"></div>
                     </div>
-                    <div class="clwm-painel" id="clwm-p-mais">
+                    <div class="clwm-painel" id="clwm-p-mais" role="tabpanel" aria-labelledby="clwm-tab-mais">
                         <div id="clwm-mais-menu">
                             <input type="text" id="clwm-nova-titulo" placeholder="${escapeHtml(t('newnote.placeholder'))}" autocomplete="off">
                             <button class="clwm-btn" id="clwm-nova-criar">📝 ${escapeHtml(t('newnote.create'))}</button>
@@ -606,18 +634,25 @@
                         </div>
                     </div>
                 </div>
-                <div class="clwm-status" id="clwm-status"></div>
+                <div class="clwm-status" id="clwm-status" role="status" aria-live="polite"></div>
             </div>`;
 
         document.body.appendChild(root);
+        fecharComEsc = (e) => { if (e.key === 'Escape') remover(); };
+        document.addEventListener('keydown', fecharComEsc);
+        root.querySelector('.clwm-tab.ativo')?.focus();
 
-        // idioma da interface do Trilium (assíncrono; refaz a UI se divergir)
+        // idioma da interface do Trilium (assíncrono; refaz a UI se divergir —
+        // mas só se o usuário ainda não interagiu, para não perder o estado digitado)
         api.runOnBackend(() => {
             const opt = api.getOption('locale');
             return opt ? opt.value : null;
         }).then((locale) => {
             const novo = clwNormalizeLang(locale || navigator.language);
-            if (novo !== lang) { lang = novo; abrir(); }
+            if (novo !== lang) {
+                lang = novo;
+                if (!interagiu) abrir();
+            }
         }).catch(() => undefined);
 
         // conteúdo inicial
@@ -627,12 +662,17 @@
         info();
 
         // eventos
+        root.addEventListener('input', () => { interagiu = true; });
+        root.addEventListener('click', () => { interagiu = true; });
         document.getElementById('clwm-fechar').addEventListener('click', remover);
         root.addEventListener('click', (e) => { if (e.target === root) remover(); });
 
         root.querySelectorAll('.clwm-tab').forEach((b) => {
             b.addEventListener('click', () => {
-                root.querySelectorAll('.clwm-tab').forEach((x) => x.classList.toggle('ativo', x === b));
+                root.querySelectorAll('.clwm-tab').forEach((x) => {
+                    x.classList.toggle('ativo', x === b);
+                    x.setAttribute('aria-selected', String(x === b));
+                });
                 root.querySelectorAll('.clwm-painel').forEach((p) => {
                     p.classList.toggle('ativo', p.id === 'clwm-p-' + b.dataset.painel);
                 });
@@ -654,7 +694,28 @@
         document.getElementById('clwm-ir-editar').addEventListener('click', abrirEditar);
         document.getElementById('clwm-ir-remover').addEventListener('click', abrirRemover);
         document.getElementById('clwm-ir-relacoes').addEventListener('click', abrirRelacoes);
-        document.getElementById('clwm-voltar').addEventListener('click', voltarMenu);
+        document.getElementById('clwm-voltar').addEventListener('click', (e) => {
+            // Editor aberto com alterações: dois toques para descartar (o desktop salva ao fechar)
+            const editor = document.querySelector('.clwm-ed-conteudo');
+            if (editor) {
+                const titulo = document.getElementById('clwm-ed-titulo');
+                const mudou = editor.dataset.original !== editor.innerHTML
+                    || (titulo && titulo.dataset.original !== titulo.value);
+                if (mudou) {
+                    const btn = e.currentTarget;
+                    if (btn.dataset.confirmado !== '1') {
+                        btn.dataset.confirmado = '1';
+                        const original = btn.textContent;
+                        btn.textContent = t('editor.discard');
+                        setTimeout(() => {
+                            if (btn.isConnected) { btn.dataset.confirmado = ''; btn.textContent = original; }
+                        }, 3000);
+                        return;
+                    }
+                }
+            }
+            voltarMenu();
+        });
     }
 
     abrir();

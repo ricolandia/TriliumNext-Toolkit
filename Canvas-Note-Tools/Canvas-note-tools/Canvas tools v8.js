@@ -646,6 +646,7 @@ const CLW_I18N = {
         'common.error':          '✗ Erro: ',
         'common.canvas_json':    'Conteúdo do canvas inválido (JSON corrompido). Operação cancelada.',
         'common.untitled':       'Sem título',
+        'common.close':          'Fechar',
 
         /* busca / inserir nota */
         'search.title':          'Inserir nota no Canvas',
@@ -694,6 +695,7 @@ const CLW_I18N = {
         'remove.title':          'Remover card do canvas',
         'remove.empty':          'Nenhum card vinculado encontrado.',
         'remove.btn':            'Remover',
+        'remove.confirm':        'Confirmar?',
         'remove.done':           '🗑️ Card removido do canvas.',
         'remove.not_found':      'ℹ️ Card não encontrado no canvas.',
         'remove.error':          'Erro ao remover card: ',
@@ -704,6 +706,8 @@ const CLW_I18N = {
         'edit.btn':              'Editar',
         'editor.title':          'Editar nota',
         'editor.save':           'Salvar',
+        'editor.close':          'Fechar (salva a nota)',
+        'editor.discard':        'Descartar?',
         'editor.no_note':        'Nota não encontrada.',
         'editor.saved':          '✏️ Nota salva e card atualizado.',
         'editor.error':          'Erro ao salvar: ',
@@ -807,6 +811,7 @@ const CLW_I18N = {
         'common.error':          '✗ Error: ',
         'common.canvas_json':    'Invalid canvas content (corrupted JSON). Operation cancelled.',
         'common.untitled':       'Untitled',
+        'common.close':          'Close',
 
         /* search / insert note */
         'search.title':          'Insert note into Canvas',
@@ -855,6 +860,7 @@ const CLW_I18N = {
         'remove.title':          'Remove card from canvas',
         'remove.empty':          'No linked card found.',
         'remove.btn':            'Remove',
+        'remove.confirm':        'Confirm?',
         'remove.done':           '🗑️ Card removed from the canvas.',
         'remove.not_found':      'ℹ️ Card not found in the canvas.',
         'remove.error':          'Error removing card: ',
@@ -865,6 +871,8 @@ const CLW_I18N = {
         'edit.btn':              'Edit',
         'editor.title':          'Edit note',
         'editor.save':           'Save',
+        'editor.close':          'Close (saves the note)',
+        'editor.discard':        'Discard?',
         'editor.no_note':        'Note not found.',
         'editor.saved':          '✏️ Note saved and card refreshed.',
         'editor.error':          'Error saving: ',
@@ -1048,6 +1056,28 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         };
     }
 
+    /** Detecta tema claro pelo brilho de --main-background-color (classe .clw-light no root) */
+    _aplicarTemaClaro() {
+        try {
+            const root = this._el('clw-root');
+            if (!root) return;
+            const raw = String(getComputedStyle(document.body).getPropertyValue('--main-background-color') || '').trim();
+            let r = null, g = null, b = null;
+            let m = raw.match(/^#([0-9a-f]{6})$/i);
+            if (m) {
+                r = parseInt(m[1].slice(0, 2), 16); g = parseInt(m[1].slice(2, 4), 16); b = parseInt(m[1].slice(4, 6), 16);
+            } else {
+                m = raw.match(/rgba?\(([^)]+)\)/i);
+                if (m) { const p = m[1].split(',').map((s) => parseFloat(s)); r = p[0]; g = p[1]; b = p[2]; }
+            }
+            this._temaClaro = r != null && (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.55;
+            root.classList.toggle('clw-light', this._temaClaro);
+        } catch (_) { /* mantém o padrão escuro */ }
+    }
+
+    /** Cor de erro legível no tema atual (status usam cor inline) */
+    _corErro() { return this._temaClaro ? '#be183c' : '#f38ba8'; }
+
     async _refineLang() {
         try {
             if (CLW_LANG_CACHE === null) {
@@ -1216,12 +1246,12 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             </div>
 
             <!-- Editor flutuante -->
-            <div id="clw-editor-float" class="clw-editor-overlay">
+            <div id="clw-editor-float" class="clw-editor-overlay" role="dialog" aria-modal="true" aria-labelledby="clw-editor-title-label">
                 <div class="clw-editor-box">
                     <div class="clw-editor-header">
-                        <span class="clw-panel-icon">✏️</span>
-                        <span class="clw-editor-title">${t('editor.title')}</span>
-                        <button id="clw-editor-close" class="clw-panel-close">✕</button>
+                        <span class="clw-panel-icon" aria-hidden="true">✏️</span>
+                        <span class="clw-editor-title" id="clw-editor-title-label">${t('editor.title')}</span>
+                        <button id="clw-editor-close" class="clw-panel-close" title="${t('editor.close')}" aria-label="${t('editor.close')}">✕</button>
                     </div>
                     <input id="clw-editor-note-title" class="clw-input" type="text"
                         placeholder="${t('newnote.placeholder')}" autocomplete="off" spellcheck="false" />
@@ -1241,21 +1271,22 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
             <!-- Toolbar de botões -->
             <div class="clw-toolbar">
-                <button id="clw-btn"          class="clw-round-btn" title="${t('btn.insert')}">🔗</button>
-                <button id="clw-btn-capture"  class="clw-round-btn" title="${t('btn.capture')}">🎯</button>
-                <button id="clw-btn-newnote"  class="clw-round-btn" title="${t('btn.newnote')}">📝</button>
-                <button id="clw-btn-saverel"  class="clw-round-btn" title="${t('btn.relations')}">🕸️</button>
-                <button id="clw-btn-edit"     class="clw-round-btn" title="${t('btn.edit')}">✏️</button>
-                <button id="clw-btn-sync"     class="clw-round-btn" title="${t('btn.sync')}">⟳</button>
-                <button id="clw-btn-longform" class="clw-round-btn" title="${t('btn.longform')}">📄</button>
-                <button id="clw-btn-flow"     class="clw-round-btn" title="${t('btn.flow')}">🪄</button>
-                <button id="clw-btn-tpl"      class="clw-round-btn" title="${t('btn.tpl')}">🧩</button>
-                <button id="clw-btn-remove"   class="clw-round-btn clw-round-btn--danger" title="${t('btn.remove')}">🗑️</button>
-                <button id="clw-btn-help"     class="clw-round-btn clw-round-btn--help" title="${t('btn.help')}">?</button>
+                <button id="clw-btn"          class="clw-round-btn" title="${t('btn.insert')}" aria-label="${t('btn.insert')}">🔗</button>
+                <button id="clw-btn-capture"  class="clw-round-btn" title="${t('btn.capture')}" aria-label="${t('btn.capture')}" aria-pressed="false">🎯</button>
+                <button id="clw-btn-newnote"  class="clw-round-btn" title="${t('btn.newnote')}" aria-label="${t('btn.newnote')}">📝</button>
+                <button id="clw-btn-saverel"  class="clw-round-btn" title="${t('btn.relations')}" aria-label="${t('btn.relations')}">🕸️</button>
+                <button id="clw-btn-edit"     class="clw-round-btn" title="${t('btn.edit')}" aria-label="${t('btn.edit')}">✏️</button>
+                <button id="clw-btn-sync"     class="clw-round-btn" title="${t('btn.sync')}" aria-label="${t('btn.sync')}">⟳</button>
+                <button id="clw-btn-longform" class="clw-round-btn" title="${t('btn.longform')}" aria-label="${t('btn.longform')}">📄</button>
+                <button id="clw-btn-flow"     class="clw-round-btn" title="${t('btn.flow')}" aria-label="${t('btn.flow')}">🪄</button>
+                <button id="clw-btn-tpl"      class="clw-round-btn" title="${t('btn.tpl')}" aria-label="${t('btn.tpl')}">🧩</button>
+                <button id="clw-btn-remove"   class="clw-round-btn clw-round-btn--danger" title="${t('btn.remove')}" aria-label="${t('btn.remove')}">🗑️</button>
+                <button id="clw-btn-help"     class="clw-round-btn clw-round-btn--help" title="${t('btn.help')}" aria-label="${t('btn.help')}">?</button>
             </div>
         </div>`;
 
         document.body.insertAdjacentHTML('beforeend', html);
+        this._aplicarTemaClaro();
 
         if (!document.getElementById('clw-style')) {
         const style = document.createElement('style');
@@ -1294,6 +1325,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     border:1px solid var(--main-border-color,#45475a);
     border-radius:14px; padding:16px; width:300px;
     max-width:calc(100vw - 32px);
+    max-height:calc(100vh - 120px); /* janelas baixas: o painel inteiro rola */
+    overflow-y:auto;
     box-sizing:border-box;
     box-shadow:
         0 0 0 1px rgba(203,166,247,0.06),
@@ -1370,6 +1403,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     color:var(--main-text-color,#cdd6f4); line-height:1.4;
     transition:background 0.12s, border-color 0.12s;
     border:1px solid transparent;
+    background:none; width:100%; text-align:left;
+    font-family:inherit; font-size:inherit; box-sizing:border-box;
     animation:clwFadeIn 0.15s ease both;
 }
 .clw-result-item:hover, .clw-result-item:focus-visible {
@@ -1427,6 +1462,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 }
 
 /* ── Danger (remove) button ── */
+.clw-round-btn--danger { border-color:rgba(243,139,168,0.45); }
 .clw-round-btn--danger:hover {
     background:rgba(243,139,168,0.18) !important;
     border-color:#f38ba8 !important;
@@ -1643,6 +1679,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     border:1px solid transparent; color:var(--main-text-color,#cdd6f4);
     font-size:13px; font-weight:600; margin-top:4px;
     display:flex; align-items:center; gap:8px;
+    background:none; width:100%; text-align:left; font-family:inherit; box-sizing:border-box;
     animation:clwFadeIn 0.15s ease both;
     transition:background 0.12s, border-color 0.12s;
 }
@@ -1685,6 +1722,35 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
     font-size:15px; color:var(--main-text-color,#cdd6f4); opacity:.9; line-height:1.45;
 }
 .clw-help-foot b { opacity:1; font-weight:700; }
+
+/* ── Estados e acessibilidade ── */
+.clw-btn-primary:disabled { opacity:.55; cursor:default; }
+.clw-btn-primary:focus-visible,
+.clw-round-btn:focus-visible,
+.clw-panel-close:focus-visible,
+.clw-remove-item-btn:focus-visible,
+.clw-edit-item-btn:focus-visible,
+.clw-result-item:focus-visible,
+.clw-tpl-item:focus-visible {
+    outline:2px solid var(--active-item-background-color,#cba6f7);
+    outline-offset:2px;
+}
+@media (prefers-reduced-motion: reduce) {
+    #clw-root *, #clw-root *::before, #clw-root *::after {
+        transition:none !important; animation:none !important;
+    }
+}
+/* Tema claro (a classe .clw-light é posta pelo JS): tons mais escuros para contraste */
+#clw-root.clw-light .clw-round-btn--danger { border-color:rgba(190,24,60,0.5); }
+#clw-root.clw-light .clw-round-btn--danger:hover {
+    background:rgba(190,24,60,0.12) !important; border-color:#be183c !important;
+}
+#clw-root.clw-light .clw-remove-item-btn {
+    color:#be183c; background:rgba(190,24,60,0.08); border-color:rgba(190,24,60,0.35);
+}
+#clw-root.clw-light .clw-remove-item-btn:hover { background:rgba(190,24,60,0.2); border-color:#be183c; }
+#clw-root.clw-light .clw-edit-item-btn:hover { background:rgba(124,58,237,0.15); border-color:#7c3aed; }
+#clw-root.clw-light .clw-input:focus { border-color:#7c3aed !important; box-shadow:0 0 0 3px rgba(124,58,237,0.15); }
         `;
         document.head.appendChild(style);
         }
@@ -1723,9 +1789,11 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             this._flowStatus('');
         });
 
-        // Fecha painéis com Escape
+        // Fecha painéis com Escape (o editor fecha salvando, como o ✕)
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
+            const $editor = this._el('clw-editor-float');
+            if ($editor && $editor.style.display === 'flex') { this._saveEditor(); return; }
             this._hide('clw-panel');
             this._hide('clw-newnote-float');
             this._hide('clw-relmap-panel');
@@ -1742,6 +1810,12 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             const q = e.target.value;
             searchTimer = setTimeout(() => window._clw?.search(q), 280);
         });
+        this._el('clw-search').addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            const primeiro = this._el('clw-results')?.querySelector('.clw-result-item');
+            if (primeiro) primeiro.click();
+        });
 
         let tplTimer;
         this._el('clw-tpl-filter').addEventListener('input', () => {
@@ -1755,6 +1829,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             if (root && !root.contains(e.target)) {
                 this._hide('clw-panel');
                 this._hide('clw-newnote-float');
+                this._hide('clw-relmap-panel');
                 this._hide('clw-remove-panel');
                 this._hide('clw-edit-panel');
                 this._hide('clw-flow-panel');
@@ -1803,6 +1878,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             this._captureMode         = true;
             this._captureCanvasNoteId = this.noteId;
             this._el('clw-btn-capture').classList.add('clw-capture-active');
+            this._el('clw-btn-capture').setAttribute('aria-pressed', 'true');
             this._show('clw-capture-banner');
             // Persiste o ID do canvas ativo para sobreviver a hot-reloads
             try { sessionStorage.setItem('clw_capture_canvas', this.noteId); } catch (_) {}
@@ -1811,6 +1887,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             this._captureMode         = false;
             this._captureCanvasNoteId = null;
             this._el('clw-btn-capture').classList.remove('clw-capture-active');
+            this._el('clw-btn-capture').setAttribute('aria-pressed', 'false');
             this._hide('clw-capture-banner');
             try { sessionStorage.removeItem('clw_capture_canvas'); } catch (_) {}
             api.showMessage(this._t('capture.off'));
@@ -1908,10 +1985,20 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 row.style.animationDelay = `${i * 25}ms`;
                 row.innerHTML = `
                     <span class="clw-remove-item-title" title="${escapeHtml(card.title)}">${escapeHtml(card.title)}</span>
-                    <button class="clw-remove-item-btn">Remover</button>
+                    <button class="clw-remove-item-btn">${this._t('remove.btn')}</button>
                 `;
-                row.querySelector('button').addEventListener('click', async () => {
-                    if (!confirm('Remover este card do canvas?\nA nota continuará existindo no Trilium.')) return;
+                const btnRemover = row.querySelector('button');
+                btnRemover.addEventListener('click', async () => {
+                    // Dois toques para confirmar (padrão do launcher mobile)
+                    if (btnRemover.dataset.confirmado !== '1') {
+                        btnRemover.dataset.confirmado = '1';
+                        const original = btnRemover.textContent;
+                        btnRemover.textContent = this._t('remove.confirm');
+                        setTimeout(() => {
+                            if (btnRemover.isConnected) { btnRemover.dataset.confirmado = ''; btnRemover.textContent = original; }
+                        }, 3000);
+                        return;
+                    }
                     row.style.opacity = '0.4';
                     row.style.pointerEvents = 'none';
                     await this._doRemoveCard(canvasNoteId, card.noteId);
@@ -2018,7 +2105,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 row.style.animationDelay = `${i * 25}ms`;
                 row.innerHTML = `
                     <span class="clw-edit-item-title" title="${escapeHtml(card.title)}">${escapeHtml(card.title)}</span>
-                    <button class="clw-edit-item-btn">✏️ Editar</button>
+                    <button class="clw-edit-item-btn">✏️ ${this._t('edit.btn')}</button>
                 `;
                 row.querySelector('button').addEventListener('click', async () => {
                     await this._openEditor(canvasNoteId, card.noteId, card.title);
@@ -2644,7 +2731,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         const el = this._el('clw-tpl-status');
         if (!el) return;
         el.textContent = msg || '';
-        el.style.color = isError ? '#f38ba8' : 'var(--muted-text-color,#6c7086)';
+        el.style.color = isError ? this._corErro() : 'var(--muted-text-color,#6c7086)';
         el.style.display = msg ? 'block' : 'none';
     }
 
@@ -2653,9 +2740,9 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         if (list) list.innerHTML = '';
         this._tplStatus(this._t('tpl.loading'));
         try {
-            this._templates = await api.runOnBackend(() => api.searchForNotes('#canvasTemplate')
-                .map(note => ({ noteId: note.noteId, title: note.title || '(sem título)' }))
-                .sort((a, b) => a.title.localeCompare(b.title)));
+            this._templates = await api.runOnBackend((L) => api.searchForNotes('#canvasTemplate')
+                .map(note => ({ noteId: note.noteId, title: note.title || ((L && L.untitled) || 'Sem título') }))
+                .sort((a, b) => a.title.localeCompare(b.title)), [this._backendLabels()]);
             this._templatesLoaded = true;
             this._renderTemplates();
         } catch (err) {
@@ -2682,7 +2769,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         }
         this._tplStatus('');
         for (const tpl of items) {
-            const item = document.createElement('div');
+            const item = document.createElement('button');
+            item.type = 'button';
             item.className = 'clw-tpl-item';
             item.innerHTML = '<span class="clw-tpl-item-ic">🧩</span>' + escapeHtml(tpl.title);
             item.title = this._t('btn.tpl');
@@ -2703,7 +2791,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 if (!templateNote) throw new Error(L.tplMissing);
 
                 let canvasData;
-                try { canvasData = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { canvasData = {}; }
+                try { canvasData = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 if (!canvasData.type)     canvasData.type     = 'excalidraw';
                 if (!canvasData.version)  canvasData.version  = 2;
                 if (!canvasData.elements) canvasData.elements = [];
@@ -2774,7 +2862,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         const el = this._el('clw-flow-status');
         if (!el) return;
         el.textContent = msg || '';
-        el.style.color = isError ? '#f38ba8' : 'var(--muted-text-color,#6c7086)';
+        el.style.color = isError ? this._corErro() : 'var(--muted-text-color,#6c7086)';
         el.style.display = msg ? 'block' : 'none';
     }
 
@@ -2919,6 +3007,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
             this._flowStatus(this._t('flow.tpl_saved', { name, where: info.where }));
             api.showMessage(this._t('flow.tpl_saved_msg'));
+            this._templatesLoaded = false; // template novo aparece no 🧩 sem recarregar
+            this._templates = null;
             setTimeout(() => api.activateNote(info.noteId), 250);
         } catch (err) {
             console.error('[CanvasLinker] saveFlowTemplate error:', err);
@@ -2971,9 +3061,10 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
             const fragment = document.createDocumentFragment();
             notes.forEach((note, i) => {
-                const title   = note.title   || '(sem título)';
+                const title   = note.title   || this._t('common.untitled');
                 const excerpt = note.excerpt || '';
-                const item    = document.createElement('div');
+                const item    = document.createElement('button');
+                item.type = 'button';
                 item.className  = 'clw-result-item';
                 item.title      = title;
                 item.style.animationDelay = `${i * 30}ms`;
