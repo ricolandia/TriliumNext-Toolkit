@@ -70,7 +70,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 
 | # | Plugin | Arquivo(s) | Data | 👨‍💻 Código | 🎨 UI/UX | ⚡ Quick wins | Veredito |
 |---|--------|------------|------|-----------|----------|---------------|----------|
-| 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1+2 aplicados (28/09)**: ~40 correções/quick wins; `test-planejador.js` com 35 asserções. Resto no batch 3 |
+| 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1+2+3 aplicados (28/09)**: ~60 correções/quick wins; `test-planejador.js` com 39 asserções. Resto no batch 4 |
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/`, `Writers-Tools/js-grid/` | ⏭️ **próximo** | | | | |
 
 ### 🔁 Fila proposta (ajustável)
@@ -306,9 +306,29 @@ forma transparente (preenchida no primeiro fetch, podada junto com os órfãos).
 marcar/desmarcar, REC-BE com teto/validações/`</li>`, SPAN-BE, DATAS, RECON) +
 `test-refs.js` (8) passando; `bun build` OK.
 
-## ⏭️ Deferido para o batch 3 (triagem sugerida)
+## ✅ Correções aplicadas — batch 3 (28/09/2026)
 
-- **Performance/view:** C3.4 (virtualização/limite de cards) e C7.2 (refactor de CSS/views compartilhados).
-- **Manutenção:** C7.1 (i18n PT/EN como o resto do toolkit), C7.3 (versões manifest × registry), C7.5 (comentários vencidos), C8.1 (suite completa de funções puras).
-- **UI/UX:** D2.1 (seletor de modo único responsivo), D3.1/D3.2 (operação por teclado + alternativa ao drag), D5.3 (toast de sucesso), D6.2 (hover/foco em CSS), D6.3 (`prefers-reduced-motion`), D8.1/D8.2 (tipografia única e piso de 11-12 px), D1.x/D2.x/D4.3 (hierarquia, terminologia e drag em trackpads), C4.8/D6.1 (`was-dragged` morto).
-- **Quick wins restantes:** Q2 (indicador "salvando/salvo"), Q8 (atalhos de teclado), Q9 (scroll preservado), Q10 (duplicar semana), Q11 (ordenar backlog por `#upto`).
+Critério: paridade com o toolkit (i18n), uso diário (quick wins) e acessibilidade.
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C7.1 | Interface **PT/EN** pelo `locale` do Trilium: dicionário `WP_I18N`, `t()` com interpolação, dias/meses e datas por idioma (`fmtCurto`), troca detectada no boot (com re-render da tela de carregamento) | `bun build` + revisão; smoke em runtime pendente (demo EN) |
+| Q2 | Indicador **salvando…/salvo ✓/erro ✗** no cabeçalho das 3 views, com limpeza automática | revisão |
+| Q8 | **Atalhos**: ←/→ navegam semana/mês, `t` volta a hoje, `r` recarrega, `Esc` fecha diálogos; só com foco dentro do plugin (não rouba teclas da nota) e listener único por página | revisão em runtime pendente |
+| Q9 | **Scroll preservado** nas re-renderizações (`capturarScroll`/`restaurarScroll`) e "hoje" revelado na primeira carga | revisão |
+| Q10 | Botão **⇥ rolar a semana para a próxima** (+7 dias, mover datas e ordem) com Desfazer | revisão em runtime pendente |
+| Q11 | **Backlog ordenado por `#upto`** (vencidos primeiro, sem prazo por último) nas 3 views; função pura `ordenarBacklog` | `test-planejador.js` (4 asserções) |
+| C4.8 + D6.1 | `was-dragged` deixou de ser código morto (marcado no dragstart, limpo após o drop): clique residual não navega mais | revisão |
+| D3.1 (parcial) | Controles com `tabindex`/`role`/`aria-label` (cards, chips, ✓, barras, textos) e ativação por Enter/Espaço; `:focus-visible` em todos os controles | revisão |
+| D6.2 | Hover/foco do painel de Tarefas migrou dos handlers `.css()` para CSS (`:hover`/`:not(.completing)`) | revisão |
+| D6.3 | `@media (prefers-reduced-motion: reduce)` desliga animações/transições do plugin | revisão |
+| C7.5 | Comentário vencido do `migrateIds` atualizado (guard, não "remover após uma semana") | revisão |
+
+**Testes:** `test-planejador.js` com **39 asserções** (novas de `ordenarBacklog`) +
+`test-refs.js` (8) + `bun build` OK.
+
+## ⏭️ Deferido para o batch 4 (triagem sugerida)
+
+- **Performance/view:** C3.4 (virtualização/limite de cards), C7.2 (refactor de CSS/views compartilhados).
+- **UI/UX:** D2.1 (seletor de modo único responsivo), D8.1/D8.2 (tipografia única e piso de 11-12 px), D3.2 (alternativa completa ao drag por teclado, hoje parcial), D1.x/D2.x/D4.3 (hierarquia, terminologia, drag em trackpads), D5.3 (toast de sucesso dedicado).
+- **Manutenção:** C7.3 (reconciliar versões `manifest` × registry publicado, junto do próximo release), C8.1 (suite completa de funções puras restantes).
