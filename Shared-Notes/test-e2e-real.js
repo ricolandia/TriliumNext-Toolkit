@@ -2,15 +2,15 @@
 // executando o MESMO código do widget (shared-notes-widget.js) contra ETAPI.
 //
 // A = VPS (https://trilium.rizomatico.org) | B = demo local (http://localhost:8080)
-// Uso: node e2e_real.js
+// Uso: E2E_A_TOKEN=<token da VPS> E2E_B_TOKEN=<token do demo> bun test-e2e-real.js
 const { execFileSync } = require('child_process');
 const path = require('path');
 
-const REPO = '/home/ricardo/Documentos/31_APPS_GITHUB/TriliumNext-Toolkit/Shared-Notes';
+const REPO = __dirname;
 const A = {
     name: process.env.E2E_A_NAME || 'VPS',
     base: process.env.E2E_A_BASE || 'https://trilium.rizomatico.org/etapi',
-    token: process.env.E2E_A_TOKEN || '9WkRivSiLJCU_1dsxielIDd30MBY1vKuKZMijMOdTvagfZQgFjGIbBeQ='
+    token: process.env.E2E_A_TOKEN || ''
 };
 const B = {
     name: process.env.E2E_B_NAME || 'Demo',
@@ -18,6 +18,11 @@ const B = {
     token: process.env.E2E_B_TOKEN || ''
 };
 const EXPECT_A_ENDPOINT = process.env.E2E_EXPECT_A_ENDPOINT || '';
+
+if (!A.token || !B.token) {
+    console.error('Defina E2E_A_TOKEN (VPS) e E2E_B_TOKEN (demo) por variável de ambiente — os tokens NÃO ficam no repositório.');
+    process.exit(1);
+}
 
 let fails = 0;
 function ok(cond, msg) {

@@ -77,7 +77,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados + fix pós-batch 4** (`t`→`tr` + guard do render + `test-smoke.js`): ~65 correções/refactors; 49 asserções + smoke. Residual no `ROADMAP-RESIDUAIS.md` |
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smokes dos dois no Chrome headless); residual no `ROADMAP-RESIDUAIS.md` |
 | 3 | Canvas-Note-Tools (widget + launcher mobile) | `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js`, `mobile-launcher.src.js`, `build-mobile-launcher.js` | 29/09/2026 | 42 achados (0C/4A/14M/20B/4S) | 35 achados (2C/8A/18M/5B/2S) | 16 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smoke do widget e do launcher); residual no `ROADMAP-RESIDUAIS.md` |
-| 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Relatório publicado** (29/09); ⚠️ token ETAPI vazado no E2E (rotacionar); correções em batches após triagem |
+| 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Relatório publicado** (29/09); ✅ token do E2E rotacionado e fora do repo (29/09); correções em batches após triagem |
 
 ### 🔁 Fila proposta (ajustável)
 
@@ -989,7 +989,7 @@ expiração `NaN`, zip sem `relations`).
 | ⚡ Quick wins | — | — | — | — | — | 16 itens |
 
 **Top 5 (triagem sugerida):**
-1. **[Crítica · Segurança]** Token ETAPI **real da VPS** hardcoded em `test-e2e-real.js:13`, commitado (`bc0f446`) e publicado no GitHub: qualquer clone tem acesso total ao `trilium.rizomatico.org`. Ação imediata: remover do arquivo **e rotacionar o token**.
+1. **[Crítica · Segurança]** Token ETAPI **real da VPS** hardcoded em `test-e2e-real.js:13`, commitado (`bc0f446`) e publicado no GitHub: qualquer clone tem acesso total ao `trilium.rizomatico.org`. ✅ **Corrigido em 29/09 (urgente, fora dos batches):** token rotacionado (o antigo responde 401), o novo salvo na nota `GtK2xDKqKTTH` do Trilium e o `test-e2e-real.js` agora exige `E2E_A_TOKEN`/`E2E_B_TOKEN` por env (sem literais).
 2. **[Alta · Código]** Envio marca **todas** as filhas como `snSent` mesmo com falha parcial (`widget:884-901`; handler responde 200 com `errors[]`/`noteIds` em `199-233`) — respostas perdidas nunca são reenviadas; e o aviso de falha de marcação é sobrescrito pelo status de sucesso (`894-901`).
 3. **[Alta · Código]** `replies:[null]` derruba o handler: o catch por reply reacessa `r.title` (`handler:188-208`) e o TypeError escapa sem resposta JSON.
 4. **[Alta · Código]** Convite antigo (v1) reverte o snapshot do peer em silêncio: `newVer = payload.snapshotVersion || existing.version + 1` aceita versão menor e sobrescreve o conteúdo (`widget:644-654`).
@@ -1132,7 +1132,7 @@ expiração `NaN`, zip sem `relations`).
 
 | # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
 |---|----------|------|-------|:-------:|:-----:|-----------|
-| 1 | Remover token ETAPI do E2E + rotação | `test-e2e-real.js:13` | Fecha vazamento público (token no GitHub) | S + rotação | Baixo | `rg 9WkRivSi` = 0; token velho 401 |
+| 1 | Remover token ETAPI do E2E + rotação | `test-e2e-real.js:13` | Fecha vazamento público (token no GitHub) | S + rotação | Baixo | ✅ 29/09: token antigo 401; E2E exige env; sem literais no repo |
 | 2 | Marcar `snSent` só nos ids confirmados | `widget:884-898`; `handler:188-233` | Fim da perda silenciosa em falha parcial | S/M | Baixo | simulador com 1 falha de 2 |
 | 3 | Revogar convites pela UI (neutraliza `inviteToken`) | `widget:321-332,528-538,716-724` | Revogação sem caçar gate na árvore | M | Médio | simulador (peer recebe 404) + 2 toques |
 | 4 | Aceitar `noteContent`/título vazios | `widget:612-616` | Nota vazia compartilhável | S | Baixo | asserção no simulador |
@@ -1190,6 +1190,9 @@ imediata); (b) **perda silenciosa** no envio parcial (`snSent` em lote) e no
 handler com entradas malformadas; (c) **integridade do snapshot** no downgrade de
 convite; (d) **acessibilidade e contraste** do widget (status sem ARIA, cores de
 tema escuro no claro); (e) **divergência zip × manifest** e README incompleto.
-Nenhuma correção foi aplicada nesta rodada.
+Nenhuma correção foi aplicada nesta rodada — **exceto a rotação urgente do token
+vazado no E2E (29/09)**, feita fora dos batches a pedido do dono: token antigo
+revogado (401), novo token salvo na nota `GtK2xDKqKTTH` e `test-e2e-real.js` sem
+literais (env `E2E_A_TOKEN`/`E2E_B_TOKEN`).
 
 **Próximo da lista:** AI-Chat (rodada 5).
