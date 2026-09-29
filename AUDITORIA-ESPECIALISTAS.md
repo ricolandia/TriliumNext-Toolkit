@@ -81,7 +81,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Batches 1-2 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; 70 chaves i18n em paridade; testes hostis); ✅ token do E2E rotacionado (29/09); residual no `ROADMAP-RESIDUAIS.md` |
 | 5 | AI-Chat (render note) | `AI-Chat/AI-Chat/AI Code.js` | 29/09/2026 | 50 achados (2C/9A/18M/17B/4S) | 40 achados (3C/11A/16M/9B/1S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/zip com sha256 idêntico; demo: instalação nova via ETAPI com sha idêntico e config pelo label; 85 chaves i18n em paridade; `test-chat.js` + `test-smoke.js`); residual no `ROADMAP-RESIDUAIS.md` |
 | 6 | Minimalist Pomodoro + Time Tracker | `Minimalist-Pomodoro/Pomodoro-mini/Pomodoro mini.js` | 29/09/2026 | 36 achados (2C/4A/16M/9B/5S) | 33 achados (1C/8A/14M/8B/3S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; `test-pomodoro.js` 35 ✅ + `test-smoke.js` 30 ✅; STOP em 2 toques que só limpa após salvar; relatório em `<tr>` com escaping e label `#pomodoro`; i18n 30 chaves em paridade); residual no `ROADMAP-RESIDUAIS.md` |
-| 7 | Word Counter | `Word-Counter/Word count.js` | 29/09/2026 | 34 achados (0C/4A/13M/13B/4S) | 29 achados (1C/6A/12M/7B/3S) | 17 itens (S/M) | **Auditoria concluída; nenhuma correção aplicada** (batches após triagem: 1) integridade da contagem + eventos + storage, 2) UI/a11y/estado + i18n + decisão da semântica do "escrito hoje", 3) harness + README/zip) |
+| 7 | Word Counter | `Word-Counter/Word count.js` | 29/09/2026 | 34 achados (0C/4A/13M/13B/4S) | 29 achados (1C/6A/12M/7B/3S) | 17 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; `test-wordcount.js` 53 ✅ + `test-smoke.js` 24 ✅; semântica baseline+delta por nota; contagem com entidades; barras ARIA/meta; i18n 14 chaves; zip defasado regenerado); residual no `ROADMAP-RESIDUAIS.md` |
 
 ### 🔁 Fila proposta (ajustável)
 
@@ -1990,3 +1990,50 @@ triagem (candidatos: 1) integridade da contagem + eventos + storage, 2) UI/a11y/
 decisão da semântica, 3) harness + README/zip).
 
 **Próximo da lista:** Daily-Note-Navigator (rodada 8 — prioridade do release).
+
+---
+
+## ✅ Correções aplicadas — rodada 7, batches 1-3 (29/09/2026)
+
+### Batch 1 — integridade da contagem, eventos e storage
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C4.4/QW1 | **Contagem correta**: `htmlToText` decodifica entidades (`&nbsp;` não é palavra nem 6 caracteres), preserva `a < b`, ignora `script/style`; palavras exigem letra/dígito (`— • |` não contam) | `test-wordcount` (fixtures) + smoke |
+| C4.1/QW12 | **Semântica baseline + delta por nota** (decisão do Ricardo): a 1ª leitura do período só define a baseline; só o crescimento conta; reduzir reancora sem débito; **migração** do formato antigo preserva o total | puras `progressApply/parseProgressStore` + smoke A/B/E |
+| C5.1 | `entitiesReloadedEvent` com **`isEnabled()`** (nota de código não é contada com o widget oculto) | guarda estrutural + smoke |
+| C5.2/C4.2 | `noteId` + geração capturados **antes do await**; resultado obsoleto é descartado (fim da nota errada) | guarda + smoke |
+| C1.5/C3.1/C4.7/QW15 | Storage só por helpers com try/catch; **payload v2 validado**, migração legada e **poda automática** (14 dias / 8 semanas); `setItem` protegido | puras (parse/prune) + smoke E |
+| C6.1 | `getNoteComplement()` (deprecado) → `await this.note.getContent()` | guarda estrutural |
+| C4.5/QW9 | `parseGoalValue` puro (`Number`/finite/clamp 1..GOAL_MAX) nos 3 pontos de leitura | puras + smoke B |
+| C4.6 | Denominadores das metas em **spans próprios**, atualizados a cada render | smoke B |
+| C5.3/QW6 | **Debounce trailing** (~150 ms) por instância no evento de conteúdo (fim do evento descartado) | smoke A (coalesce) |
+| C4.9/QW7 | Rollover de dia/semana no `visibilitychange`/`focus` (hook único por página) | revisão (sem teste dedicado) |
+| C1.1/C1.4 | Nota **protegida** avisa; falha de leitura vira **estado com retry** clicável (fim do catch mudo) | smoke D |
+
+### Batch 2 — UI, a11y, estados e i18n
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D7.1/D7.2/D7.3 | **Contraste das barras**: fill `--main-text-color` sem opacity (a semanal era invisível: 1.16–1.93:1) e trilho `color-mix` com fallback — ≥3:1 nos temas | guarda estrutural + QA visual |
+| D3.1/D3.2/QW5 | Barras com `role="progressbar"` + `aria-valuenow/max/valuetext`; região `role="status"` para anúncios | smoke A/B |
+| D5.1/QW3 | **Meta atingida**: ✓ + cor de destaque + `aria-valuetext` + anúncio único por período | smoke B |
+| D2.1/D2.2/D2.3/QW4/17 | **i18n PT/EN** (14 chaves em paridade), números por locale, título "Contador de Palavras"/"Word Counter", "Nesta nota" | smoke C + paridade no harness |
+| D8.1/QW8 | Valores com separador de milhar por locale; tooltips com critério de caracteres (com/sem espaços) e nº de notas contadas | smoke C |
+| D5.2-D5.7 | Estados: "…" inicial, erro com retry, protegida, aviso de meta, `title` explicativos | smoke D |
+| D4.1/D1.3/D6.1/D6.2 | `.wc-row` com `gap`/`min-width:0`/`nowrap`; barras 6 px com margens unificadas; `prefers-reduced-motion`; estilos por classes escopadas | revisão |
+
+### Batch 3 — harness, README e artefatos
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C8.1/QW13/QW14 | **`test-wordcount.js`** (53 asserções: entidades, palavras/chars, metas, baseline+delta, parse/migração/poda, guardas, paridade i18n) e **`test-smoke.js`** (24 checks: boot PT/EN, delta/debounce, meta, erro/retry/protegida, migração legada) | `bun test-wordcount.js` 53 ✅ · `bun test-smoke.js` 24 ✅ |
+| C7.1/C7.3/QW15-17 | **Zip regenerado** (JS `ae638dea…`, meta `0.106.0` — o antigo era de 12/05 e não tinha a meta semanal) e README reescrito (semanal, semântica, critérios, testes, limitações) | sha256 zip = repo |
+
+**Deploy (29/09):** VPS (nota `SpCiIhPakals` "Word count") e demo EN (`7z4UojsgHVCc`
+"Word Counter") via ETAPI, **sha256 `ae638dea…` idêntico repo=VPS=demo**; zip regenerado com o
+mesmo sha (o demo já rodava o sha antigo do repo; agora ambos estão na versão corrigida).
+
+**Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Word Counter): corrida entre janelas,
+edição em split não ativo, slot `position`, tooltip da origem da meta, intervalo ISO na UI,
+QA visual de contraste, captura do README e bump de release.

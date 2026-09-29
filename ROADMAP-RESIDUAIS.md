@@ -127,8 +127,22 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 | PM-C8.x | Cobrir no smoke a retomada de sessão após reload (`pomo-session-end` no futuro) | Testes | S | Baixo | `test-smoke.js` | asserção nova |
 | PM-D2.4 | Regravar capturas do README (UI antiga: emoji, sem ciclo) | Doc | S | Baixo | `imagens/` | manual nos 2 temas |
 
+## Word Counter (rodada 7)
+
+| ID | Item | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+|----|------|-----------|:-------:|:-----:|------------------------------|-----------|
+| WC-C5.5 | Corrida read-modify-write entre janelas do Trilium (localStorage) | Robustez | S/M | Médio | `_track/_readStore` | manual (2 janelas) |
+| WC-C4.8 | Edição em split não ativo só entra quando a nota vira ativa | Robustez/UX | M | Médio | `entitiesReloadedEvent` (filtro por `noteId`) | manual |
+| WC-C7.9 | `position = 1` — slot único no toolkit; documentar/definir | Manutenção | S | Baixo | `get position()` | revisão |
+| WC-D5.4 | Tooltip indicando a origem da meta (nota ativa/herdada) | UX | S | Baixo | `_readGoal`/render | manual |
+| WC-D2.7 | "Semana" sem exibir o intervalo ISO na UI | UX | S | Baixo | render/tooltip | manual |
+| WC-D3.x | QA visual de contraste nos 4 temas (color-mix com fallback) | UX | S | Baixo | CSS | QA visual |
+| WC-D2.x | Captura do README antiga (sem a linha "Semana") | Doc | S | Baixo | `imagens/` | manual |
+| WC-C7.6 | Bump de versão/registry + versão no README no release | Release | S | Baixo | registry/README | revisão |
+
 ## Histórico
 
+- **29/09/2026** — atualizado com os residuais da rodada 7 (Word Counter).
 - **29/09/2026** — atualizado com os residuais da rodada 6 (Minimalist Pomodoro).
 - **29/09/2026** — **Daily-Note-Map removido da coleção** (decisão de uso: o mapa
   nativo do Trilium cobre; o código fica no histórico do git): saiu do repo, do README
