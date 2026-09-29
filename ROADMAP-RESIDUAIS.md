@@ -98,8 +98,26 @@ prioridade.
 | CN-QW15 | Desfazer remoção de card (restaurar `isDeleted=false`) | UX | M | Médio | REMOVE + painel | `bun` + manual |
 | CN-QW16 | Consolidar a listagem de cards num helper/backend `CARDS` único | Manutenção | M | Baixo | `v8` (4 fluxos) | `bun` + manual |
 
+## AI-Chat (rodada 5)
+
+| ID | Item | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+|----|------|-----------|:-------:|:-----:|------------------------------|-----------|
+| AC-C7.5 | Cache da config (hoje `searchForNotes` + leitura a cada operação) | Manutenção/perf | S | Baixo | `loadConfig` (era `805-813`) | manual + spy no stub |
+| AC-C4.11 | `STORAGE_KEY` por instância/noteId (duas abas sobrescrevem o histórico) | Robustez | S/M | Baixo | `saveState`/`loadState` | manual (2 abas) |
+| AC-C2.4 | Política para imagens remotas da IA (hoje `<img>` remoto carrega direto) | Segurança/UX | S/M | Médio | `renderMarkdown`/CSS | manual (beacon) |
+| AC-C3.2 | `restoreMessages` em lote (100 msgs com scroll medido por item) | Perf | M | Baixo | `restoreMessages` | cronometrar com histórico cheio |
+| AC-C4.16 | Sufixar títulos duplicados dos comandos (`Resumo — X` repetido) | Robustez | S | Baixo | `runCommand` | manual |
+| AC-D5.7 | Persistir o rascunho da edição (hoje o texto vai para o input e não é salvo) | Robustez/UX | S | Baixo | `editMessage`/`saveState` | manual |
+| AC-D5.12 | Preservar/alertar o prompt custom ao trocar de persona | UX | S | Baixo | handler da persona | manual |
+| AC-D3.9 | Estado `disabled` do Enviar (input vazio / operações não canceláveis) | UX | S | Baixo | `atualizarContador`/`setLoading` | manual |
+| AC-D4.1 | Breakpoint por container (painel estreito no desktop não recebe o CSS mobile) | UX | M | Baixo | `@media 500px` | manual em painel dividido |
+| AC-D1.1 | Densidade/hierarquia das 4 faixas antes do chat | UX | M | Baixo | markup/CSS | revisão visual |
+| AC-D2.4 | Regravar capturas do README (EN/emoji antigos, contradizem a UI atual) | Doc | S | Baixo | `imagens/` | manual nos 2 temas |
+| AC-C7.6 | Registry: descrição "widget" → "render note" + bump de versão no release | Release | S | Baixo | `registry.json` | revisão |
+
 ## Histórico
 
+- **29/09/2026** — atualizado com os residuais da rodada 5 (AI-Chat).
 - **29/09/2026** — atualizado com os residuais da rodada 4 (Shared-Notes).
 - **29/09/2026** — atualizado com os residuais da rodada 3 (Canvas-Note-Tools).
 - **29/09/2026** — criado com os residuais das rodadas 1 (Weekly Planner) e 2

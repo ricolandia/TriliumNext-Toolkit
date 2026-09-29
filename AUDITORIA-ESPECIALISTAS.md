@@ -78,7 +78,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smokes dos dois no Chrome headless); residual no `ROADMAP-RESIDUAIS.md` |
 | 3 | Canvas-Note-Tools (widget + launcher mobile) | `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js`, `mobile-launcher.src.js`, `build-mobile-launcher.js` | 29/09/2026 | 42 achados (0C/4A/14M/20B/4S) | 35 achados (2C/8A/18M/5B/2S) | 16 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smoke do widget e do launcher); residual no `ROADMAP-RESIDUAIS.md` |
 | 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Batches 1-2 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; 70 chaves i18n em paridade; testes hostis); ✅ token do E2E rotacionado (29/09); residual no `ROADMAP-RESIDUAIS.md` |
-| 5 | AI-Chat (render note) | `AI-Chat/AI-Chat/AI Code.js` | 29/09/2026 | 50 achados (2C/9A/18M/17B/4S) | 40 achados (3C/11A/16M/9B/1S) | 20 itens (S/M) | **Auditoria concluída; nenhuma correção aplicada** (batches após triagem: 1) integridade/segurança, 2) UI/a11y/estado, 3) paridade/harness com `test-chat.js` + smoke) |
+| 5 | AI-Chat (render note) | `AI-Chat/AI-Chat/AI Code.js` | 29/09/2026 | 50 achados (2C/9A/18M/17B/4S) | 40 achados (3C/11A/16M/9B/1S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/zip com sha256 idêntico; demo: instalação nova via ETAPI com sha idêntico e config pelo label; 85 chaves i18n em paridade; `test-chat.js` + `test-smoke.js`); residual no `ROADMAP-RESIDUAIS.md` |
 
 ### 🔁 Fila proposta (ajustável)
 
@@ -1470,3 +1470,66 @@ nesta rodada — batches após triagem do dono (candidatos: 1) integridade/segur
 3) paridade/harness — com o `test-chat.js` + smoke entrando no pacote.
 
 **Próximo da lista:** Daily-Note-Map (rodada 6).
+
+---
+
+## ✅ Correções aplicadas — rodada 5, batches 1-3 (29/09/2026)
+
+### Batch 1 — integridade, segurança e robustez
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C1.1/C7.1/QW1 | Config descoberta por **label `#aiChatConfig`** com fallback de títulos ("AI Chat - Config"/"AI Chat Config"/"AI Chat - config"); manifest/README alinhados; label adicionado às configs do VPS e do demo | smoke + **instalação real no demo** (nota nova criada pelo manifest lê a config pelo label) + guarda no `test-chat` |
+| C2.1 | `renderMarkdown` **fail-closed**: sem `marked` **ou** sem `DOMPurify` devolve texto escapado (`aicEscape`), nunca HTML cru | `test-chat` (escape) + smoke (sem HTML injetado) |
+| C2.3/QW17 | `saveNote` escapa conteúdo/persona; comandos HTML são sanitizados com DOMPurify quando disponível; a nota criada é aberta | revisão + smoke |
+| C1.3 | `getNoteTreeBackend`: try/catch por nota (inclui `getContent`), filtros `isProtected`/`#archived`/tipo e tetos (40 notas × 2.000 chars); `TREE_DEPTH=3` agora cumpre "child and grandchild" | smoke (contexto carrega) + revisão |
+| C4.6 | `buildContextText` retorna `{text, feedback}`; primeiro bloco truncado, puladas contadas certo e **feedback visível na UI** (`[x/y notas]`) | smoke + revisão |
+| C5.1/C4.9/D5.4 | Fim do `abortController` global: `beginOp/endOp` com controller + timer por operação, `clearTimeout` no `finally`, timeout ≠ cancelamento; Enviar durante comando avisa ("aguarde") em vez de abortar | smoke (erro de rede) + revisão |
+| C1.2/D5.2 | Erro de envio remove a bolha/entrada do histórico e **restaura o texto no input**; erro vira **balão inline persistente** (distinto para timeout/cancelamento) | smoke (texto restaurado + `.msg-error`) |
+| C4.2/D5.3 | `regenerate` mira a **mensagem clicada** por `mid` (fim do `.msg:last-child` que apagava a bolha do usuário) com snapshot restaurado em falha | revisão + smoke |
+| C5.2/D3.5/QW4 | Atalhos **escopados ao plugin** (`$c.off('keydown.aichat')`, `Ctrl/Cmd`), sem sequestrar outras notas nem acumular handlers | `test-chat` (guarda: sem `$(document).on`) |
+| C5.3/QW3 | Patch de `$.fn.html/.append` com flag `window.__aicPatched`; CSS **substituído** (`textContent =`) em vez de concatenado; `append` preserva todos os args | `test-chat` (guardas) |
+| C2.2/D2.1/QW2 | CSS **100% escopado** em `.chat-wrap` (reset `*`, `::placeholder`, `.toast`/`.msg`/`.typing`); toast movido para dentro do wrap | `test-chat` (guardas) + smoke |
+| C1.4 | Parser de config ignora linhas `#`, ancora por linha e clampa `temperature`/`max_tokens`; placeholder "your key" detectado | `test-chat` (7 casos) |
+| C4.4/C3.1/C7.6 | `callApi()` única (send/regenerate/comandos); payload só `{role, content}`; **janela de histórico** (~40k chars) | `test-chat` (guarda) + smoke |
+| C4.5/C1.9 | `choices[0]`/conteúdo validado ("Resposta vazia da API"); erro de rede mapeado ("Falha de rede ao chamar a API") | smoke (erro de rede) |
+| C1.5/C4.14/C3.3 | Estado **versionado** (`STORAGE_VERSION`), histórico validado no load, aviso de cota, `finally` no `_isRestoring`, `saveState` com debounce no prompt | revisão + smoke (histórico salvo) |
+| C1.7/C1.8 | `getProtectedContent` null → fallback com validação de string; config sem key/placeholder mostra banner acionável | `test-chat` + smoke (cena sem config) |
+| C4.15/C4.16 | Contexto avisa tipo não textual; comando com resposta vazia falha antes de criar nota | revisão |
+
+### Batch 2 — UI, estados, tema e acessibilidade
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D3.1/QW15 | Ações de mensagem revelam em **hover e `:focus-within`** com `aria-label`; cópia com fallback (`execCommand`) e toast de falha; clique na bolha do usuário edita (com guarda de seleção) | smoke (aria-label) |
+| D3.2 | `#messages` com `role="log" aria-live="polite"` + `aria-busy`; `#typing` `role="status"`; `#search-count` vivo | smoke (`role=log`) |
+| D3.3/D4.5 | Alvos ≥40px no mobile; campos em 16px (anti-zoom iOS) | revisão |
+| D3.4/D3.6/D3.7 | `:focus-visible` com `!important`; todos os campos com label/`aria-label`; `aria-expanded` em persona/busca | revisão |
+| D5.1/QW9 | Fim do `confirm()` nativo: **confirmação inline de 2 toques** (limpar, editar, trocar contexto) com Cancelar acessível | `test-chat` (guarda: sem `confirm(`) + smoke |
+| D7.x | Tema claro detectado (`.aic-light` por brilho) com `--aic-danger`/`--aic-code-bg`; opacidades de texto removidas; toast com `max-width`/wrap | revisão |
+| D6.1 | `prefers-reduced-motion` desliga pulso do "Parar" e transições | revisão |
+| D5.6/QW15 | Colapso alterna entre **HTML curto e completo guardados** (fim do `slice` que quebrava tags) | revisão + smoke |
+| D5.5/QW18 | Busca no **texto completo** (`data-full-text`) com "N de M" e "Nenhuma mensagem encontrada" | smoke (contagem) |
+| D5.8/QW10 | Banner de config no boot + botão "Verificar de novo"; badge do modelo com `title` | smoke (2 cenas) |
+| D4.2 | `title` no título do contexto e no badge (truncados recuperáveis) | revisão |
+| QW11-14 | Contexto: título clicável (abre a nota), Enter carrega, botão remover, feedback `[x/y]`; **exportar `.md`**; contador de chars + tokens (`usage`); botão flutuante "rolar para o fim" | smoke (uso/contagem) |
+
+### Batch 3 — paridade, harness e artefatos
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C7.1/D2.2/QW20 | **i18n PT/EN** pelo `locale` do Trilium (`AIC_I18N` com 85 chaves + `tr()` com interpolação); datas/horas/títulos por locale; personas e comandos com prompts e rótulos EN | smoke cena EN (botões/persona/estado vazio) + asserção de paridade |
+| C8.1/QW19 | **`test-chat.js`** (funções puras: escape, parser de config, 10 guardas estruturais, paridade i18n) e **`test-smoke.js`** (Chrome headless: config OK/sem config/EN, envio, erro de rede, busca) | `bun test-chat.js` 19 ✅ · `bun test-smoke.js` 21 ✅ |
+| QW7 | Preferências (persona/prompt/subnotas) restauram **mesmo sem histórico**; `change` do "Subnotas" passa a salvar | revisão |
+| C7.4/C7.5 | README reescrito (claims corrigidos, config por label, i18n, testes); **zip regenerado** com o JS novo (sha idêntico), config atual e **label `aiChatConfig` no meta**; `appVersion 0.106.0` | sha256 zip = repo |
+
+**Deploy (29/09):** VPS (nota `SoLUglVUsVdN`, config `Pg0VgLlQZiCZ` com label adicionado) e
+**demo EN** (plugin não existia: instalação nova via ETAPI — `Xf3HC8ReUMJ5` render + `HBIDHriTNqN5`
+código + `Dm58WcQ6yEgC` config) com **sha256 idêntico ao repo** (`24a9bfdf…`); zip regenerado com o
+mesmo sha. A instalação nova no demo validou na prática o fluxo "manager cria config com label →
+plugin encontra pelo label".
+
+**Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ AI-Chat): cache de config, `STORAGE_KEY`
+por instância, política para imagens remotas, render em lote no restore, títulos duplicados dos
+comandos, prompt custom na troca de persona, estado do botão Enviar, breakpoint por container,
+densidade das faixas, capturas do README, bump/descrição no registry.
