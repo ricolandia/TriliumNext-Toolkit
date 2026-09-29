@@ -70,7 +70,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 
 | # | Plugin | Arquivo(s) | Data | 👨‍💻 Código | 🎨 UI/UX | ⚡ Quick wins | Veredito |
 |---|--------|------------|------|-----------|----------|---------------|----------|
-| 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1+2+3 aplicados (28/09)**: ~60 correções/quick wins; `test-planejador.js` com 39 asserções. Resto no batch 4 |
+| 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados (28/09)**: ~65 correções/refactors; `test-planejador.js` com 49 asserções. Residual no batch 5 |
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/`, `Writers-Tools/js-grid/` | ⏭️ **próximo** | | | | |
 
 ### 🔁 Fila proposta (ajustável)
@@ -327,8 +327,21 @@ Critério: paridade com o toolkit (i18n), uso diário (quick wins) e acessibilid
 **Testes:** `test-planejador.js` com **39 asserções** (novas de `ordenarBacklog`) +
 `test-refs.js` (8) + `bun build` OK.
 
-## ⏭️ Deferido para o batch 4 (triagem sugerida)
+## ✅ Correções aplicadas — batch 4 (28/09/2026)
 
-- **Performance/view:** C3.4 (virtualização/limite de cards), C7.2 (refactor de CSS/views compartilhados).
-- **UI/UX:** D2.1 (seletor de modo único responsivo), D8.1/D8.2 (tipografia única e piso de 11-12 px), D3.2 (alternativa completa ao drag por teclado, hoje parcial), D1.x/D2.x/D4.3 (hierarquia, terminologia, drag em trackpads), D5.3 (toast de sucesso dedicado).
-- **Manutenção:** C7.3 (reconciliar versões `manifest` × registry publicado, junto do próximo release), C8.1 (suite completa de funções puras restantes).
+Cartão: fechamento dos refactors e do uso em escala, sem mudança funcional esperada.
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D2.1 | Seletor de modo **único** (`modeSwitcher`): a barra dedicada saiu; no mobile o mesmo componente vira uma linha de largura total no fim do cabeçalho (CSS, `order:10`) | `bun build` + revisão |
+| D8.1 | Tipografia do painel definida **só no CSS** (função `applyCompactTaskFonts` removida; a especificidade de ID + `!important` cobria os mesmos valores) | revisão; smoke visual pendente |
+| D8.2 | Piso do título de grupo no mobile 9px → **11px** | revisão |
+| C3.4 | Listas longas com **limite + "+N"** expandível: 50/coluna (kanban), 8/dia (mês), 40/grupo (painel); expansões resetam a cada fetch | revisão |
+| D3.2 | **Picker de dia unificado** (kanban + mês, anexado ao `$root` para sobreviver a re-renders) e atalho **`m`** move o card focado em qualquer view; `Esc` fecha; dica no título do card | revisão em runtime pendente |
+| C7.2 | Base **CARD_CSS** compartilhada (kanban/mês); remoção de `modeBar`, `allCols` e das duplicações em JS (hover e tipografia) | `bun build` + revisão |
+| C8.1 | Testes de **`parseTaskTags`** (bloco `TAGS`, 10 asserções): limpeza do texto, `#todo/#done`, `#doing` clamp, `#upto`→ISO, `#every/#total`, espaços e case-insensitive | `test-planejador.js` (49 asserções no total) |
+
+## ⏭️ Backlog residual (batch 5, se houver)
+
+- **UI/UX:** D1.x/D2.x/D4.3 (hierarquia, terminologia, drag em trackpads), D5.3 (toast de sucesso dedicado; hoje o Desfazer cobre), D2.4 (título por view e glifos no WebView), D1.2 (densidade do mês).
+- **Manutenção:** C7.3 (versões `manifest` × registry publicado — junto do próximo release), C8.1 restante (`getWeekCols`/`getMonthDays`, `migrateIds`, `setOrder`) e virtualização real caso o vault cresça muito (hoje o limite + "+N" segura).
