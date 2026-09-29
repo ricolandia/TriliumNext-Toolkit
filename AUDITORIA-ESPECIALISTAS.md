@@ -77,7 +77,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados + fix pós-batch 4** (`t`→`tr` + guard do render + `test-smoke.js`): ~65 correções/refactors; 49 asserções + smoke. Residual no `ROADMAP-RESIDUAIS.md` |
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smokes dos dois no Chrome headless); residual no `ROADMAP-RESIDUAIS.md` |
 | 3 | Canvas-Note-Tools (widget + launcher mobile) | `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js`, `mobile-launcher.src.js`, `build-mobile-launcher.js` | 29/09/2026 | 42 achados (0C/4A/14M/20B/4S) | 35 achados (2C/8A/18M/5B/2S) | 16 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smoke do widget e do launcher); residual no `ROADMAP-RESIDUAIS.md` |
-| 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Relatório publicado** (29/09); ✅ token do E2E rotacionado e fora do repo (29/09); correções em batches após triagem |
+| 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Batches 1-2 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; 70 chaves i18n em paridade; testes hostis); ✅ token do E2E rotacionado (29/09); residual no `ROADMAP-RESIDUAIS.md` |
 
 ### 🔁 Fila proposta (ajustável)
 
@@ -1196,3 +1196,51 @@ revogado (401), novo token salvo na nota `GtK2xDKqKTTH` e `test-e2e-real.js` sem
 literais (env `E2E_A_TOKEN`/`E2E_B_TOKEN`).
 
 **Próximo da lista:** AI-Chat (rodada 5).
+
+---
+
+## ✅ Correções aplicadas — rodada 4, batches 1-2 (29/09/2026)
+
+### Batch 1 — integridade, segurança e robustez
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C1.1/C1.2 handler + C1.1/C1.2 widget + D5.4 + QW2 | **`snSent` só nas respostas confirmadas**: o handler devolve `sourceIds` (quais itens do remetente viraram nota) e o widget marca só esses; falhas parciais são reportadas (`enviar.falhas`) e o aviso de falha de marcação deixou de ser sobrescrito pelo sucesso | `test-shared-notes` [12] (item nulo/inválido não derruba; `sourceIds=['child-1']`; 2 erros) |
+| C1.1 handler | `replies:[null]`/itens sem tipo não derrubam mais (validação por item + catch seguro) | `test-shared-notes` [12] (só inválidos → 422 sem crash) |
+| C4.1 widget | Convite mais antigo **não reverte o snapshot** (erro explícito `aceitar.mais_antiga`) | `test-shared-notes` [13] (conteúdo intacto) |
+| QW4/C4.2 widget | Aceita título/conteúdo vazios (presença + tipo, não truthiness) | `test-shared-notes` [13] (nota vazia criada) |
+| C2.3 widget + handler | 169.254/16 bloqueado **também em https** (dois front-ends) | `test-shared-notes` [13] + [9] |
+| C2.1 widget | `fetch` com `redirect:'error'` (o POST não segue 307/308 para outro host) e teto de 1 MB na resposta; corpo não-JSON preservado (`data.raw`) | revisão + harness |
+| C1.3 widget | `snVersion` NaN não contamina mais o histórico (`Number.isFinite` + fallback) | revisão |
+| C3.2/C2.2 widget | Envio só de texto/código **não-protegidos**, com `getContent()` isolado por filha e contagem de ignoradas (`enviar.puladas`) | `test-shared-notes` (fluxo principal) + revisão |
+| C1.3 handler | `inviteExpires` corrompido = **expirado** (nunca eterno) | `test-shared-notes` [12] (410) |
+| C4.1 handler | Gate só vale se **for filha da nota âncora** (409) e a âncora existe/não deletada (404) | `test-shared-notes` [12] (409) |
+| QW8/C4.3 handler | `inviteToken` validado em formato/tamanho **antes** da busca | `test-shared-notes` [12] (token de 5000 chars → 400) |
+| C1.4/C2.2 handler | `from` sanitizado (newlines/controle → espaço; ≤80 com erro específico) | `test-shared-notes` [12] |
+| C3.1 handler | Busca da gate por `getNotesWithLabel('inviteToken', …)` com fallback para a varredura | `test-shared-notes` (fluxos) |
+| C6.2/C6.1/C2.1 handler | Corpo com try/catch global (500 JSON), `gate.save()` redundante removido, 405 com `Allow` + OPTIONS 204 | revisão |
+| QW13/C7.2 manifest | Config sem placeholders quebrados (`yourname`/`yoururl` vazios) e instruções completas | `manifest.json` válido |
+
+### Batch 2 — UI/estados, tema e quick wins
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D3.1 + D3.2 + D3.4 | **ARIA**: `role="status" aria-live="polite"` nos 3 status + notificação; tabs com `role="tablist"/"tab"/"tabpanel"`, `aria-selected`/`aria-controls`; textos dos campos com `aria-label` | smoke + revisão |
+| D7.1 + D7.2 + D2.2 | **Tema claro** detectado pelo brilho de `--main-background-color` (`.sn-light`): status/perigo legíveis; botão primário e foco com vars do tema (fim do roxo fixo); textarea com fallback neutro | revisão (runtime visual pendente) |
+| D3.3 + D4.2 + D6.1 | `:focus-visible` em tabs/botões/campos; alvos ≥40px; hover nos tabs; `prefers-reduced-motion`; fontes para .85rem | revisão |
+| D5.1 + D5.2 + QW6 + D5.8 | **Troca de nota** limpa convite/contadores/notificação e mantém uma aba válida; dica "Crie notas filhas" vs "todas enviadas" (QW10) | `test-shared-notes` + revisão |
+| D5.3 | Substituir cópia local agora pede **2 toques** (`aceitar.confirmar_substituir`) | `test-shared-notes` [6] (pede confirmação) |
+| QW5 + QW7 | Botão **⟳** revalida contadores; expiração configurável por `#inviteExpireDays` (padrão 7) e data no status (`gerar.expira`) | `test-shared-notes` + revisão |
+| QW11 | `refreshWithNote` sai cedo para notas sem rótulos do plugin (menos chamadas de backend) | revisão |
+| QW14 + QW15 + QW16 + C8.3/C8.4 | Harness: `__dirname` portátil, `getOption` no mock, testes de guard de boot, paridade i18n (**70 chaves**), entradas hostis (null/gigante/expiração/409) e necessidade de confirmação | `bun test-shared-notes.js` (todos) |
+
+**Deploy (29/09):** VPS `MZgG8hPdD30l`/`7pomMcPeoZib` e demo `o9JnIpUFdhSS`/`WGWGPpnx88zr`
+via ETAPI; **sha256 idêntico repo = VPS = demo = zip** (`0af549e5…` widget, `065789e3…`
+handler); zip com os scripts atualizados (a regeneração estrutural fica no roadmap).
+Token ETAPI do E2E rotacionado fora dos batches (ver rodada 4).
+
+**Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Shared-Notes): revogar/gerir
+convites pela UI, dedupe por clone, guardas de await/reentrância, i18n das mensagens do
+handler no widget, badge de respostas na aba, contexto do destinatário, criptografia
+E2E/HMAC, regeneração estrutural do zip, refinos de tipografia e cobertura de eventos
+de UI.

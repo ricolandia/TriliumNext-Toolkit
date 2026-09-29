@@ -49,6 +49,22 @@ prioridade.
 
 ---
 
+## Shared-Notes (rodada 4)
+
+| ID | Item | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+|----|------|-----------|:-------:|:-----:|------------------------------|-----------|
+| SN-QW3+SN-D5.5 | Revogar/gerir convites pela UI (lista com uso/expiração; neutralizar `inviteToken` sem `deleteNote`) | UX | M | Médio | widget `321-332,528-538,716-724`; handler `222-226` | `bun` (peer recebe 404) + 2 toques |
+| SN-seg | Criptografia E2E + HMAC de identidade (hoje base64 puro; wishlist documentada) | Segurança | L | Médio | payload do convite; README | formato v3 + testes de ida e volta |
+| SN-C4.3 | Dedupe por `#sharedNoteId` com clone de nota (dois candidatos; ordem indefinida) | Robustez | M | Médio | widget `632-641` | `bun` + manual |
+| SN-C5.1 | Await lento aplicando contadores/status na nota errada após troca | Robustez | S | Baixo | widget `415-444,567-575,884-916` | `bun` (troca no meio) |
+| SN-C1.7 | Cada clique em "Gerar" cria gate e incrementa versão sem envio | UX | S | Baixo | widget `510-541` | manual |
+| SN-D1.1 + SN-D1.2 | Badge de respostas na aba + contexto do destinatário antes de enviar | UX | S | Baixo | widget `323,436-441` / `346-355,814-826` | manual |
+| SN-D2.5 + SN-D5.10 | Widget mapeia código de erro para i18n própria (fim do texto do peer cru) e mensagens do handler orientadas a ação | i18n/UX | M | Baixo | widget `877-881`; handler `39-64` | `bun` + manual em 2 idiomas |
+| SN-C2.4 + SN-C6.1 + SN-C5.3 | Fallback `Math.random` no token; detectar `fetch` no sandbox; abortar fetch ao fechar/trocar | Robustez | S | Baixo | widget `95-100,828-865,840-860` | revisão |
+| SN-D3.5 + SN-D4.x + SN-D8.1 | Refinos restantes de foco/tipografia/toque | UX | S | Baixo | widget (CSS) | revisão visual |
+| SN-C7.1 | Regenerar o zip a partir de uma instalação real (com `relations` e títulos do manifest) | Manutenção | M | Médio | `Shared-notes.zip` | importar no demo e conferir a relação |
+| SN-C8.1 + SN-C8.5 | Stub de jQuery com eventos reais (binds/tabs) e E2E com `--cleanup` de artefatos | Testes | M | Baixo | `test:77-88` / `test-e2e-real.js:336-339` | `bun` |
+
 ## Como executar na volta (após a rodada 16)
 
 1. **Triagem única:** revalidar cada item no código atual (linhas/relevância mudaram),
@@ -84,6 +100,7 @@ prioridade.
 
 ## Histórico
 
+- **29/09/2026** — atualizado com os residuais da rodada 4 (Shared-Notes).
 - **29/09/2026** — atualizado com os residuais da rodada 3 (Canvas-Note-Tools).
 - **29/09/2026** — criado com os residuais das rodadas 1 (Weekly Planner) e 2
   (Writers-Tools); regra de execução pós-rodada 16 registrada no método do
