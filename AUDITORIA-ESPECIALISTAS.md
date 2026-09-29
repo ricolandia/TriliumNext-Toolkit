@@ -77,11 +77,12 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados + fix pós-batch 4** (`t`→`tr` + guard do render + `test-smoke.js`): ~65 correções/refactors; 49 asserções + smoke. Residual no `ROADMAP-RESIDUAIS.md` |
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smokes dos dois no Chrome headless); residual no `ROADMAP-RESIDUAIS.md` |
 | 3 | Canvas-Note-Tools (widget + launcher mobile) | `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js`, `mobile-launcher.src.js`, `build-mobile-launcher.js` | 29/09/2026 | 42 achados (0C/4A/14M/20B/4S) | 35 achados (2C/8A/18M/5B/2S) | 16 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smoke do widget e do launcher); residual no `ROADMAP-RESIDUAIS.md` |
+| 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Relatório publicado** (29/09); ⚠️ token ETAPI vazado no E2E (rotacionar); correções em batches após triagem |
 
 ### 🔁 Fila proposta (ajustável)
 
 ~~2. Writers-Tools (Fountain + Longform)~~ ✅ 29/09 · ~~3. Canvas-Note-Tools~~ ✅ 29/09 ·
-**4. Shared-Notes (próximo)** · 5. AI-Chat · 6. Daily-Note-Map · 7.
+~~4. Shared-Notes~~ ✅ 29/09 · **5. AI-Chat (próximo)** · 6. Daily-Note-Map · 7.
 Knowledge-Dashboard · 8. Attribute-GC · 9. Pomodoro · 10. Word-Counter · 11.
 Daily-Note-Navigator · 12. UI-Tweaks · 13. Kanboard · 14. Mastodon · 15.
 Canvas-Template-Loader · 16. Canvas-Templates.
@@ -964,3 +965,231 @@ sync em lote (C3.1/M3.1), layout de cards (C4.4/C4.7), índice de z-order (C4.8)
 Ctrl+Z (C4.9), vínculo texto↔forma (C4.10), limite do `flowZIndex` (C4.11),
 listeners do widget (C5.1/C7.5), refinos de UI/i18n (D1.x/D2.x/D3.4/D3.5/D4.x/D6.2/D8.1)
 e quick wins restantes (QW9/QW10/QW15/QW16).
+
+---
+
+## Rodada 4 — Shared-Notes (widget + handler) (29/09/2026)
+
+**Escopo:** `Shared-Notes/shared-notes-widget.js` (936 linhas),
+`shared-notes-handler.js` (233), `README.md`, `manifest.json`,
+`test-shared-notes.js` (simulador, 11 seções), `test-e2e-real.js` (ETAPI),
+`Shared-notes.zip` e a entrada `shared-notes` 0.10.1 do registry.
+**Verificação:** `bun test-shared-notes.js` ✅ (47+ asserções, inclui smoke de
+`doRenderBody`) · `bun build` ✅ nos dois · zip = repo (md5 idêntico) · 3
+especialistas (read-only) + **conferência direta dos achados graves** (token no
+E2E, `snSent` em lote, `replies:[null]`, downgrade de snapshot, 169.254 no https,
+expiração `NaN`, zip sem `relations`).
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 0 | 4 | 21 | 16 | 6 | 47 |
+| 🎨 UI/UX | 1 | 7 | 16 | 5 | 2 | 31 |
+| ⚡ Quick wins | — | — | — | — | — | 16 itens |
+
+**Top 5 (triagem sugerida):**
+1. **[Crítica · Segurança]** Token ETAPI **real da VPS** hardcoded em `test-e2e-real.js:13`, commitado (`bc0f446`) e publicado no GitHub: qualquer clone tem acesso total ao `trilium.rizomatico.org`. Ação imediata: remover do arquivo **e rotacionar o token**.
+2. **[Alta · Código]** Envio marca **todas** as filhas como `snSent` mesmo com falha parcial (`widget:884-901`; handler responde 200 com `errors[]`/`noteIds` em `199-233`) — respostas perdidas nunca são reenviadas; e o aviso de falha de marcação é sobrescrito pelo status de sucesso (`894-901`).
+3. **[Alta · Código]** `replies:[null]` derruba o handler: o catch por reply reacessa `r.title` (`handler:188-208`) e o TypeError escapa sem resposta JSON.
+4. **[Alta · Código]** Convite antigo (v1) reverte o snapshot do peer em silêncio: `newVer = payload.snapshotVersion || existing.version + 1` aceita versão menor e sobrescreve o conteúdo (`widget:644-654`).
+5. **[Crítica · UI]** Nenhum status é anunciado a leitor de tela (sem `role=status`/`aria-live`, `927-932` + markup `323/331/342/354`) e as cores fixas de status (`#4ade80/#facc15/#f87171`) ficam ilegíveis no tema claro (`71-73`).
+
+### 👨‍💻 Código — achados
+
+#### Widget (`shared-notes-widget.js`)
+
+**Alta**
+
+- **C1.1 · Falha parcial marcada como enviada** (`884-901`; handler `199-233`): o handler responde 200 com `errors[]` + `noteIds`, mas o widget marca **todas** as filhas coletadas como `snSent` e ignora `errors`. Correção: marcar só `result.data.noteIds` e reportar as falhas.
+- **C1.2 · Aviso de falha sobrescrito pelo sucesso** (`894-901`): o `catch` da marcação escreve warn e as linhas seguintes escrevem o status de sucesso por cima; próximo envio duplica as mesmas notas. Correção: concatenar o aviso à mensagem final.
+- **C4.1 · Convite antigo reverte o snapshot** (`644-654`): `snapshotVersion` menor é aceito e reescreve `setContent`/`snVersion`. Correção: rejeitar (ou confirmar) quando a versão recebida for menor.
+
+**Média**
+
+- **C4.2 · Nota vazia não pode ser aceita** (`612-617`): `!payload[k]` trata `''` como ausente. Correção: validar presença/tipo, não truthiness.
+- **C5.1 · Status/contadores da nota errada após troca** (`415-444`, `567-575`, `884-916`): awaits não conferem se `this._sharedNote` mudou. Correção: capturar o `noteId` e descartar resultado obsoleto.
+- **C2.1 · Fetch segue redirect sem revalidar destino** (`844-849`; validação `114-134`): 307/308 podem reenviar o POST (com conteúdo) para http/privado. Correção: `redirect: 'error'` ou validar cada `Location`.
+- **C3.1 · `resp.json()` sem limite de tamanho** (`850-852`): resposta hostil pode estourar a memória do backend. Correção: teto de bytes (`Content-Length`).
+- **C3.2 · Qualquer filha vira texto** (`791-803`): imagens/anexos entram como base64 gigante; uma filha problemática derruba a coleta (sem try/catch por filha). Correção: filtrar `type === 'text'` e isolar por filha.
+- **C2.2 · Sem guarda de nota protegida** (`515`, `801`): convite/envio não checam `isProtected`. Correção: bloquear/avisar (verificar em runtime o comportamento do `getContent`).
+- **C2.3 · `https://169.254.x.x` passa** (`119-126`): o bloqueio link-local só existe no ramo `http:`. Correção: aplicar antes do early-return de https.
+- **C4.3 · Dedupe por `#sharedNoteId` com clone de nota** (`632-641`): dois candidatos e a ordem do `searchForNotes` decide. Correção: preferir o da Inbox e avisar ambiguidade.
+
+**Baixa**
+
+- **C1.3 · `snVersion` NaN contamina o snapshot** (`518-520`, `646`, `712`): `parseInt('abc')` → `"NaN"`/`null`. Correção: `Number.isFinite` com fallback.
+- **C4.4 · Validação de tipos fraca do payload** (`611-621`, `651-655`): `v: "abc"`, `from`/`noteContent` objetos só quebram depois. Correção: `typeof` por campo.
+- **C1.4 · Nome > 80 gera erro enganoso** (`785`, `863`; handler `131-134`). Correção: validar/truncar no cliente e detalhar no handler.
+- **C1.5 · `myReplyToken` vazio sem aviso** (`765`, `814-826`): peer fica sem canal de resposta. Correção: aviso dedicado.
+- **C1.6 · Corpo não-JSON do peer engolido** (`850-852`): perde o texto real (proxy/502). Correção: guardar trecho bruto.
+- **C5.2 · Re-render de idioma apaga o texto colado** (`386-401`). Correção: preservar `.val()` no re-render.
+- **C1.7 · Cada clique em "Gerar" cria gate e incrementa versão** (`510-541`). Correção: reutilizar gate pendente ou avisar.
+
+**Sugestão**
+
+- **C2.4 · Fallback de token com `Math.random()`** (`95-100`): token previsível quando não há `crypto`. Recusar gerar sem `getRandomValues`.
+- **C6.1 · Sem detecção de `fetch` no sandbox** (`828-865`): erro genérico em instância antiga. Checar `typeof fetch`.
+- **C5.3 · Fetch em voo não cancelado ao fechar/trocar** (`840-860`): guardar o controller e abortar.
+
+#### Handler (`shared-notes-handler.js`)
+
+**Alta**
+
+- **C1.1 · `replies:[null]` derruba o handler** (`188-208`): o catch reacessa `r.title` no item nulo. Correção: validar `r && typeof r === 'object'` antes do try e fallback seguro no catch.
+
+**Média**
+
+- **C1.2 · Contrato 200-com-erros incompatível** (`199-212`, `229-233`): falhas viram perda silenciosa no cliente. Correção: 207 ou marcar só os `noteIds`.
+- **C3.1 · Busca de gate é varredura completa** (`149-156`): O(nº de gates) por POST público. Correção: `searchForNotes('#inviteToken=…')`.
+- **C4.1 · Vínculo com a âncora confia só no label** (`172-180`): não valida parentesco/lixeira. Correção: checar `parentNoteId` e `isDeleted`.
+- **C4.2 · Multi-peer sobrescreve o canal de retorno** (`214-220`): o último peer vira o único destino. Correção: canais por peer ou recusar o segundo.
+- **C4.3 · Itens de `replies` sem tipo viram "Sem título"** (`188-192`): `["texto"]`/`[{}]` criam nota vazia com 200. Correção: exigir `title`/`content` string.
+- **C1.3 · `inviteExpires` inválido desliga a expiração** (`163-168`): `!isNaN` pula a checagem e o convite vira eterno. Correção: tratar não numérico como expirado/erro.
+
+**Baixa**
+
+- **C1.4 · Interpolação em cadeia permite injeção de placeholders via `from`** (`81-89`, `190`). Correção: substituição em passe único.
+- **C6.1 · `gate.save()` redundante após mudar o título** (`225-226`). Correção: remover/verificar em runtime.
+- **C4.4 · Códigos 500 para erro de cliente** (`174`, `210-211`): usar 409/422 e orientar.
+- **C2.1 · 405 sem `Allow`/OPTIONS** (`116-118`). Correção: `Allow: POST` + OPTIONS 204.
+- **C2.2 · `from` aceito com newlines/controle** (`131`, `190`, `224`). Correção: strip de `[\r\n\t]`.
+
+**Sugestão**
+
+- **C6.2 · Corpo do handler sem try/catch global**: throw inesperado vira 500 HTML. Envolver com `reply(500, {...})`.
+
+#### Testes e versões (C7/C8)
+
+- **C7.1 · Zip divergente do manifest** (Média): o `Shared-notes.zip` não tem `relations` (a `renderNote` não é criada ao importar) e usa títulos/tipos diferentes do manifest ("Shared notes"/"Config"). Correção: regenerar o zip a partir do manifest/instalação real.
+- **C7.2 · README omite `backendScriptingEnabled`** (Média): o requisito só aparece no erro do widget (`209`, `448-456`).
+- **C7.4 · Validações/i18n duplicados widget×handler** (Média): mudança de regra exige sincronizar as duas cópias (`114-134`/`159-288` × `93-113`/`32-71`).
+- **C7.5 · Guia de config pode criar nota duplicada** (Média): manifest já cria a config e o README manda criar outra; o widget escolhe pela ordem do `searchForNotes` (`493-495`).
+- **C8.1 · Stub de jQuery não testa eventos** (Média): `on()` não guarda callback; binds/tabs nunca são exercitados (`test:77-88`).
+- **C8.2 · Sem entradas hostis no handler** (Média): faltam `replies:[null]`, 405, JSON inválido, 410, `replyToken` fora do regex (`test:110-121`).
+- **C8.4 · Cobertura ausente dos fluxos corrigíveis** (Média): downgrade, nota vazia, multi-peer, falha parcial de `snSent`.
+- **C7.3 · README diverge no vocabulário do token** (Baixa): EN diz "reply token"? o renovado é `inviteToken` (`655`).
+- **C7.7 · PT sem a nota de migração do AI-Chat** (Baixa): existe só no EN (`README:67` × `113-221`).
+- **C8.5 · Testes não portáveis e E2E sem cleanup** (Baixa): paths absolutos (`test:15`, `e2e:9`) e artefatos deixados nas instâncias (`e2e:336-339`).
+- **C8.3 · Smoke tolera falha do i18n** (Baixa): stub sem `getOption` esconde o caminho de locale (`test:291-293`).
+- **Config.txt de 0 bytes** na raiz (não referenciado por manifest/README).
+- **Sem script de regeneração do zip** (Sugestão): sincronia depende de processo manual.
+
+### 🎨 UI/UX — achados
+
+#### Widget
+
+**Crítica**
+
+- **D3.1 · Status não anunciados a leitor de tela** (`927-932`; markup `323`, `331`, `342`, `354`): sem `role="status"`/`aria-live`; erros e expiração terminam em silêncio. Correção: `role=status aria-live=polite` (e `role=alert` em erro).
+
+**Alta**
+
+- **D3.2 · Abas sem semântica de tablist** (`315-319`, `460-466`): sem `role="tab"/"tabpanel"`, `aria-selected`, `aria-controls`, setas. Correção: padrão WAI-ARIA Tabs.
+- **D5.1 · Painel "Responder" ativo sem aba visível** (`411`, `429-433`, `460-466`): ao trocar para nota sem canal, o painel e a contagem antiga permanecem. Correção: voltar para "Gerar" e limpar contagem.
+- **D5.2 · Convite antigo sobrevive à troca de nota** (`567-568`, `404-445`): textarea/Copiar não são limpos. Correção: limpar ao trocar.
+- **D5.3 · Aceitar sobrescreve nota existente sem aviso** (`644-654`, `682`): edição local perdida sem confirmação. Correção: confirmar ou oferecer duplicar.
+- **D5.4 · Erros parciais engolidos** (`884-901`; handler `229-233`): mesma raiz do C1.1 (UI mostra sucesso).
+- **D7.1 · Status ilegíveis no tema claro** (`71-73`, `323`): `#4ade80`/`#facc15`/`#f87171` ~1,5-2,8:1. Correção: variantes escuras por tema.
+- **D4.1 · Abas estouram o painel estreito** (`29-32`, `33-39`): sem `flex-wrap`/scroll; rótulos cortados no mobile. (verificar em runtime)
+
+**Média**
+
+- **D3.3 · Foco visível fraco/ausente** (`58`, `33-44`, `59-69`): `outline:none` no textarea; sem `:focus-visible` em tabs/botões.
+- **D3.4 · Campos sem rótulo** (`329-330`, `337-338`): só placeholder. Correção: `aria-label`.
+- **D4.2 · Alvos de toque < 40px** (`30-39`, `59-65`): tabs ~34px, botões ~35px.
+- **D1.1 · Aviso de respostas escondido no painel "Gerar"** (`323`, `436-441`): quem está em outra aba não vê.
+- **D1.2 · Sem contexto do destinatário antes de enviar** (`346-355`, `814-826`, `899-901`): não mostra o host de destino.
+- **D5.5 · Gestão de convites invisível** (`README:12`, `107-109`; handler `222-226`): sem lista/expiração/revogação; o título da gate muda (`🔒`→`💬`) e quebra a instrução do README.
+- **D5.6 · Cópia exige seleção manual** (`136-153`, `473-477`): fallback e instrução pressupõem seleção (ignora Mac/mobile).
+- **D5.7 · Mensagens técnicas cruas e PT fixo** (`577-578`, `739-740`, `854-856`, `918-919`): `e.message` cru e timeout em PT na UI EN.
+- **D5.8 · Re-render de idioma pode apagar digitação** (`386-398`, `372-376`): mesma raiz do C5.2.
+- **D2.1 · Glifos/nomes divergentes UI × README** (`316-318` × `README:74`, `186`).
+- **D2.2 · Roxo hardcoded fora do accent** (`58`, `67-68`): usar vars de botão/accent.
+- **D7.2 · Fallback escuro único no textarea** (`52`): `#1a1a2e` pode ficar ilegível no claro. (verificar em runtime)
+- **D8.1 · Fontes < 14px** (`27`, `38`, `55`, `64`, `70`, `74`, `75`, `323`).
+- **D6.1 · Micro-interações desiguais e sem reduced-motion** (`33-44`, `66-69`; única transição no botão primário).
+
+**Baixa**
+
+- **D1.3 · Posição do status varia por painel** (`325-331` × `339-342` × `349-354`).
+- **D2.3 · "Aceitar e criar nota" também atualiza** (`183`, `644-683`).
+- **D2.4 · CSS morto `.sn-badge`** (`74`).
+
+**Sugestão**
+
+- **D6.2 · Badge numérico na aba "Responder"** (`350`, `428-434`).
+- **D5.9 · Atalho Ctrl+Enter para aceitar/enviar** (`337-338`, `591`).
+
+#### Handler / mensagens
+
+- **D2.5 · Idioma do erro segue o receptor, não o remetente** (Média; handler `73-79`; widget `877-881`): A em PT recebe EN cru do handler de B. Correção: widget mapear código→chave própria.
+- **D5.10 · Jargão de desenvolvedor na UI** (Média; handler `39`, `43`, `45`, `64`): "Payload inválido…", "Gate note sem vínculo…". Correção: mensagens orientadas a ação.
+- **D2.6 · Nome > 80 cai em erro genérico** (Baixa; handler `131-134`).
+- **D2.7 · Títulos com glifos/separadores inconsistentes** (Baixa; handler `34`, `36`, `225` × widget `216`).
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
+|---|----------|------|-------|:-------:|:-----:|-----------|
+| 1 | Remover token ETAPI do E2E + rotação | `test-e2e-real.js:13` | Fecha vazamento público (token no GitHub) | S + rotação | Baixo | `rg 9WkRivSi` = 0; token velho 401 |
+| 2 | Marcar `snSent` só nos ids confirmados | `widget:884-898`; `handler:188-233` | Fim da perda silenciosa em falha parcial | S/M | Baixo | simulador com 1 falha de 2 |
+| 3 | Revogar convites pela UI (neutraliza `inviteToken`) | `widget:321-332,528-538,716-724` | Revogação sem caçar gate na árvore | M | Médio | simulador (peer recebe 404) + 2 toques |
+| 4 | Aceitar `noteContent`/título vazios | `widget:612-616` | Nota vazia compartilhável | S | Baixo | asserção no simulador |
+| 5 | Botão ⟳ para atualizar contagens/avisos | `widget:315-319`, `404-445` | Ver respostas novas sem F5 | S | Baixo | simulador + manual |
+| 6 | Limpar convite ao trocar de nota | `widget:404-445`, `567-568` | Evita enviar convite da nota anterior | S | Baixo | simulador |
+| 7 | Expiração configurável e visível (`#inviteExpireDays`) | `widget:492-501,526,570-575`; handler `163-169` | Convite com data de validade na UI | S | Baixo | simulador |
+| 8 | Validar formato/tamanho do `inviteToken` no handler | `handler:131-139` | Rejeita lixo antes da varredura | S | Baixo | simulador (400) |
+| 9 | ARIA nas abas e status | `widget:314-319,323,331,342,354,460-467` | Leitor de tela anuncia estados | S | Baixo | asserção no smoke |
+| 10 | Estado vazio real na aba Responder | `widget:415-434` | Fim do "já foram enviadas" enganoso | S | Baixo | simulador |
+| 11 | Evitar backend em toda troca de nota | `widget:405-426` | Menos serialização/execução | S | Baixo | espião no stub |
+| 12 | README: backend scripting, troubleshooting, testes | `README:45-67,157-179` | Falha de instalação mais comum documentada | S | Baixo | conferência |
+| 13 | Manifest: config sem placeholders quebrados | `manifest.json:21-24,74,79` | Evita "yourname"/endpoint inválido | S | Baixo | reimportar no demo |
+| 14 | Harness portátil (sem `/home/ricardo`) | `test:15`; `e2e:9` | Testes rodam em qualquer máquina | S | Baixo | copiar p/ /tmp e rodar |
+| 15 | Cobrir o boot guard do handler no simulador | `test:110-122`; handler `17-23` | Evita regressão do guard | S | Baixo | asserção nova |
+| 16 | Travar paridade das chaves i18n no teste | `test:272-278` | Impede deriva PT/EN | S | Baixo | asserção de conjuntos |
+
+**Notas dos 5 primeiros:** (1) exigir `E2E_A_TOKEN` por env com erro claro, remover o
+literal do arquivo e rotacionar o token no Trilium; (2) handler devolve `sourceIds`
+das respostas criadas e o widget marca só esses ids, avisando falhas; (3) botão com
+2 toques que zera o `inviteToken` das gates filhas (neutraliza sem `deleteNote`);
+(4) trocar `!payload[k]` por `payload[k] == null`; (5) ⟳ reaproveitando os contadores
+existentes com guarda de reentrância.
+
+**Descartes explícitos:** criptografia E2E + HMAC (wishlist L, exige formato v3 e
+coordenação entre pares); pré-visualização do convite (validação local já cobre);
+polling com `setInterval` (timers em widget + backend em loop; o ⟳ cobre);
+`prefers-reduced-motion` como quick win separado (única transição é do botão
+primário; entra junto com o D6.1); auto-copiar o convite ao gerar (clipboard sem
+gesto falha em http de LAN).
+
+### Pontos fortes (não mexer)
+
+- Callbacks de backend auto-contidos com args em array em todas as chamadas, incluindo o `fetch`/`AbortController` (padrão do sandbox 0.105+).
+- Guard de boot do handler (`18-23`) e todas as saídas passando por `reply()` com `res.setHeader`.
+- Nenhum dado do peer entra no DOM sem `snEscape` (`927-932`); convite vai para `.val()`.
+- Validação de endpoint simétrica e conservadora (https; privadas/Tailscale; 169.254 bloqueado no http; IPv6 `::1`) com aviso ao usuário.
+- Timeout de 30s com `clearTimeout` no `finally` e retorno estruturado `{status,data}`.
+- Codec UTF-8 correto e fallbacks para contexto não-seguro (`snUuid`, `snCopiar`).
+- Snapshot in-place preserva filhas e renova `inviteToken`; envio cumulativo ignora gates/respostas; dedupe global; i18n PT/EN completo (62 chaves).
+- Zip com JS idêntico ao repo; `test-shared-notes.js` com 47 asserções e smoke.
+
+### Versões/registry/README
+
+- Registry `shared-notes` **0.10.1** via `manifestUrl` (sem `sourceUrl`), instalação pelo manager monta `children`/`relations` corretamente.
+- **Zip × manifest divergentes** (C7.1): sem `relations` (widget não aparece na nota raiz ao importar o zip) e títulos/tipos diferentes; `Config.txt` de 0 byte não referenciado.
+- README omite o requisito de backend scripting e diverge em vocabulário de token; PT sem a nota de migração do AI-Chat.
+- `test-e2e-real.js` com token vivo da VPS (item 1 do top 5) e sem cleanup de artefatos.
+
+### Veredito da rodada 4
+
+Plugin funcional e maduro no fluxo feliz (harness 47 asserções + E2E real 32 já
+verdes; sandbox correto; sem XSS no DOM; validações conservadoras), com riscos
+concentrados em: (a) **segurança/vazamento** do token no E2E versionado (ação
+imediata); (b) **perda silenciosa** no envio parcial (`snSent` em lote) e no
+handler com entradas malformadas; (c) **integridade do snapshot** no downgrade de
+convite; (d) **acessibilidade e contraste** do widget (status sem ARIA, cores de
+tema escuro no claro); (e) **divergência zip × manifest** e README incompleto.
+Nenhuma correção foi aplicada nesta rodada.
+
+**Próximo da lista:** AI-Chat (rodada 5).
