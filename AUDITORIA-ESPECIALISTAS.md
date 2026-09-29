@@ -80,7 +80,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 3 | Canvas-Note-Tools (widget + launcher mobile) | `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js`, `mobile-launcher.src.js`, `build-mobile-launcher.js` | 29/09/2026 | 42 achados (0C/4A/14M/20B/4S) | 35 achados (2C/8A/18M/5B/2S) | 16 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smoke do widget e do launcher); residual no `ROADMAP-RESIDUAIS.md` |
 | 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Batches 1-2 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; 70 chaves i18n em paridade; testes hostis); ✅ token do E2E rotacionado (29/09); residual no `ROADMAP-RESIDUAIS.md` |
 | 5 | AI-Chat (render note) | `AI-Chat/AI-Chat/AI Code.js` | 29/09/2026 | 50 achados (2C/9A/18M/17B/4S) | 40 achados (3C/11A/16M/9B/1S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/zip com sha256 idêntico; demo: instalação nova via ETAPI com sha idêntico e config pelo label; 85 chaves i18n em paridade; `test-chat.js` + `test-smoke.js`); residual no `ROADMAP-RESIDUAIS.md` |
-| 6 | Minimalist Pomodoro + Time Tracker | `Minimalist-Pomodoro/Pomodoro-mini/Pomodoro mini.js` | 29/09/2026 | 36 achados (2C/4A/16M/9B/5S) | 33 achados (1C/8A/14M/8B/3S) | 20 itens (S/M) | **Auditoria concluída; nenhuma correção aplicada** (batches após triagem: 1) integridade/perda de dados + relatório, 2) a11y/estado/tema + i18n, 3) harness + README/zip) |
+| 6 | Minimalist Pomodoro + Time Tracker | `Minimalist-Pomodoro/Pomodoro-mini/Pomodoro mini.js` | 29/09/2026 | 36 achados (2C/4A/16M/9B/5S) | 33 achados (1C/8A/14M/8B/3S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; `test-pomodoro.js` 35 ✅ + `test-smoke.js` 30 ✅; STOP em 2 toques que só limpa após salvar; relatório em `<tr>` com escaping e label `#pomodoro`; i18n 30 chaves em paridade); residual no `ROADMAP-RESIDUAIS.md` |
 
 ### 🔁 Fila proposta (ajustável)
 
@@ -1751,3 +1751,53 @@ triagem (candidatos: 1) integridade/perda de dados + relatório, 2) a11y/estado/
 3) harness + README/zip).
 
 **Próximo da lista:** Word-Counter (rodada 7 — prioridade do release).
+
+---
+
+## ✅ Correções aplicadas — rodada 6, batches 1-3 (29/09/2026)
+
+### Batch 1 — integridade, perda de dados e relatório
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C1.1/D5.1 | **STOP condicionado ao sucesso**: `_saveReport()` devolve booleano; `_stop()` só zera a sessão com o relatório salvo (falha mantém os dados e a pendência) | smoke B/E (falha do backend preserva dados, pendência visível, nenhum relatório criado) |
+| C4.1 | **Fim da inflação offline**: `lastTick` restaurado é reancorado (`Date.now()`), então tempo com o app fechado não é creditado a nota nenhuma | `test-pomodoro` (guarda estrutural) + smoke B |
+| C2.1/QW3-4 | **Relatório corrigido**: linhas viram `<tr><td>` de verdade (era markdown dentro do `<tbody>`), títulos escapados (`escHtml`), id validado; label `#pomodoro`; data de início da sessão (fim do bug de meia-noite); título com data/hora | `test-pomodoro` (7 asserções) + smoke B |
+| C4.3 | **Pausa não conta como tempo de nota**: `_finishSession` desancora no break e reancora no foco; `refreshWithNote` ignora o break | `test-pomodoro` (nextSession) + revisão |
+| C1.2 | **Restore não sobrescreve estado vivo** no remount (só restaura com `noteTimes` vazio), com merge de ciclos | smoke (re-render) + revisão |
+| C5.1 | **Ciclo de vida**: `beforeunload` único por página (`__pomoUnload`), init idempotente (`bootInitialized`), tick via `tickGlobal` no widget atual, DOM só repinta quando o segundo muda e tick de 1 s (fim do `pomo-ticks` 4×/s) | `test-pomodoro` (guardas) + smoke |
+| C4.2/C1.6/QW1 | **Recarga retoma a sessão** (`pomo-session-end` futuro religa o timer) e `_updateUI()` roda sempre no boot (fim do 25:00 "mentiroso") | smoke (timerBoot 10:00) + revisão |
+| C1.3/D5.4 | **Guarda de reentrada** (`saving`) + botões desabilitados; salvamento manual reancora a nota atual e zera ciclos por relatório | smoke (disabled) + revisão |
+| C1.4/C4.9/C4.13 | **Pendência fantasma**: `_pause` só persiste com dados; `parseTrackingData` valida tipos/ids/ms (compatível com `secs` legado) e JSON corrompido avisa e é preservado | `test-pomodoro` + smoke D |
+| C1.5/C3.3 | Storage só pelos helpers com try/catch; `_updateUI` não relê o localStorage fora do check da pendência | revisão + smoke |
+| C4.4/C4.5 | Salvar no meio não para o tracking (reancora); `cycleCount` zera por relatório | smoke B + revisão |
+| C4.7 | Data do relatório usa a **data de início da sessão** (persistida no payload) | `test-pomodoro` + revisão |
+| C4.8/C6.1 | `_start` sem nota limpa a âncora; mensagem informa o destino (nota do dia ou nota atual) | smoke B (mensagem "nota do dia") |
+| C1.7 | Erro com fallback de mensagem (`(e && e.message) || e`) | `test-pomodoro` (guarda) |
+
+### Batch 2 — a11y, estados, tema e i18n
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D3.1-D3.5/QW12 | **A11y**: `aria-label` estável nos 3 botões, `role="timer"` com rótulo por minuto, região `role="status" aria-live` para as transições, alvos ≥40 px (44 no mobile), `:focus-visible`, teclado `p`/`s` escopado ao widget | smoke A/C (aria em PT e EN, roles) |
+| D5.1/QW9 | STOP em **2 toques** (arma por 4 s com título próprio) e só limpa após salvar | smoke A/B |
+| D7.1/D6.1/D6.3 | Hover real (`--hover-item-background-color` com fallbacks), `:active`/`disabled` com opacidade e `prefers-reduced-motion` | revisão + smoke |
+| D2.1/D2.4/D2.6/D5.5 | **i18n PT/EN** (30 chaves em paridade, locale do Trilium, datas por idioma), terminologia única (Foco/Pausa, "Encerrar e salvar"), fim do emoji e do título duplicado, indicador de ciclo e anúncio de fase | smoke C (EN) + paridade no `test-pomodoro` |
+| D5.3/D5.6/QW7 | Pendência vira `<button>` real, só aparece com dados e tem ação/aviso | smoke B/D |
+| D2.5/QW5 | Fim do estado `'...'`; transições anunciadas na live region | smoke + revisão |
+
+### Batch 3 — harness, README e artefatos
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C8.1/QW14-15 | **`test-pomodoro.js`** (puros: `formatTime`, `nextSession`, relatório com escaping, `parseTrackingData`, 9 guardas estruturais, paridade i18n) e **`test-smoke.js`** (Chrome headless: boot PT/EN, start/stop em 2 toques, estado salvo, pendência corrompida, falha do backend) | `bun test-pomodoro.js` 35 ✅ · `bun test-smoke.js` 30 ✅ |
+| C7.4/C7.6/QW19-20 | README reescrito (promessas reais, left-pane, STOP, destino do relatório, testes) e **zip regenerado** (JS sha `cb4fddb6…`, meta `0.106.0`) | sha256 zip = repo |
+
+**Deploy (29/09):** VPS (nota `o6lGc6BE5d9g` "Pomodoro mini") e demo EN (`8a2iAuivWwJE`
+"Minimalist Pomodoro and Time Tracker") via ETAPI, **sha256 `cb4fddb6…` idêntico
+repo=VPS=demo**; zip regenerado com o mesmo sha.
+
+**Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Minimalist Pomodoro): durações
+configuráveis (`#pomoWorkMin`/`#pomoBreakMin`), idempotência do `cssBlock` + ids globais,
+vínculo para a nota do relatório, prévia do relatório, ícone do relatório, smoke da retomada
+após reload e capturas do README.

@@ -115,8 +115,21 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 | AC-D2.4 | Regravar capturas do README (EN/emoji antigos, contradizem a UI atual) | Doc | S | Baixo | `imagens/` | manual nos 2 temas |
 | AC-C7.6 | Registry: descrição "widget" → "render note" + bump de versão no release | Release | S | Baixo | `registry.json` | revisão |
 
+## Minimalist Pomodoro + Time Tracker (rodada 6)
+
+| ID | Item | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+|----|------|-----------|:-------:|:-----:|------------------------------|-----------|
+| PM-C4.x | Durações configuráveis via labels `#pomoWorkMin`/`#pomoBreakMin` (default 25/5, clamp 1–120) | UX | M | Médio | consts `WORK_SECS`/`BREAK_SECS`; relatório | teste puro `resolveDurations` + manual |
+| PM-C5.2/C7.3 | `cssBlock` reanexa o CSS a cada render e os ids `#pomo-*` são globais | Manutenção | S | Baixo | `CSS`/`buildTpl` | smoke de remount + revisão |
+| PM-D5.x | Vínculo clicável para a nota do relatório na mensagem (hoje só o texto do destino) | UX | S | Baixo | `_saveReport` | manual |
+| PM-D5.12 | Prévia do relatório antes de salvar | UX | S/M | Baixo | `_saveReport` | manual |
+| PM-D8.1 | Ícone do relatório (`bx-file` = mesmo glifo da aba "File properties") | UX | S | Baixo | `buildTpl` | revisão visual |
+| PM-C8.x | Cobrir no smoke a retomada de sessão após reload (`pomo-session-end` no futuro) | Testes | S | Baixo | `test-smoke.js` | asserção nova |
+| PM-D2.4 | Regravar capturas do README (UI antiga: emoji, sem ciclo) | Doc | S | Baixo | `imagens/` | manual nos 2 temas |
+
 ## Histórico
 
+- **29/09/2026** — atualizado com os residuais da rodada 6 (Minimalist Pomodoro).
 - **29/09/2026** — **Daily-Note-Map removido da coleção** (decisão de uso: o mapa
   nativo do Trilium cobre; o código fica no histórico do git): saiu do repo, do README
   do toolkit e do registry do Plugin Manager; a fila de auditoria caiu de 16 para 15.
