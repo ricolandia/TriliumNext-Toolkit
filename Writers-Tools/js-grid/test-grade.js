@@ -28,11 +28,13 @@ eval(
     extrairFuncao('escaparHtml') + '\n' +
     extrairFuncao('contarPalavras') + '\n' +
     extrairFuncao('avisar') + '\n' +
+    extrairFuncao('sanitizarHtml') + '\n' +
     extrairFuncao('ehNotaDeScript') + '\n' +
     extrairFuncao('ehCompilado') + '\n' +
     extrairFuncao('abrirNota') + '\n' +
     'globalThis.escaparHtml = escaparHtml; globalThis.contarPalavras = contarPalavras;' +
-    'globalThis.avisar = avisar; globalThis.ehNotaDeScript = ehNotaDeScript;' +
+    'globalThis.avisar = avisar; globalThis.sanitizarHtml = sanitizarHtml;' +
+    'globalThis.ehNotaDeScript = ehNotaDeScript;' +
     'globalThis.ehCompilado = ehCompilado; globalThis.abrirNota = abrirNota;'
 );
 
@@ -43,8 +45,10 @@ const ok = (nome, cond, extra) => {
 };
 
 console.log('1) escaparHtml');
-ok('escapa & < >', escaparHtml('<b>Olá & "mundo"</b>') === '&lt;b&gt;Olá &amp; "mundo"&lt;/b&gt;',
+ok('escapa & < >', escaparHtml('<b>Olá & "mundo"</b>') === '&lt;b&gt;Olá &amp; &quot;mundo&quot;&lt;/b&gt;',
     escaparHtml('<b>Olá & "mundo"</b>'));
+ok('escapa aspas duplas (atributo title)', escaparHtml('a" onmouseover="x') === 'a&quot; onmouseover=&quot;x', escaparHtml('a" onmouseover="x'));
+ok('escapa aspas simples', escaparHtml("d'água") === 'd&#39;água', escaparHtml("d'água"));
 ok('null → ""', escaparHtml(null) === '', escaparHtml(null));
 ok('undefined → ""', escaparHtml(undefined) === '', escaparHtml(undefined));
 ok('0 → "0"', escaparHtml(0) === '0', escaparHtml(0));
@@ -66,6 +70,17 @@ ok('nota sem mime → false', ehNotaDeScript({}) === false);
 console.log('\n4) ehCompilado');
 ok('com #compiledDoc → true', ehCompilado({ hasLabel: (l) => l === 'compiledDoc' }) === true);
 ok('sem #compiledDoc → false', ehCompilado({ hasLabel: () => false }) === false);
+
+console.log('\n4b) sanitizarHtml (notas do compilado)');
+ok('remove <script>…</script>', !sanitizarHtml('<p>ok</p><script>alert(1)</script>').includes('<script'),
+    sanitizarHtml('<p>ok</p><script>alert(1)</script>'));
+ok('remove <script src>', !sanitizarHtml('<script src="x.js"></script>').includes('script'));
+ok('remove atributo on*', !sanitizarHtml('<img src=x onerror="alert(1)">').includes('onerror'),
+    sanitizarHtml('<img src=x onerror="alert(1)">'));
+ok('neutraliza javascript: em href', !/javascript:/i.test(sanitizarHtml('<a href="javascript:alert(1)">x</a>')),
+    sanitizarHtml('<a href="javascript:alert(1)">x</a>'));
+ok('preserva HTML normal', sanitizarHtml('<p>texto <b>forte</b></p>') === '<p>texto <b>forte</b></p>',
+    sanitizarHtml('<p>texto <b>forte</b></p>'));
 
 console.log('\n5) avisar e abrirNota (api stubado)');
 avisar('teste');

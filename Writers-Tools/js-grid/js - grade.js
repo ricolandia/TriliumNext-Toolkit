@@ -14,6 +14,12 @@ const dashboardNote = api.originEntity;
 // ignorar style inline (o layout não pode depender do tema, ex.: Folio).
 (function () {
     if (typeof document === 'undefined' || typeof $ === 'undefined' || !$.fn) return;
+    // Instala UMA vez por página: o script pode re-executar (refresh do render note)
+    // e os wrappers não podem se acumular (senão o CSS duplica e a corrente de
+    // patches entre plugins cresce a cada refresh).
+    if (window.__lgPatched) return;
+    window.__lgPatched = true;
+
     const getStyleEl = () => {
         let el = document.getElementById('lg-styles');
         if (!el) {
@@ -28,8 +34,11 @@ const dashboardNote = api.originEntity;
         if (!str.includes('<style>')) return str;
         const styleEl = getStyleEl();
         const re = /<style>([\s\S]*?)<\/style>/g;
+        let css = '';
         let m;
-        while ((m = re.exec(str)) !== null) styleEl.textContent += '\n' + m[1];
+        while ((m = re.exec(str)) !== null) css += '\n' + m[1];
+        // Idempotente: substitui o conteúdo em vez de acumular a cada render
+        if (styleEl.textContent !== css) styleEl.textContent = css;
         return str.replace(re, '');
     };
     const origHtml = $.fn.html;
@@ -38,9 +47,10 @@ const dashboardNote = api.originEntity;
         if (typeof arg === 'string' && arg.includes('<style>')) arg = hoist(arg);
         return origHtml.apply(this, [arg]);
     };
-    $.fn.append = function (arg) {
-        if (typeof arg === 'string' && arg.includes('<style>')) arg = hoist(arg);
-        return origAppend.apply(this, [arg]);
+    $.fn.append = function () {
+        const args = Array.prototype.slice.call(arguments);
+        if (typeof args[0] === 'string' && args[0].includes('<style>')) args[0] = hoist(args[0]);
+        return origAppend.apply(this, args);
     };
 })();
 
@@ -135,7 +145,9 @@ function escaparHtml(texto) {
     return String(texto == null ? '' : texto)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function contarPalavras(texto) {
@@ -143,9 +155,23 @@ function contarPalavras(texto) {
     return limpo ? limpo.split(/\s+/).length : 0;
 }
 
-/** Aviso nativo do Trilium (silencioso em versões antigas) */
+/** Aviso nativo do Trilium (com fallback no console quando indisponível) */
 function avisar(mensagem) {
-    try { api.showMessage(mensagem); } catch (e) { /* opcional */ }
+    try { api.showMessage(mensagem); return; } catch (e) { /* opcional */ }
+    try { console.warn('[Longform]', mensagem); } catch (e) { /* sem console */ }
+}
+
+/** Sanitização defensiva do HTML das filhas antes de entrar no compilado:
+ *  remove scripts/frames, atributos on* e URLs javascript: (mitigação de
+ *  conteúdo importado; o conteúdo é do próprio usuário). */
+function sanitizarHtml(html) {
+    return String(html || '')
+        .replace(/<\s*script\b[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, '')
+        .replace(/<\s*script\b[^>]*\/?>/gi, '')
+        .replace(/<\s*(iframe|object|embed)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+        .replace(/<\s*(iframe|object|embed)\b[^>]*\/?>/gi, '')
+        .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/(href|src)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*'|javascript:[^\s>]+)/gi, '$1="#"');
 }
 
 /** Notas de script (JS/CSS) não entram no grid */
@@ -175,35 +201,75 @@ let ultimoDrag = 0;
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
 
+let renderizando = false;
+let ultimaOrdem = null;
+
 async function renderizar() {
-    const todas = await dashboardNote.getChildNotes();
-    let children = todas.filter((n) => !ehNotaDeScript(n) && !ehCompilado(n));
-
-    // ordem salva
-    let savedOrder = [];
+    if (renderizando) return; // evita renders concorrentes (duplicar cards)
+    renderizando = true;
     try {
-        const label = dashboardNote.getLabelValue('gridOrder');
-        if (label) savedOrder = JSON.parse(label);
-    } catch (e) {}
+        const todas = await dashboardNote.getChildNotes();
+        let children = todas.filter((n) => !ehNotaDeScript(n) && !ehCompilado(n));
 
-    if (savedOrder.length > 0) {
-        const map = {};
-        children.forEach((n) => { map[n.noteId] = n; });
+        // ordem salva (label com JSON válido; se não for array, ignora)
+        let savedOrder = [];
+        try {
+            const label = dashboardNote.getLabelValue('gridOrder');
+            if (label) savedOrder = JSON.parse(label);
+        } catch (e) { /* ordem corrompida: segue a ordem natural */ }
+        if (!Array.isArray(savedOrder)) savedOrder = [];
 
-        const ordered = [];
-        savedOrder.forEach((id) => {
-            if (map[id]) { ordered.push(map[id]); delete map[id]; }
-        });
+        if (savedOrder.length > 0) {
+            const map = {};
+            children.forEach((n) => { map[n.noteId] = n; });
 
-        children = ordered.concat(Object.values(map));
-    }
+            const ordered = [];
+            savedOrder.forEach((id) => {
+                if (map[id]) { ordered.push(map[id]); delete map[id]; }
+            });
 
-    api.$container.html(`
+            children = ordered.concat(Object.values(map));
+        }
+        ultimaOrdem = JSON.stringify(children.map((n) => n.noteId));
+
+        // Conteúdo das filhas em paralelo; uma nota problemática não derruba o grid
+        const cards = await Promise.all(children.map(async (child) => {
+            let text = '';
+            try {
+                const contentData = await child.getNoteComplement();
+                text = (contentData.content || '')
+                    .replace(/<\/(p|div|h[1-6]|li)>/gi, '\n')
+                    .replace(/<br\s*\/?>/gi, '\n')
+                    .replace(/<[^>]*>/g, '')
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/&amp;/g, '&')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .trim();
+            } catch (e) { /* segue com a nota vazia */ }
+
+            const palavras = contarPalavras(text);
+            const preview = text.length > 180 ? text.substring(0, 180) + '…' : text;
+
+            return {
+                palavras,
+                html: `
+            <div class="lg-card" data-id="${child.noteId}" draggable="true" tabindex="0" role="button" title="${escaparHtml(child.title)} · Enter abre · ↑/↓ reordena">
+                <h3>${escaparHtml(child.title)}</h3>
+                <p>${escaparHtml(preview) || 'Nota vazia…'}</p>
+                <div class="lg-footer">📝 ${palavras.toLocaleString('pt-BR')} palavra${palavras !== 1 ? 's' : ''}</div>
+            </div>`,
+            };
+        }));
+
+        const totalPalavras = cards.reduce((soma, c) => soma + c.palavras, 0);
+
+        api.$container.html(`
         <style>${CSS}</style>
         <div id="lg-root">
             <div class="lg-header">
                 <div class="lg-info">
-                    ${children.length} nota${children.length !== 1 ? 's' : ''} · arraste para ordenar · clique para abrir
+                    ${children.length} nota${children.length !== 1 ? 's' : ''} · 📝 ${totalPalavras.toLocaleString('pt-BR')} palavra${totalPalavras !== 1 ? 's' : ''} · arraste para ordenar · clique para abrir
                 </div>
                 <div class="lg-actions">
                     <button id="btn-refresh" class="lg-btn lg-btn-sec">⟳ Atualizar</button>
@@ -214,35 +280,27 @@ async function renderizar() {
         </div>
     `);
 
-    const $grid = api.$container.find('#grid');
+        const $grid = api.$container.find('#grid');
 
-    if (!children.length) {
-        $grid.html('<div class="lg-empty">Nenhuma nota de conteúdo ainda.<br>Crie notas filhas desta para montar o seu documento.</div>');
-        return;
-    }
+        if (!children.length) {
+            $grid.html('<div class="lg-empty">Nenhuma nota de conteúdo ainda.<br>Crie notas filhas desta para montar o seu documento.</div>');
+            return;
+        }
 
-    for (const child of children) {
-        const contentData = await child.getNoteComplement();
-        const text = (contentData.content || '')
-            .replace(/<\/(p|div|h[1-6]|li)>/gi, '\n')
-            .replace(/<br\s*\/?>/gi, '\n')
-            .replace(/<[^>]*>/g, '')
-            .replace(/&nbsp;/g, ' ')
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .trim();
+        $grid.append(cards.map((c) => c.html).join(''));
 
-        const palavras = contarPalavras(text);
-        const preview = text.length > 180 ? text.substring(0, 180) + '…' : text;
-
-        $grid.append(`
-            <div class="lg-card" data-id="${child.noteId}" draggable="true">
-                <h3>${escaparHtml(child.title)}</h3>
-                <p>${escaparHtml(preview) || 'Nota vazia…'}</p>
-                <div class="lg-footer">📝 ${palavras.toLocaleString('pt-BR')} palavra${palavras !== 1 ? 's' : ''}</div>
+    } catch (err) {
+        api.$container.html(`
+            <style>${CSS}</style>
+            <div id="lg-root">
+                <div class="lg-empty">
+                    Erro ao carregar o grid: ${escaparHtml(err.message)}<br><br>
+                    <button id="btn-retry" class="lg-btn">⟳ Tentar de novo</button>
+                </div>
             </div>
         `);
+    } finally {
+        renderizando = false;
     }
 }
 
@@ -253,16 +311,25 @@ async function salvarOrdem() {
     const order = api.$container.find('#grid .lg-card').map(function () {
         return $(this).attr('data-id');
     }).get();
+    const json = JSON.stringify(order);
+    if (json === ultimaOrdem) return; // nada mudou: não escreve nem avisa
 
-    await api.runOnBackend((noteId, order) => {
-        api.getNote(noteId).setLabel('gridOrder', JSON.stringify(order));
-    }, [dashboardNote.noteId, order]);
-
-    avisar('Ordem salva');
+    try {
+        await api.runOnBackend((noteId, order) => {
+            api.getNote(noteId).setLabel('gridOrder', JSON.stringify(order));
+        }, [dashboardNote.noteId, order]);
+        ultimaOrdem = json;
+        avisar('Ordem salva');
+    } catch (e) {
+        avisar('Não foi possível salvar a ordem: ' + ((e && e.message) || e));
+    }
 }
 
-// Handlers delegados no container (sobrevivem ao re-render)
-api.$container.on('dragstart', '.lg-card', function (e) {
+// Handlers delegados no container (sobrevivem ao re-render). O `.off('.lg')`
+// evita acúmulo quando o script re-executa (refresh do render note).
+api.$container.off('.lg');
+
+api.$container.on('dragstart.lg', '.lg-card', function (e) {
     dragged = this;
     const dt = e.originalEvent && e.originalEvent.dataTransfer;
     if (dt) {
@@ -272,20 +339,20 @@ api.$container.on('dragstart', '.lg-card', function (e) {
     $(this).addClass('lg-dragging');
 });
 
-api.$container.on('dragover', '.lg-card', function (e) {
+api.$container.on('dragover.lg', '.lg-card', function (e) {
     e.preventDefault();
     if (e.originalEvent && e.originalEvent.dataTransfer) e.originalEvent.dataTransfer.dropEffect = 'move';
 });
 
-api.$container.on('dragenter', '.lg-card', function () {
+api.$container.on('dragenter.lg', '.lg-card', function () {
     $(this).addClass('lg-drop');
 });
 
-api.$container.on('dragleave', '.lg-card', function () {
+api.$container.on('dragleave.lg', '.lg-card', function () {
     $(this).removeClass('lg-drop');
 });
 
-api.$container.on('drop', '.lg-card', function (e) {
+api.$container.on('drop.lg', '.lg-card', function (e) {
     e.preventDefault();
     e.stopPropagation();
     $(this).removeClass('lg-drop');
@@ -298,24 +365,24 @@ api.$container.on('drop', '.lg-card', function (e) {
     else $(dragged).insertAfter(this);
 });
 
-api.$container.on('dragover', '#grid', function (e) {
+api.$container.on('dragover.lg', '#grid', function (e) {
     e.preventDefault();
     if (!$(e.target).closest('.lg-card').length) $(this).addClass('lg-over');
 });
 
-api.$container.on('dragleave', '#grid', function (e) {
+api.$container.on('dragleave.lg', '#grid', function (e) {
     const para = e.relatedTarget;
     if (!para || !$.contains(this, para)) $(this).removeClass('lg-over');
 });
 
-api.$container.on('drop', '#grid', function (e) {
+api.$container.on('drop.lg', '#grid', function (e) {
     e.preventDefault();
     $(this).removeClass('lg-over');
     // soltar na área vazia (ou depois do último card) move para o fim
     if (dragged && !$(e.target).closest('.lg-card').length) $(this).append(dragged);
 });
 
-api.$container.on('dragend', '.lg-card', async function () {
+api.$container.on('dragend.lg', '.lg-card', async function () {
     ultimoDrag = Date.now();
     $(this).removeClass('lg-dragging');
     api.$container.find('.lg-card').removeClass('lg-drop');
@@ -324,13 +391,35 @@ api.$container.on('dragend', '.lg-card', async function () {
     await salvarOrdem();
 });
 
-// Clique abre a nota (ignora o clique que encerra um arraste)
-api.$container.on('click', '.lg-card', function () {
+// Clique abre a nota (ignora o clique que encerra um arraste e os botões de mover)
+api.$container.on('click.lg', '.lg-card', function (e) {
     if (Date.now() - ultimoDrag < 250) return;
+    if ($(e.target).closest('.lg-mover').length) return;
     abrirNota($(this).attr('data-id'));
 });
 
-api.$container.on('click', '#btn-refresh', () => renderizar());
+// Teclado: Enter/Espaço abre; ↑/↓ move o card (alternativa sem mouse)
+api.$container.on('keydown.lg', '.lg-card', function (e) {
+    const $card = $(this);
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        abrirNota($card.attr('data-id'));
+        return;
+    }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const $irmaos = $card.parent().find('.lg-card');
+        const pos = $irmaos.index($card);
+        if (e.key === 'ArrowUp' && pos > 0) $card.insertBefore($irmaos.eq(pos - 1));
+        else if (e.key === 'ArrowDown' && pos < $irmaos.length - 1) $card.insertAfter($irmaos.eq(pos + 1));
+        else return;
+        $card.trigger('focus');
+        salvarOrdem();
+    }
+});
+
+api.$container.on('click.lg', '#btn-refresh', () => renderizar());
+api.$container.on('click.lg', '#btn-retry', () => renderizar());
 
 
 // ── GERAR DOCUMENTO ───────────────────────────────────────────────────────────
@@ -339,6 +428,7 @@ async function gerarDocumento() {
     const $btn = api.$container.find('#btn-generate');
     if ($btn.prop('disabled')) return;
     $btn.prop('disabled', true).text('⏳ Gerando…');
+    api.$container.find('#btn-refresh').prop('disabled', true);
 
     try {
         const ids = api.$container.find('#grid .lg-card').map(function () {
@@ -354,7 +444,7 @@ async function gerarDocumento() {
         for (const id of ids) {
             const note = await api.getNote(id);
             const data = await note.getNoteComplement();
-            content += `<h2>${escaparHtml(note.title)}</h2>${data.content || ''}<br><hr><br>`;
+            content += `<h2>${escaparHtml(note.title)}</h2>${sanitizarHtml(data.content || '')}<br><hr><br>`;
         }
 
         const titulo = '📄 ' + dashboardNote.title;
@@ -371,13 +461,17 @@ async function gerarDocumento() {
                 return 'atualizado';
             }
 
-            const { note } = api.createNewNote({
-                parentNoteId: parentId,
-                title: title,
-                content: content,
-                type: 'text'
+            // Nota + label na MESMA transação: se o label falhar, nada fica
+            // para trás (senão a nota viraria card e se auto-compilaria)
+            api.transactional(() => {
+                const { note } = api.createNewNote({
+                    parentNoteId: parentId,
+                    title: title,
+                    content: content,
+                    type: 'text'
+                });
+                note.setLabel('compiledDoc', '');
             });
-            note.setLabel('compiledDoc', '');
             return 'criado';
         }, [dashboardNote.noteId, titulo, content]);
 
@@ -388,6 +482,7 @@ async function gerarDocumento() {
         avisar('Erro ao gerar: ' + err.message);
     } finally {
         api.$container.find('#btn-generate').prop('disabled', false).text('📝 Gerar documento');
+        api.$container.find('#btn-refresh').prop('disabled', false);
     }
 }
 

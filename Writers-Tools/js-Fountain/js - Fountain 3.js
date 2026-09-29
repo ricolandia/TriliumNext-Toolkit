@@ -18,6 +18,12 @@ const Fountain = (function () {
 // ignorar style inline (o layout não pode depender do tema, ex.: Folio).
 (function () {
     if (typeof document === 'undefined' || typeof $ === 'undefined' || !$.fn) return;
+    // Instala UMA vez por página: o script pode re-executar (refresh do render note)
+    // e os wrappers não podem se acumular (senão o CSS duplica e a corrente de
+    // patches entre plugins cresce a cada refresh).
+    if (window.__fvPatched) return;
+    window.__fvPatched = true;
+
     const getStyleEl = () => {
         let el = document.getElementById('fv-styles');
         if (!el) {
@@ -32,8 +38,11 @@ const Fountain = (function () {
         if (!str.includes('<style>')) return str;
         const styleEl = getStyleEl();
         const re = /<style>([\s\S]*?)<\/style>/g;
+        let css = '';
         let m;
-        while ((m = re.exec(str)) !== null) styleEl.textContent += '\n' + m[1];
+        while ((m = re.exec(str)) !== null) css += '\n' + m[1];
+        // Idempotente: substitui o conteúdo em vez de acumular a cada render
+        if (styleEl.textContent !== css) styleEl.textContent = css;
         return str.replace(re, '');
     };
     const origHtml = $.fn.html;
@@ -42,9 +51,10 @@ const Fountain = (function () {
         if (typeof arg === 'string' && arg.includes('<style>')) arg = hoist(arg);
         return origHtml.apply(this, [arg]);
     };
-    $.fn.append = function (arg) {
-        if (typeof arg === 'string' && arg.includes('<style>')) arg = hoist(arg);
-        return origAppend.apply(this, [arg]);
+    $.fn.append = function () {
+        const args = Array.prototype.slice.call(arguments);
+        if (typeof args[0] === 'string' && args[0].includes('<style>')) args[0] = hoist(args[0]);
+        return origAppend.apply(this, args);
     };
 })();
 
@@ -63,7 +73,7 @@ const Fountain = (function () {
         synopsis:              /^(?:=(?!=+) *)(.*)/,
         note:                  /^(?:\[{2}(?!\[+))(.+)(?:\]{2}(?!\[+))$/,
         note_inline:           /(?:\[{2}(?!\[+))([\s\S]+?)(?:\]{2}(?!\[+))/g,
-        boneyard:              /(^\/\*|^\*\/)$/g,
+        boneyard:              /(^\/\*|^\*\/)$/gm,
         page_break:            /^={3,}$/,
         line_break:            /^ {2}$/,
         bold_italic_underline: /(_{1}\*{3}(?=.+\*{3}_{1})|\*{3}_{1}(?=.+_{1}\*{3}))(.+?)(\*{3}_{1}|_{1}\*{3})/g,
@@ -86,7 +96,9 @@ const Fountain = (function () {
         return String(texto == null ? '' : texto)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     // Ênfase inline — marcador mais longo primeiro, para **negrito** não ser
@@ -147,7 +159,7 @@ const Fountain = (function () {
             // Scene heading
             if ((match = line.match(regex.scene_heading))) {
                 let text = match[1] || match[2];
-                if (text.endsWith('  ')) continue;           // força action
+                if (text.endsWith('  ')) { tokens.push({ type: 'action', text }); continue; } // dois espaços = ação forçada
                 let sceneNum;
                 const sn = text.match(regex.scene_number);
                 if (sn) { sceneNum = sn[1]; text = text.replace(regex.scene_number, ''); }
@@ -257,7 +269,7 @@ const Fountain = (function () {
 
                 // Script
                 case 'scene_heading':
-                    scriptHtml.push(`<h3 id="cena-${cenaIdx++}"${t.scene_number ? ` data-scene="${t.scene_number}"` : ''}>${t.text}</h3>`);
+                    scriptHtml.push(`<h3 id="cena-${cenaIdx++}"${t.scene_number ? ` data-scene="${escaparHtml(t.scene_number)}"` : ''}>${t.text}</h3>`);
                     break;
                 case 'transition':
                     scriptHtml.push(`<h2>${t.text}</h2>`);
@@ -761,16 +773,18 @@ function htmlParaTexto(html) {
 
 /** Gera nome de arquivo seguro, sem acentos ou caracteres especiais */
 function nomeSeguro(titulo) {
-    return (titulo || 'roteiro')
+    const seguro = (titulo || 'roteiro')
         .toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '');
+    return seguro || 'roteiro';
 }
 
-/** Aviso nativo do Trilium (silencioso em versões antigas) */
+/** Aviso nativo do Trilium (com fallback no console quando indisponível) */
 function avisar(mensagem) {
-    try { api.showMessage(mensagem); } catch (e) { /* opcional */ }
+    try { api.showMessage(mensagem); return; } catch (e) { /* opcional */ }
+    try { console.warn('[Fountain]', mensagem); } catch (e) { /* sem console */ }
 }
 
 /** Bytes → base64 (em blocos, para não estourar a pilha em arquivos maiores) */
@@ -889,8 +903,14 @@ function calcularStats(tokens) {
     const locais = new Map();
     const atos = [];
     let personagemAtual = null;
+    let emBoneyard = false;
 
     for (const t of tokensEmOrdem(tokens)) {
+        // Conteúdo entre /* e */ (boneyard) não entra nas estatísticas
+        if (t.type === 'boneyard_begin') { emBoneyard = true; continue; }
+        if (t.type === 'boneyard_end')   { emBoneyard = false; continue; }
+        if (emBoneyard) continue;
+
         const texto = limpar(t);
 
         switch (t.type) {
@@ -1200,7 +1220,12 @@ function pdfGerar(tokens) {
     const xParentetico = PDF_MARGEM + larguraUtil * 0.31;
     const xPersonagem = PDF_MARGEM + larguraUtil * 0.37;
 
+    let emBoneyard = false;
     for (const t of ordem) {
+        // Boneyard (/* … */) fica fora do PDF (só o HTML o esconde em comentário)
+        if (t.type === 'boneyard_begin') { emBoneyard = true; continue; }
+        if (t.type === 'boneyard_end')   { emBoneyard = false; continue; }
+        if (emBoneyard) continue;
         if (PDF_TIPOS_TITULO.has(t.type)) continue;
         const texto = pdfLimparToken(t);
 
@@ -1342,28 +1367,36 @@ function aplicarZoom() {
     if (page) page.style.fontSize = zoomFonte + 'pt';
 }
 
-// Registrado uma vez (o visor permanece montado no app).
-// ⚠️ No desktop o Ctrl+= também é o zoom do Trilium/Electron: se conflitar,
-// remover estes atalhos (os botões −/+ continuam).
-document.addEventListener('keydown', (e) => {
-    if (!(e.ctrlKey || e.metaKey)) return;
-    if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomFonte = Math.min(24, zoomFonte + 1); aplicarZoom(); }
-    else if (e.key === '-') { e.preventDefault(); zoomFonte = Math.max(8, zoomFonte - 1); aplicarZoom(); }
-    else if (e.key === '0') { e.preventDefault(); zoomFonte = 12; aplicarZoom(); }
-});
-
-// Esc sai do modo foco (sem roubar o Esc de um campo de texto/editor)
-document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
+// Atalhos globais (zoom Ctrl+=/−/0, F5 e Esc): só agem com o visor montado no
+// documento — fora dele, não roubam teclas do app (Ctrl+= é o zoom do Electron).
+// Re-executar o script troca o listener (remove o anterior pelo window), então
+// não acumula cópias e as closures apontam sempre para o render atual.
+function fvTratarAtalhos(e) {
     const root = api.$container[0]?.querySelector('#fv-root');
-    if (!root || !root.classList.contains('fv-foco')) return;
-    const alvo = document.activeElement;
-    const emCampo = alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT' || alvo.isContentEditable);
-    if (!emCampo) {
-        root.classList.remove('fv-foco');
-        root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!root || !document.body.contains(root)) return;
+
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+        if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomFonte = Math.min(24, zoomFonte + 1); aplicarZoom(); return; }
+        if (e.key === '-') { e.preventDefault(); zoomFonte = Math.max(8, zoomFonte - 1); aplicarZoom(); return; }
+        if (e.key === '0') { e.preventDefault(); zoomFonte = 12; aplicarZoom(); return; }
+        return;
     }
-});
+
+    if (e.key === 'F5' && !e.shiftKey) { e.preventDefault(); renderizar(); return; }
+
+    if (e.key === 'Escape') {
+        if (!root.classList.contains('fv-foco')) return;
+        const alvo = document.activeElement;
+        const emCampo = alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT' || alvo.isContentEditable);
+        if (!emCampo) {
+            root.classList.remove('fv-foco');
+            root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+}
+if (window.__fvKeydown) document.removeEventListener('keydown', window.__fvKeydown);
+window.__fvKeydown = fvTratarAtalhos;
+document.addEventListener('keydown', fvTratarAtalhos);
 
 
 // ── 8. RENDERIZAÇÃO ───────────────────────────────────────────────────────────
@@ -1398,7 +1431,7 @@ async function renderizar() {
             : String(complemento.content || '');
 
         const resultado   = Fountain.parse(textoCru, true); // true = retorna tokens
-        const nomeArquivo = nomeSeguro(notaMae.title || rascunho.title);
+        const nomeArquivo = nomeSeguro(resultado.title || rascunho.title || notaMae.title);
         const stats       = calcularStats(resultado.tokens || []);
 
         const seletorRascunho = candidatas.length > 1 ? `
@@ -1627,7 +1660,7 @@ async function renderizar() {
             const id = $(this).attr('href').slice(1);
             const alvo = api.$container[0].querySelector('#' + id);
             if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            marcarCenaAtiva(id);
+            marcarAtivo(api.$container[0], id);
         });
 
         configurarScrollSpy();
