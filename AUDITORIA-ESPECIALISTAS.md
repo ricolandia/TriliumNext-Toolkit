@@ -70,7 +70,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 
 | # | Plugin | Arquivo(s) | Data | 👨‍💻 Código | 🎨 UI/UX | ⚡ Quick wins | Veredito |
 |---|--------|------------|------|-----------|----------|---------------|----------|
-| 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados (28/09)**: ~65 correções/refactors; `test-planejador.js` com 49 asserções. Residual no batch 5 |
+| 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados + fix pós-batch 4** (`t`→`tr` + guard do render + `test-smoke.js`): ~65 correções/refactors; 49 asserções + smoke. Residual no batch 5 |
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/`, `Writers-Tools/js-grid/` | ⏭️ **próximo** | | | | |
 
 ### 🔁 Fila proposta (ajustável)
@@ -340,6 +340,25 @@ Cartão: fechamento dos refactors e do uso em escala, sem mudança funcional esp
 | D3.2 | **Picker de dia unificado** (kanban + mês, anexado ao `$root` para sobreviver a re-renders) e atalho **`m`** move o card focado em qualquer view; `Esc` fecha; dica no título do card | revisão em runtime pendente |
 | C7.2 | Base **CARD_CSS** compartilhada (kanban/mês); remoção de `modeBar`, `allCols` e das duplicações em JS (hover e tipografia) | `bun build` + revisão |
 | C8.1 | Testes de **`parseTaskTags`** (bloco `TAGS`, 10 asserções): limpeza do texto, `#todo/#done`, `#doing` clamp, `#upto`→ISO, `#every/#total`, espaços e case-insensitive | `test-planejador.js` (49 asserções no total) |
+
+## ⚠️ Incidente e correção pós-batch 4 (28/09/2026)
+
+Os batches 3 e 4 foram deployados com um bug que só aparecia em runtime: as
+chamadas de tradução usavam `t()`, **sombreado** pelo parâmetro `t` dos
+`.map(t => ...)` que renderizam tarefas → `TypeError: t is not a function` e o
+plugin ficava **preso no "carregando"**. `bun build` e os testes de funções puras
+não pegavam (era erro de escopo em runtime, e o primeiro render não tinha guard).
+
+- **Correção:** helper renomeado para **`tr()`** (imune a sombreamento) + **guard
+  no primeiro render** (erro vira tela de erro com "Tentar de novo", nunca mais
+  loading infinito).
+- **Prevenção:** novo **`test-smoke.js`** — roda o plugin no Chrome headless com
+  stubs de `api`/jQuery e verifica que ele sai do "carregando", renderiza o board
+  e não gera erro no console.
+- **Regressão verificada:** `281485f` (batch 2) passava; `3c04fa3` (batch 3) e
+  `4aa8abf` (batch 4) falhavam; a versão corrigida passa.
+- **Lição:** todo plugin de render precisa de um smoke de runtime no CI/local —
+  testes de funções puras não cobrem escopo/ordem de execução do render.
 
 ## ⏭️ Backlog residual (batch 5, se houver)
 
