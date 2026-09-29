@@ -78,11 +78,12 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smokes dos dois no Chrome headless); residual no `ROADMAP-RESIDUAIS.md` |
 | 3 | Canvas-Note-Tools (widget + launcher mobile) | `Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js`, `mobile-launcher.src.js`, `build-mobile-launcher.js` | 29/09/2026 | 42 achados (0C/4A/14M/20B/4S) | 35 achados (2C/8A/18M/5B/2S) | 16 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smoke do widget e do launcher); residual no `ROADMAP-RESIDUAIS.md` |
 | 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Batches 1-2 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; 70 chaves i18n em paridade; testes hostis); ✅ token do E2E rotacionado (29/09); residual no `ROADMAP-RESIDUAIS.md` |
+| 5 | AI-Chat (render note) | `AI-Chat/AI-Chat/AI Code.js` | 29/09/2026 | 50 achados (2C/9A/18M/17B/4S) | 40 achados (3C/11A/16M/9B/1S) | 20 itens (S/M) | **Auditoria concluída; nenhuma correção aplicada** (batches após triagem: 1) integridade/segurança, 2) UI/a11y/estado, 3) paridade/harness com `test-chat.js` + smoke) |
 
 ### 🔁 Fila proposta (ajustável)
 
 ~~2. Writers-Tools (Fountain + Longform)~~ ✅ 29/09 · ~~3. Canvas-Note-Tools~~ ✅ 29/09 ·
-~~4. Shared-Notes~~ ✅ 29/09 · **5. AI-Chat (próximo)** · 6. Daily-Note-Map · 7.
+~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · **6. Daily-Note-Map (próximo)** · 7.
 Knowledge-Dashboard · 8. Attribute-GC · 9. Pomodoro · 10. Word-Counter · 11.
 Daily-Note-Navigator · 12. UI-Tweaks · 13. Kanboard · 14. Mastodon · 15.
 Canvas-Template-Loader · 16. Canvas-Templates.
@@ -1244,3 +1245,228 @@ convites pela UI, dedupe por clone, guardas de await/reentrância, i18n das mens
 handler no widget, badge de respostas na aba, contexto do destinatário, criptografia
 E2E/HMAC, regeneração estrutural do zip, refinos de tipografia e cobertura de eventos
 de UI.
+
+---
+
+## Rodada 5 — AI-Chat (29/09/2026)
+
+**Escopo:** `AI-Chat/AI-Chat/AI Code.js` (1.235 linhas), `AI-Chat/AI-Chat/AI Chat - config.txt`,
+`AI-Chat/manifest.json`, `AI-Chat/README.md`, `AI-Chat/AI-Chat.zip`; registry `ai-chat-openrouter`.
+**Verificação:** `bun build` (sintaxe) ✅ · zip × repo: JS idêntico (sha256 `280ffe5f…`), config do
+zip **defasada** (`bbc95d23…` × `f32583a9…`, sem os exemplos de provedores) · **sem harness de
+teste** (`test-*.js` não existe no plugin, diferente das rodadas 1-4) · registry `0.8.3` (o manifest
+sem `version` é o padrão do repo, não é divergência) · 3 especialistas (read-only) + conferência
+direta dos achados graves no fonte.
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 2 | 9 | 18 | 17 | 4 | 50 |
+| 🎨 UI/UX | 3 | 11 | 16 | 9 | 1 | 40 |
+| ⚡ Quick wins | — | — | — | — | — | 20 itens |
+
+**Top 5 (triagem sugerida):**
+1. **[Crítica · Código]** Config buscada só por título exato (`806-807`) × manifest cria "AI Chat Config" com label `aiChatConfig` nunca lido (`manifest:15-17,35-39`): instalação nova pelo Plugin Manager nasce sem config (todo envio/comando falha). README manda criar "AI Chat - Config" e o zip traz "AI Chat - config" (três grafias).
+2. **[Crítica · Código]** XSS condicional quando o CDN falha: sem `marked` o fallback devolve HTML cru (`437`, `442`), sem `DOMPurify` nada é sanitizado (`444`) e o resultado vai para `.html()` (`653`) — vale para a resposta da IA e para o histórico restaurado do localStorage.
+3. **[Alta · Código]** Concorrência do `abortController` global: timers de 90 s que leem a variável no disparo, sem `clearTimeout` no `finally` (`863-864`, `936-937`, `1050-1051`) → TypeError após o `null`, aborta requisição de outra operação e Enviar durante comando cancela o comando.
+4. **[Crítica · UI + Alta · Código]** CSS global: reset `*` + `::placeholder` + classes genéricas (`.toast`, `.msg`, `.typing`) no `<head>` (`40`, `166-167`, `219-226`, `312-328`) a partir de patch de `$.fn.html/.append` re-aplicado com CSS concatenado (`4-34`) — contamina o app inteiro e outros plugins.
+5. **[Crítica · UI]** Ações de mensagem (copiar/regenerar/editar) só no hover, botões fora do tab order, e lista sem `aria-live`/`role=log` (`187-188`, `628-647`, `384-387`) — teclado, touch e leitor de tela ficam sem os três recursos anunciados.
+
+**Nota de dedupe:** ~13 raízes aparecem em mais de uma lista (config `C1.1`≈`QW-1`; CSS/patch `C5.3`+`C5.4`≈`D2.1`≈`QW-2/3`; abort/concorrência `C5.1`≈`D5.4`≈`QW-16`; atalhos `C5.2`≈`D3.5`≈`QW-4`; regenerate `C4.2`≈`D5.3`≈`QW-6`; erro de envio `C1.2`≈`D5.2`≈`QW-5`; `confirm()` `D5.1`≈`QW-9`; i18n `C7.3`≈`D2.2`≈`QW-20`; troca de contexto `C4.10`≈`D5.9`≈`QW-8`; colapso `C4.3`≈`D5.6`≈`QW-15`; persistência `C1.5`≈`D2.5`≈`QW-7`; config no boot `D5.8`≈`QW-10`; ações de mensagem `D3.1`≈`QW-15`). Os batches consolidam por raiz.
+
+### 👨‍💻 Código — achados
+
+**Crítica**
+
+- **C1.1 · Config invisível para instalações novas** (`806-807`; manifest `15-17`, `35-39`): busca por `note.title = "AI Chat - Config"`, mas o manifest cria a nota como "AI Chat Config" e rotula `aiChatConfig` (label que o código nunca lê; `getNotesWithLabel` = 0 no arquivo); README `22` manda criar "AI Chat - Config" e o zip traz "AI Chat - config". Config criada pelo manager nunca é encontrada. Correção: buscar por `#aiChatConfig` com fallback por título e alinhar manifest/README/template. (verificar em runtime no fluxo manifestUrl)
+- **C2.1 · Sanitização opcional = XSS quando o CDN falha** (`436-446`, `653`): `if (!_marked) return text.replace(/\n/g,'<br>')` e `renderMarkdown` só sanitiza `if (_purify)`; o resultado alimenta `body.html(...)`. Vale para resposta da IA (com possível prompt injection da nota de contexto) e para o histórico do localStorage. Correção: escapar o fallback e falhar fechado sem sanitizador (ou `require('sanitize-html')`, na whitelist do sandbox). (verificar em runtime offline)
+
+**Alta**
+
+- **C5.1 · `abortController` global e timers que leem a variável no disparo** (`845-864`, `936-937`, `1050-1051`; `clearTimeout` só em `891`/`964`/`1088`): se `loadConfig`/contexto falha antes do fetch, o timer de 90 s dispara em `null` (TypeError) ou aborta requisição de outra operação; Enviar durante comando aborta o comando e não envia (`848-851`). Correção: controller local por operação + guard de concorrência + `finally`.
+- **C5.2 · Listener de `document` sem namespace/remoção** (`1202-1215`): `$(document).on('keydown', ...)` acumula a cada re-render; `Ctrl+Shift+S/C/F` disparam de qualquer nota/painel (limpar é destrutivo) e continuam ativos após fechar a nota. Correção: namespace + `.off()` + escopo por foco (e `metaKey` no Mac). (verificar em runtime)
+- **C5.3 · Patch global de `$.fn` sem idempotência e hoist concatenando CSS** (`4-34`, `21`): a cadeia de wrappers cresce a cada re-render e `styleEl.textContent +=` acumula o CSS inteiro; o `append` repassa só o 1º argumento. Correção: flag `window.__aicPatched` + atualizar o style em vez de concatenar.
+- **C2.2 · CSS sem escopo: reset `*`, `::placeholder` e classes genéricas hoistados** (`40`, `166-167`, `219-226`, `312-328`): afeta o app inteiro e pode colidir com outros plugins (todos os demais escopam por `#wp-root`/`#fv-root`/`#lg-root`). Correção: prefixar sob `.aic-root`/`.chat-wrap`.
+- **C2.3 · `saveNote` grava conteúdo cru em HTML persistido** (`1021-1027`): `'<p>' + who + ': ' + m.content.replace(/\n/g,'<br>') + '</p>'` sem `esc()`; injeção armazenada na nota (inclusive via prompt injection da nota de contexto). Correção: escapar conteúdo/persona (ou salvar em Markdown).
+- **C4.1 · `regenerate` apaga a bolha do usuário do DOM** (`921-932`): após `restoreMessages()`, `$msgs.find('.msg:last-child').remove()` remove a última bolha, que é a do usuário (a da IA já saiu no `pop`); em falha o history é recomposto (`983`) mas o DOM segue sem a pergunta. Correção: não remover (o restore já excluiu a resposta) ou mirar só a bolha da IA.
+- **C1.2 · Erro no `send` faz `history.pop()` cego, sem refletir na UI** (`904-914`): a bolha da pergunta fica visível mas sai do histórico (some das próximas requisições e volta no reload); se `editMessage`/`regenerate` mexeram no array, o pop remove a mensagem errada. Correção: adicionar ao histórico só após sucesso ou remover com verificação e refletir no DOM/estado.
+- **C1.3 · Backend do RAG com `getContent()` fora do try, sem filtros e sem teto** (`750-771`): `note.getContent()` antes do `try`; sem `isProtected`/`#archived`/whitelist de tipo; nada limita o número de notas (imagens/base64 trafegam backend→frontend antes do corte de 15.000). Correção: try/catch por nota + filtros no backend + limite. (verificar em runtime com nota protegida)
+- **C1.4 · Regex do config ignoram linhas comentadas** (`814-818`; template `4-34`): `# api_base: …` casa igual e o parsing pega a primeira ocorrência; comentar para voltar ao OpenRouter não desativa e exemplos comentados podem virar config real. Correção: remover comentários por linha antes do match.
+
+**Média**
+
+- **C4.3 · Recolher mensagem longa fatia HTML no meio de tags** (`659-675`): `body.data('full-html').slice(0, COLLAPSE_LIMIT)` no ramo "Mostrar menos"; markup quebrado e preview com menos texto que o esperado. Correção: guardar o HTML curto já gerado no colapso e alternar; nunca fatiar HTML.
+- **C4.4 · `ts` vai como campo extra no payload da API** (`691-692`, `887`, `960`): providers OpenAI-compatible estritos podem rejeitar/normalizar; payload maior sem motivo. Correção: mapear `{role, content}` antes de enviar.
+- **C4.5 · `data.choices[0].message.content` sem guarda** (`901`, `974`, `1099`): resposta vazia/filtrada derruba com TypeError críptico e, no send, ainda dispara `history.pop()`. Correção: optional chaining + erro explícito ("resposta vazia da API").
+- **C3.1 · Histórico sem poda na sessão e sem janela de payload** (`462`, `887`): `slice(-100)` só na persistência; em memória cresce sem teto e o POST manda tudo (100 × 32.000 ≈ 3,2 M chars). Correção: janela por tamanho/tokens antes de enviar.
+- **C1.5 · `catch {}` mudos em `saveState`/`loadState`, shape sem validação e `_isRestoring` pode ficar preso** (`459-488`): cota/JSON corrompido/histórico com item nulo somem sem aviso; `_isRestoring = true` antes de `restoreMessages()` e o catch engole a exceção. Correção: avisar/instrumentar, validar entradas e versão, `finally`.
+- **C1.6 · `saveNote` sem await/catch nos chamadores** (`1015-1034`, `1169`, `1207-1210`): falha de `createNewNote` propaga sem toast (unhandledrejection) e o usuário acha que salvou. Correção: try/catch com toast + `void`.
+- **C6.1 · CDNs sem SRI/timeout; `init` pode ficar pendente para sempre** (`406-434`, `1225-1227`): script que não responde nem erra trava `await initDeps()` e `loadState` nunca roda; sem SRI é superfície de supply-chain apesar da whitelist do sandbox. Correção: `require()` do sandbox ou SRI+timeout+fallback.
+- **C4.6 · `buildContextText`: primeiro bloco pode estourar 15.000 e a contagem mente após o `break`** (`786-798`): `&& combined` deixa a primeira nota passar inteira; itens restantes pós-break não entram em `skipped` e o feedback `[x/y, n puladas]` superestima incluídas (README `8` promete exatidão). Correção: truncar o bloco e contar os restantes.
+- **C3.2 · `restoreMessages` renderiza até 100 mensagens com marked+DOMPurify medindo scroll por item** (`490-502`, `611-685`): reflows O(N) e reload lento. Correção: render em lote e medir scroll só no fim.
+- **C7.1 · Sem i18n: UI, datas e títulos de notas 100% PT hardcoded** (`608`, `1026`; `getOption` = 0 ocorrências): diverge do padrão do toolkit (Canvas v8, Shared Notes, WP, Writers) e quebra no demo EN. Correção: `AIC_I18N` + `tr()` lendo `api.getOption('locale')`, incluindo datas e títulos criados. (raiz também em `D2.2`/`QW-20`)
+- **C7.2 · README promete netos (`TREE_DEPTH=2` só inclui filhos) e "erros estruturados" que o código não distingue** (`594`, `750-770`; README `8`, `63-66`, `98-101`): `walk` retorna `[]` em `d <= 0`; timeout e cancelamento usam a mesma mensagem. Correção: alinhar docs ou o depth; separar timeout/cancel/rede.
+- **C4.7 · Contexto restaurado não popula `#ctx-id-input`; nota removida envia sem contexto em silêncio** (`472-488`, `1229-1234`, `775-776`): "Carregar" com input vazio toasta "Informe um ID" mesmo com contexto ativo; nota apagada = resposta sem contexto e sem aviso. Correção: setar o input no boot e avisar/limpar quando a nota sumir.
+- **C4.8 · `editMessage` usa `historyIdx` de closure que pode ficar obsoleto** (`619`, `642-645`, `994-1008`): mutações fora do render (erro/regenerate) desalinham DOM e history; editar pode truncar no ponto errado ou não fazer nada. Correção: localizar por identidade (ts+content) ou reindexar após cada mutação.
+- **C4.9 · Duplo clique em Enviar (ou Enviar durante comando) aborta a operação e não envia** (`848-851`, `1050`, `1109-1114`): o segundo clique mata a requisição em andamento; comando cancelado reporta "timeout"; feedback enganoso. Correção: estados separados por operação e desabilitar conforme o caso.
+- **C4.10 · `setCtx` descarta a conversa atual sem confirmação e persiste o vazio** (`711-719`, `835-839`): clicar "Carregar"/"Nota ativa" por engano perde a conversa não salva de forma irreversível. Correção: confirmação em 2 toques quando houver histórico.
+- **C5.4 · Comandos concorrentes: só o botão clicado desabilita, sem progresso nem stop** (`1046-1048`, `1217-1219`): dois comandos disputam o `abortController` global. Correção: travar todos durante a operação + indicador + cancelamento real.
+- **C4.11 · `STORAGE_KEY` único entre abas/painéis; re-render durante request deixa o stop inoperante** (`457`, `459-469`): duas instâncias sobrescrevem o estado uma da outra; após re-render, o request antigo segue e o novo Parar não o alcança. Correção: sufixo por instância/noteId (ou merge via evento `storage`). (verificar em runtime)
+- **C7.3 · `loadConfig` refaz busca+leitura a cada operação e escolhe `notes[0]` arbitrário** (`805-813`, `867`, `940`, `1054`): custo repetido por mensagem/comando e escolha indefinida com título duplicado. Correção: cache com invalidação + busca por label.
+
+**Baixa**
+
+- **C7.4 · Manifest sem `version` × registry `0.8.3`** (manifest `1-41`; registry `ai-chat-openrouter`): o manifest sem versão é o padrão do repo (nenhum tem); manter o bump no registry/SESSION a cada release, sem tratar como divergência.
+- **C7.5 · Zip com config defasado embora o JS esteja em sincronia** (`AI-Chat.zip`): quem instala pelo zip recebe template antigo (sem `api_base`). Correção: regenerar o zip por script e validar sha256 das três pontas (padrão Shared Notes).
+- **C7.6 · Três cópias de fetch+headers+body e defaults/markup duplicados** (`875-897`, `948-970`, `1072-1094`; `509` × `552-553`; `385` × `499`): corrigir um item exige mexer em 3 lugares (raiz dos achados de concorrência). Correção: extrair `callApi(cfg, messages, signal)`.
+- **C7.7 · Cores hardcoded fora das variáveis do tema** (`223`, `247`, `252`, `268`, `287`, `292`, `311`, `327-328`): contraste inconsistente no claro; diverge da convenção. Correção: tokens com variante clara. (verificar em runtime)
+- **C5.5 · Código morto: `_modelLabel` e `data('history-idx')` nunca lidos** (`454`/`822`; `619`): o índice poderia resolver o alvo do editar/regenerar. Correção: remover ou usar.
+- **C1.7 · `getProtectedContent()` retornando null cai em `content.match` sem guarda** (`808-814`): TypeError sem mensagem útil em vez de "config inválida". Correção: validar `typeof content === 'string'`. (verificar em runtime com nota protegida)
+- **C1.8 · Placeholder "your key" não validado** (template `1`; `819`): só checa presença do campo; erro real vem só no 401 da primeira chamada. Correção: detectar placeholder e orientar.
+- **C1.9 · Falha de rede vira "Failed to fetch" cru sem dica** (`911`): README promete distinguir tipos de falha. Correção: mapear `TypeError` para mensagem orientada.
+- **C4.12 · Limite de 32.000 conta code units UTF-16; `temperature`/`max_tokens` sem faixa** (`856`, `828-829`): emojis contam 2; config extrema só falha na API. Correção: `[...text].length` + clamp.
+- **C4.13 · Filtro de busca não é reaplicado no restore nem enxerga conteúdo colapsado** (`490-502`, `659-675`, `1139-1150`): após reload/regenerate a busca "some"; trecho após os 1.000 chars dá falso negativo. Correção: reaplicar no restore e buscar no texto-fonte.
+- **C4.14 · Sem migração/versão de estado; `ts` ausente vira hora atual; load não limita a 100** (`457`, `477`, `625`). Correção: versionar a chave e migrar entradas.
+- **C4.15 · `loadNote` aceita qualquer nota (imagem → base64 no contexto) sem filtro de tipo/lixeira** (`834-839`, `778-781`). Correção: alertar/recusar tipos não textuais.
+- **C4.16 · `runCommand` cria nota mesmo com resposta vazia; Mermaid pode salvar prosa; títulos duplicados** (`1099-1107`). Correção: validar conteúdo e sufixar títulos repetidos.
+- **C3.3 · `saveState` roda a cada tecla no system prompt serializando até 100 mensagens** (`542-549`): IO por tecla em históricos grandes. Correção: debounce (~300-500 ms).
+- **C2.4 · Imagens remotas da IA carregam automaticamente** (`270-271`, `444`): beacon/rastreio e conteúdo remoto no app. Correção: exigir clique ou bloquear por política de sanitização.
+- **C7.8 · Estilos inline no markup violam a convenção de classes** (`377`, `380`). Correção: classes no CSS do plugin.
+- **C2.5 · Comandos persistem HTML cru gerado pela IA (prompt injection da nota)** (`1058-1070`, `1103-1105`). Correção: sanitizar/persistir como texto quando o tipo não exigir HTML.
+
+**Sugestão**
+
+- **C8.1 · Zero testes no plugin** (`test-*.js` inexistente): extrair `parseConfig`, `renderMarkdown` (injetável), corte de contexto e colapso como funções puras + `bun` + smoke de render no Chrome headless (padrão das rodadas 1-4).
+- **C7.9 · Fonte única para config e sincronia de artefatos**: título/label/README/manifest/zip divergentes; correção estrutural: busca por label + parser compartilhado + script de release conferindo sha256 repo=zip=instâncias.
+- **C4.17 · Botão ↻ por mensagem deveria regenerar a clicada** (`634-637`, `921-923`; README `16`, `90`): hoje sempre opera a última; usar o `history-idx` morto ou esconder nas antigas.
+- **C7.10 · Reduzir o monólito** (1.235 linhas com ~300 de CSS em template string): blocos com marcadores (padrão `CLW-BE-*`/`FV_I18N`) e CSS escopado.
+
+### 🎨 UI/UX — achados
+
+**Crítica**
+
+- **D3.1 · Ações de mensagem só no hover e fora da árvore de foco** (`187-194`, `628-647`): `.msg-actions { display:none }` + `.msg:hover`; sem `:focus-within`, sem `aria-label` (só `title`). Teclado e touch não copiam/regeneram/editam. Correção: manter no DOM com `opacity/visibility`, revelar em hover **e** `:focus-within`, alvos ≥40px, `aria-label`. (verificar em runtime no mobile)
+- **D2.1 · CSS sem escopo, reset `*` e classes genéricas hoistados** (`4-34`, `40`, `166-167`, `312-328`): contamina o app inteiro e persiste após fechar a nota; colide com `.toast`/`.msg` de outros scripts. Correção: escopar sob `.aic-root`/`.chat-wrap`. (raiz também `C2.2`)
+- **D3.2 · Chat sem região viva: resposta, "IA processando..." e contador não são anunciados** (`384-387`, `312-317`, `741-744`): sem `role="log"`/`aria-live` no `#messages`, `role="status"` no `#typing`/contador, `aria-busy` no loading. O fluxo principal é mudo para leitor de tela.
+
+**Alta**
+
+- **D5.1 · `confirm()` nativo na edição e na limpeza** (`999`, `1172`): bloqueia o Electron, ignora o tema e diverge do padrão de 2 toques do toolkit (rodadas 2-4). Correção: confirmação inline com timeout e Esc.
+- **D2.2 · Interface 100% PT-BR hardcoded, sem o i18n por `locale`** (todo o arquivo; `608`, `1026`; contador "msgs" em inglês `377`): quebra o demo EN e a paridade das rodadas 2-4. Correção: `AIC_I18N` PT/EN. (raiz também `C7.1`/`QW-20`)
+- **D7.1 · Vermelho de erro hardcoded `#c0392b` fora de token** (`223`, `292`, `311`, `328`): ~2,3-2,6:1 sobre fundos escuros (reprova AA); não acompanha os temas. Correção: token/variante de perigo. (verificar em runtime nos dois temas)
+- **D7.2 · Contrastes destruídos por opacidade acumulada** (`68`, `117`, `135`, `156`, `161`, `166`, `181`, `185`, `189-194`, `219`, `224`, `289`, `315`): `--muted-text-color` × 0,35-0,6 de opacity = ~1,5-2,5:1. Correção: escala de tokens de texto, sem opacity. (verificar em runtime)
+- **D8.1 · Tipografia abaixo do piso (10-11px)** (`156`, `185`, `190`, `342`, `343`): badge do modelo 11px (10px no mobile), timestamp 11px, ações 11px. Correção: piso 12px.
+- **D3.3 · Alvos de toque bem abaixo de 40px** (`61-66`, `99-105`, `127-135`, `147-153`, `189-193`, `216-220`, `306-310`): ações ~18×14px, `.btn-icon`/`.btn-cmd`/`.btn-danger`/colapso/contexto com padding pequeno. Correção: `min-height/min-width` 40px (44 no mobile).
+- **D5.2 · Erro de API transitório, mensagem órfã e sem recuperação** (`904-913`, `994-996`, `696-699`, `734-739`): toast de 2,5 s, `history.pop()`, balão do usuário fica na tela mas o ✎ não o encontra; `msg-error`/`labels.error` nunca usados. Correção: balão de erro persistente com "Tentar de novo" e mensagem mantida no histórico.
+- **D5.3 · ↻ regenera sempre a última resposta, não a clicada** (`634-637`, `921-929`; README `16`, `90`): clicar numa resposta antiga altera a mais recente ou não faz nada (retorno mudo em `922-923`). Correção: mirar a mensagem clicada (usar `history-idx`) ou ocultar/desabilitar quando não aplicável.
+- **D3.4 · Foco mal gerenciado: `outline: none` sem `:focus-visible`, Esc sem função real, foco perdido no loading** (`57-60`, `94`, `116`, `141-146`, `282`, `731`, `1197-1199`; grep `focus-visible` = 0): Esc só dá `blur()`; `setLoading(true)` desabilita o textarea durante todo o request. Correção: `:focus-visible` global, Esc fecha busca/persona, manter foco/`aria-busy` no loading e devolver foco ao acionador.
+- **D6.1 · Pulso infinito do botão "Parar" sem `prefers-reduced-motion`** (`291-297`; grep = 0): animação contínua + contraste oscilando 30%. Correção: desativar a animação em reduced-motion.
+- **D3.5 · Atalhos globais sem escopo, sem remoção, sem Mac e sem UI** (`1202-1215`, `1192-1200`): `Ctrl+Shift+C/S/F` com `preventDefault()` em qualquer painel (limpar é destrutivo), só `ctrlKey`, handler acumulativo. Correção: escopo por foco/contêiner, `metaKey`, remoção e dica na UI. (raiz também `C5.2`/`QW-4`)
+
+**Média**
+
+- **D4.1 · Breakpoint por viewport (500px), não por contêiner** (`331-344`): painel estreito no desktop não recebe os ajustes; no mobile as faixas fixas consomem a altura útil. Correção: container queries ou breakpoints por painel.
+- **D4.2 · Truncados sem recuperação** (`69-73`, `155-158`, `334`, `342`): título do contexto e badge do modelo com ellipsis e sem `title`/expansão. Correção: tooltip com o valor completo.
+- **D4.3 · Toast `fixed` + `nowrap` sem max-width** (`319-325`, `734-739`): erro longo da API vaza da janela; ancorado ao viewport em layouts multi-painel. Correção: `max-width`, wrap e ancoragem no contêiner.
+- **D4.4 · Overflow horizontal em markdown (tabelas/URLs)** (`195`, `260-268`): só o `pre` tem `overflow-x`; sem wrapper rolável nem `overflow-wrap: anywhere`. Correção: container rolável + quebra de URLs.
+- **D5.4 · Loading inconsistente; Enviar durante comando aborta o comando em silêncio** (`721-732`, `847-851`, `1046-1050`): comando só desabilita o próprio botão, sem Stop; usuário acha que enviou. Correção: controlador por operação + Stop único + estado global. (raiz também `C5.1`/`QW-16`)
+- **D5.5 · Filtro ignora conteúdo colapsado e não mostra contagem** (`1139-1150`, `659-663`): falso negativo após os 1.000 chars; sem "N de M"/estado vazio. Correção: buscar no texto completo + contador. (raiz também `C4.13`)
+- **D5.6 · Recolher fatia o HTML e quebra o markup** (`659-675`): corte no meio de tag/entidade. Correção: re-renderizar do texto. (raiz também `C4.3`)
+- **D5.7 · Editar trunca o histórico na hora e não guarda rascunho** (`994-1009`, `459-470`): mudar de ideia é irreversível; o texto editado não é persistido. Correção: snapshot com Desfazer e rascunho salvo.
+- **D3.6 · Campos sem nome acessível: placeholder como único rótulo** (`349`, `351`, `358`, `363`, `369`, `380`, `390`): `Contexto/Especialista/Gerar` são spans decorativos; inputs sem `<label for>`/`aria-label`. Correção: associar labels.
+- **D3.7 · Toggles sem estado acessível (persona/busca)** (`360-362`, `380-381`, `535-540`, `1125-1133`): `aria-expanded`/`aria-controls` ausentes; busca aparece/some com `display:none` inline. Correção: ARIA + foco gerenciado.
+- **D5.8 · Config ausente sem estado persistente nem recuperação** (`806-819`, `823`, `867-911`): erro só no primeiro envio; badge vazio; nada aponta a nota de config (que o manifest cria com nome divergente). Correção: banner no boot com "Abrir/Criar config" e envio desabilitado com explicação. (raiz também `C1.1`/`QW-10`)
+- **D2.3 · Falsa affordance: `cursor: pointer` na bolha do usuário sem clique** (`196-201`, `640-647`; README `17`): o ponteiro promete edição que só existe no ✎ do hover. Correção: implementar clique-para-editar ou remover o cursor e corrigir o README.
+- **D5.9 · Trocar contexto apaga a conversa sem aviso** (`711-719`, `834-839`). Correção: 2 toques quando houver histórico (raiz também `C4.10`/`QW-8`).
+- **D7.3 · `#fff` fixo sobre `var(--main-color)`** (`287`, `327`): acento claro por tema derruba o contraste do CTA e do toast. Correção: par de tokens por tema. (verificar em runtime)
+- **D7.4 · Bloco de código invisível no escuro** (`247`, `250-258`): `rgba(0,0,0,0.07)` sobre fundo escuro não diferencia; `rgba(128,128,128,0.15)` idem. Correção: superfície do tema.
+- **D4.5 · Inputs <16px causam auto-zoom no WebView iOS** (`142`, `276`, `339`): 13-15px (14px no mobile). Correção: 16px nos campos no mobile. (verificar em runtime no iOS)
+
+**Baixa**
+
+- **D2.4 · Capturas do README desatualizadas e divergentes entre si** (README `57-60`; `imagens/chat-1-.webp` em EN com UI antiga, `chat-2-.webp` com emoji coloridos): contradizem "Monochromatic icons" (`README:72`). Correção: regravar nos dois temas.
+- **D1.1 · Densidade/hierarquia: quatro faixas de mesmo peso antes do chat; badge do modelo apagado** (`347-382`, `155-158`): o essencial só aparece após ~200px de chrome. Correção: colapsar contexto/persona em uma linha e dar peso ao badge.
+- **D5.10 · "Salvar" e comandos habilitados sem histórico/contexto** (`393`, `1015-1017`, `1040-1044`): cliques em becos sem saída com erro só depois. Correção: `disabled` + hint do pré-requisito.
+- **D5.11 · Sem contador do limite de 32.000 chars** (`856`): o limite só é descoberto ao perder o envio. Correção: contador a partir de ~80%.
+- **D6.2 · Hovers sem transição e ações aparecendo "seco"** (`104`, `132-134`, `194`, `321-326`): destoa do toast suave. Correção: padronizar transitions e usar opacity/visibility nas ações.
+- **D3.8 · Lista de mensagens não é focável/rolável por teclado** (`170-175`): sem `tabindex`/role, PageDown não funciona. Correção: `tabindex="0"` + `role="log"`.
+- **D2.5 · Persistência e utilitários com falhas silenciosas e estilos inline** (`472-488`, `741-744`, `377`, `380`): `loadState` `catch {}` (limpa a conversa sem aviso), contador dependente do primeiro `.chat-label`, estilos inline. Correção: avisar/instrumentar + ids/classes. (raiz também `C1.5`/`QW-7`)
+- **D5.12 · Trocar de persona sobrescreve o prompt editado sem aviso** (`524-531`, `542-549`): voltar a um especialista descarta a edição. Correção: guardar o custom e oferecer restaurar.
+- **D3.9 · Estados de botão mortos/inconsistentes** (`721-732`, `284-289`): `:disabled` do Enviar nunca é usado; Enviar ativo com input vazio (clique mudo). Correção: refletir `disabled` por estado.
+
+**Sugestão**
+
+- **D1.2 · Estado vazio que ensina o setup e os atalhos; rótulos de persona sem símbolos decorativos** (`385`, `509-516`): onboarding fraco (primeiro erro só no primeiro envio). Correção: texto com passos (criar config, carregar nota, `Ctrl+Enter`) e rótulos limpos.
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
+|---|----------|------|-------|:-------:|:-----:|-----------|
+| 1 | Config por label + fallback de título (instalação nova quebra) | `806`; `manifest:15,37` | Elimina o blocker de instalação | S | Baixo | instalação limpa + asserção no harness |
+| 2 | Escopar o reset CSS | `40`, `166-167` | Fim do vazamento global | S | Baixo | abrir outra nota/widget e comparar |
+| 3 | Guardar patch de `$.fn` e hoist (idempotência) | `4-34`, `21` | Fim do acúmulo de wrappers/CSS | S | Baixo | re-render 2× e conferir o `#aic-chat-css` |
+| 4 | Escopar atalhos globais e instalar 1× | `1202-1215` | Não sequestra o app; sem handlers duplicados | S | Baixo/Médio | atalhos em outra nota não devem disparar |
+| 5 | Corrigir divergência UI×history no erro de envio (+ timeout × cancelamento) | `904-914` | Fim da perda silenciosa do texto | S | Médio | 401/timeout com bolha marcada + retry |
+| 6 | Corrigir `regenerate` (bolha do usuário apagada; só a última) | `921-932` | Recurso passa a funcionar como anunciado | S | Médio | regen e conferir a bolha |
+| 7 | Persistir ajustes sem depender do histórico + `change` no "Subnotas" | `477-486`, `379` | Preferências restauram sempre | S | Baixo/Médio | desmarcar e recarregar |
+| 8 | Confirmar troca de contexto (2 toques) | `711-719` | Fim da perda da conversa | S | Baixo/Médio | com histórico, cancelar mantém tudo |
+| 9 | `confirm()` → 2 toques inline | `999`, `1172` | Consistência e tema | S | Baixo/Médio | armar/confirmar/cancelar |
+| 10 | Config no boot: badge + erro acionável + placeholder | `1225-1235`, `819` | Primeiro uso deixa de ser erro obscuro | S | Baixo/Médio | abrir sem config → mensagem clara |
+| 11 | Contexto: título clicável, Enter, remover, contagem `[x/y]` na UI | `350-353`, `795-798` | Contexto operável e feedback visível | S | Baixo/Médio | clicar/Enter/remover; contagem na tela |
+| 12 | Exportar conversa (copiar tudo em .md) | `1015-1034` | Levar a conversa para fora | S | Baixo | copiar gera Markdown idêntico |
+| 13 | Contadores: caracteres no input + tokens da resposta (`usage`) | `390`, `899-902` | Limite visível; custo informado | S | Baixo/Médio | digitar/responder com `usage` |
+| 14 | Botão flutuante "rolar para o fim" | `597-605` | Não perder o fio durante geração | S/M | Baixo | rolar para cima → botão aparece |
+| 15 | Ações de mensagem: cópia robusta, clique na bolha, colapso sem fatiar HTML | `630-633`, `196-201`, `667` | Ações confiáveis e acessíveis | S | Baixo/Médio | clipboard stub + recolher/expandir |
+| 16 | Proteger requisição em voo (limpar/salvar/comandos; Enviar não aborta comando) | `721-732`, `847-851`, `1171` | Fim de respostas em conversa limpa e comandos mortos | S/M | Médio | limpar durante request; 2 comandos |
+| 17 | Escapar transcript ao salvar + abrir a nota criada | `1021-1031` | Fim da injeção armazenada; confirmação visível | S | Médio | resposta com `<b>` não vira markup |
+| 18 | Filtro com "N de M" e estado vazio | `1139-1150` | Busca compreensível | S | Baixo/Médio | buscar termo raro |
+| 19 | Harness `test-chat.js` (funções puras) + smoke headless | plugin | Rede de proteção (hoje: zero testes) | M | Baixo | `bun test-chat.js` + smoke |
+| 20 | i18n PT/EN pelo `locale` (paridade com o toolkit) | todo o arquivo | Demo EN e paridade | M | Médio | paridade de chaves + smoke EN |
+
+**Descartes explícitos:** múltiplas conversas por nota/pastas de personas (exige modelo de persistência novo para ganho marginal); custo em US$ (tabela de preços desatualiza; `usage` em tokens cobre); streaming SSE (muda transporte/abort/render, risco alto sem corrigir nada existente); syntax highlighting/toolbar markdown (CDN extra e CSS global); virtualização de mensagens (limite 100 + colapso seguram); destaque de trechos na busca (re-render por tecla; a contagem resolve).
+
+### Claims do README não cumpridos
+
+| README | Promessa | Código | Situação |
+|---|---|---|---|
+| 8 | Feedback de quantas subnotas entraram/pularam | `795-798` monta, `871-872` envia só ao modelo | Não exibido ao usuário |
+| 17, 91 | Editar "and re-send from that point" | `994-1009` só devolve ao input | Parcial |
+| 63-66 | Erro de filha "logged and shown as `(erro ao ler filhas)`" | `764-766`/`789-791` viram `skipped++`, sem log | Não cumprida |
+| 77 | Agrupar esconde só rótulos repetidos consecutivos | `209-210` esconde o rótulo de toda mensagem após a 1ª | Não cumprida (seletor) |
+| 83 | Badge do modelo mostra o modelo atual | `822-823`; `init` não carrega config | Parcial (vazio ao abrir) |
+| 90 | ↻ em **qualquer** mensagem da IA | `923` exige que a última seja assistant; botão em todas (`634-637`) | Não cumprida |
+| 93 | Persona/prompt/subnotas restauram no reload | `477` só restaura com history; checkbox sem `change` | Parcial |
+| 105 | "History index tracking for reliable edit/regenerate" | `619` grava `data-history-idx`, nunca lido | Sem efeito (código morto) |
+| 106 | Scroll preservado no restore (`_isRestoring`) | `483-485`/`683` usam a flag para **forçar** scroll ao fim | Contradiz o código |
+| 78 | Colapso >1000 chars | `659-675` existe, mas recolher fatia o HTML (`667`) | Cumprida com defeito |
+
+### Pontos fortes (não mexer)
+
+- Callbacks `runOnBackend` auto-contidos com args em array em todas as chamadas (`750-770`, `1029-1031`, `1103-1105`).
+- `getProtectedContent()` com fallback para `getContent()` na leitura da config (chave protegível pelo master password).
+- Limites unificados (`MAX_CTX_CHARS=15000`, 32.000/msg) e timeout de 90 s com `AbortController`; smart scroll (`597-605`).
+- DOMPurify aplicado **quando disponível** + `.text()` nos dados do usuário; nenhuma injeção trivial no fluxo com CDNs OK.
+- Erro HTTP diferencia `data.error.message`; loading/toast/estado vazio presentes; histórico limitado a 100 no storage.
+- Stop/regenerate/edit/save implementados de ponta a ponta (com os defeitos listados, mas o fluxo existe e é testável).
+
+### Versões/registry/README/artefatos
+
+- Registry `ai-chat-openrouter` **0.8.3** com `sourceUrl` + `manifestUrl` corretos; o manifest sem `version` é o padrão de todos os manifests do repo (fonte da versão é o registry) — manter o bump no release.
+- **Zip × repo:** `AI Code.js` idêntico (sha256 `280ffe5f…`); config do zip defasada (`bbc95d23…` × `f32583a9…`) e export com `appVersion 0.103.0`.
+- **Três grafias da config:** código/README "AI Chat - Config" (606, 807; README 22), manifest "AI Chat Config" (`manifest:15`) com label `aiChatConfig` (`:37`), zip "AI Chat - config" — raiz do achado C1.1.
+- **Sem harness:** `test-*.js` inexistente; a Fase 0 não teve harness quebrado para consertar, e criar `test-chat.js` + smoke entra no batch de correção (QW-19).
+
+### Veredito da rodada 5
+
+Plugin funcional no fluxo feliz (chat, RAG de subnotas no backend, comandos, save, stop), mas com
+riscos concentrados em: (a) **instalação nova quebrada** pela busca de config desalinhada do manifest
+(crítica de release); (b) **segurança condicional**: XSS quando o CDN falha (marked/DOMPurify) e
+conteúdo cru persistido no save/comandos; (c) **concorrência**: `abortController` global com timers
+soltos e operações que se cancelam; (d) **contaminação global** por patch de `$.fn` + CSS sem escopo
+(reset `*`), afetando o app e outros plugins; (e) **acessibilidade e paridade**: ações só no hover,
+sem ARIA/vivas, sem i18n, contraste/opacidade e alvos fora do padrão. Nenhuma correção foi aplicada
+nesta rodada — batches após triagem do dono (candidatos: 1) integridade/segurança, 2) UI/a11y/estado,
+3) paridade/harness — com o `test-chat.js` + smoke entrando no pacote.
+
+**Próximo da lista:** Daily-Note-Map (rodada 6).
