@@ -86,9 +86,9 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 ~~2. Writers-Tools (Fountain + Longform)~~ ✅ 29/09 · ~~3. Canvas-Note-Tools~~ ✅ 29/09 ·
 ~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · ~~6. Daily-Note-Map~~ ⛔ removido da
 coleção (29/09 — o mapa nativo do Trilium cobre; decisão no `SESSION.md`) ·
-**6. Knowledge-Dashboard (próximo)** · 7. Attribute-GC · 8. Pomodoro · 9. Word-Counter ·
-10. Daily-Note-Navigator · 11. UI-Tweaks · 12. Kanboard · 13. Mastodon ·
-14. Canvas-Template-Loader · 15. Canvas-Templates.
+**6. Minimalist Pomodoro + Time Tracker (próximo — prioridade do release)** · 7. Word-Counter ·
+8. Daily-Note-Navigator · 9. Knowledge-Dashboard · 10. Attribute-GC · 11. UI-Tweaks ·
+12. Kanboard · 13. Mastodon · 14. Canvas-Template-Loader · 15. Canvas-Templates.
 
 ---
 
@@ -1471,7 +1471,8 @@ sem ARIA/vivas, sem i18n, contraste/opacidade e alvos fora do padrão. Nenhuma c
 nesta rodada — batches após triagem do dono (candidatos: 1) integridade/segurança, 2) UI/a11y/estado,
 3) paridade/harness — com o `test-chat.js` + smoke entrando no pacote.
 
-**Próximo da lista:** Knowledge-Dashboard (rodada 6; o Daily-Note-Map saiu da coleção em 29/09).
+**Próximo da lista:** Minimalist Pomodoro + Time Tracker (rodada 6) — prioridade do release
+definida em 29/09: Pomodoro → Word-Counter → Daily-Note-Navigator.
 
 ---
 
