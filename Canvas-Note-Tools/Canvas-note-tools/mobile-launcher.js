@@ -2,7 +2,7 @@
 // CANVAS MOBILE (v9) — GERADO AUTOMATICAMENTE
 // NÃO EDITE ESTE ARQUIVO: edite mobile-launcher.src.js (UI/ações) ou
 // "Canvas tools v8.js" (engine/i18n/backends) e rode: bun build-mobile-launcher.js
-// Gerado em: 2026-09-24T11:22:56.155Z
+// Gerado em: 2026-09-29T13:03:18.470Z
 // ============================================================
 
 // ── Constantes ──────────────────────────────────────────
@@ -16,7 +16,7 @@ const CARD_CONFIG = {
     roughness:       0,
     cornerRadius:    { type: 3 },
     cols:            5,
-    colGap:          280,
+    colGap:          360,
     rowGap:          40,
     originX:         60,
     originY:         60,
@@ -37,6 +37,15 @@ const RELATION_TYPES = [
 function relationOptionsHtml(t) {
     return '<option value="none">' + t('relations.skip') + '</option>' +
         RELATION_TYPES.map(r => `<option value="${r.value}">${t(r.labelKey)}</option>`).join('');
+}
+
+/**
+ * Rótulo (traduzido) para o texto da seta a partir do valor selecionado.
+ * Valor desconhecido (custom) volta como está — é o texto que o usuário digitou.
+ */
+function clwArrowLabel(relType, t) {
+    const rel = RELATION_TYPES.find((r) => r.value === relType);
+    return rel ? t(rel.labelKey) : String(relType || '');
 }
 
 const TEXT_TO_RELATION = {
@@ -92,6 +101,21 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+/**
+ * Sanitização defensiva do HTML de notas antes de exibi-lo no editor/diálogo:
+ * remove scripts/frames, atributos on* e URLs javascript:. Mitigação para
+ * conteúdo importado; não substitui um sanitizador completo.
+ */
+function sanitizarHtml(html) {
+    return String(html || '')
+        .replace(/<\s*script\b[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, '')
+        .replace(/<\s*script\b[^>]*\/?>/gi, '')
+        .replace(/<\s*(iframe|object|embed)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+        .replace(/<\s*(iframe|object|embed)\b[^>]*\/?>/gi, '')
+        .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/(href|src)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*'|javascript:[^\s>]+)/gi, '$1="#"');
 }
 
 /**
@@ -614,6 +638,8 @@ const CLW_I18N = {
         /* comum */
         'common.no_canvas':      'Nenhuma nota Canvas ativa.',
         'common.error':          '✗ Erro: ',
+        'common.canvas_json':    'Conteúdo do canvas inválido (JSON corrompido). Operação cancelada.',
+        'common.untitled':       'Sem título',
 
         /* busca / inserir nota */
         'search.title':          'Inserir nota no Canvas',
@@ -632,6 +658,7 @@ const CLW_I18N = {
         'newnote.no_title':      'Digite um título para a nova nota.',
         'newnote.created':       '✅ Nota "{title}" criada e inserida no canvas.',
         'newnote.error':         'Erro ao criar nota: ',
+        'newnote.orphan':        '⚠️ A nota foi criada, mas o card não pôde ser inserido no canvas.',
 
         /* modo captura */
         'capture.no_canvas':     'Abra um Canvas para ativar a captura.',
@@ -772,6 +799,8 @@ const CLW_I18N = {
         /* common */
         'common.no_canvas':      'No active Canvas note.',
         'common.error':          '✗ Error: ',
+        'common.canvas_json':    'Invalid canvas content (corrupted JSON). Operation cancelled.',
+        'common.untitled':       'Untitled',
 
         /* search / insert note */
         'search.title':          'Insert note into Canvas',
@@ -790,6 +819,7 @@ const CLW_I18N = {
         'newnote.no_title':      'Type a title for the new note.',
         'newnote.created':       '✅ Note "{title}" created and inserted into the canvas.',
         'newnote.error':         'Error creating note: ',
+        'newnote.orphan':        '⚠️ The note was created, but the card could not be inserted into the canvas.',
 
         /* capture mode */
         'capture.no_canvas':     'Open a Canvas to enable capture.',
@@ -999,7 +1029,7 @@ const CLW_BE_INSERT = (canvasNoteId, linkedNoteId, title, excerpt, cfg, cleanPat
                 if (!canvasNote) throw new Error(L.canvasMissing + ' (' + canvasNoteId + ')');
 
                 let data;
-                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 if (!data.type)     data.type     = 'excalidraw';
                 if (!data.version)  data.version  = 2;
                 if (!data.elements) data.elements = [];
@@ -1111,6 +1141,12 @@ const CLW_BE_TPL = (canvasNoteId, templateNoteId, margin, L) => {
                 const idMap = new Map();
                 for (const el of src) if (el.id) idMap.set(el.id, 'tpl_' + Math.random().toString(36).slice(2, 14));
                 const mapRef = (v) => (v && idMap.get(v)) || v;
+                // grupos também recebem ids novos: duas cópias do mesmo template
+                // não podem ficar presas (mover/remover afetaria as duas)
+                const gidMap = new Map();
+                for (const el of src) for (const gid of el.groupIds || []) {
+                    if (!gidMap.has(gid)) gidMap.set(gid, 'tplg_' + Math.random().toString(36).slice(2, 14));
+                }
 
                 const now = Date.now();
                 const clones = [];
@@ -1124,6 +1160,7 @@ const CLW_BE_TPL = (canvasNoteId, templateNoteId, margin, L) => {
                     if (c.endBinding)   c.endBinding   = { ...c.endBinding,   elementId: mapRef(c.endBinding.elementId) };
                     if (c.containerId)  c.containerId  = mapRef(c.containerId);
                     if (c.frameId)      c.frameId      = mapRef(c.frameId);
+                    if (Array.isArray(c.groupIds)) c.groupIds = c.groupIds.map(g => gidMap.get(g) || g);
                     if (typeof c.x === 'number') c.x += dx;
                     if (typeof c.y === 'number') c.y += dy;
                     c.seed = Math.floor(Math.random() * 999999);
@@ -1143,7 +1180,7 @@ const CLW_BE_FLOW = (canvasNoteId, newEls, margin, L) => {
                 const canvasNote = api.getNote(canvasNoteId);
                 if (!canvasNote) throw new Error(L.canvasMissing);
                 let data;
-                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 if (!data.type)     data.type     = 'excalidraw';
                 if (!data.version)  data.version  = 2;
                 if (!data.elements) data.elements = [];
@@ -1168,7 +1205,7 @@ const CLW_BE_CARDS = (canvasNoteId, L) => {
                 const note = api.getNote(canvasNoteId);
                 if (!note) throw new Error(L.canvasMissing);
                 let data;
-                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 return (data.elements || [])
                     .filter(e => !e.isDeleted && e.type === 'rectangle' && e.link?.startsWith('#root/'))
                     .map(e => {
@@ -1186,7 +1223,7 @@ const CLW_BE_NEWNOTE = (canvasNoteId, title) => {
                 return result.note.noteId;
             };
 
-const CLW_BE_SYNC = (canvasNoteId, noteId, cfg, cleanPatterns) => {
+const CLW_BE_SYNC = (canvasNoteId, noteId, cfg, cleanPatterns, L) => {
             const patterns = cleanPatterns.map(([src, flags, repl]) => [new RegExp(src, flags), repl]);
 
             function clean(raw, max) {
@@ -1228,7 +1265,7 @@ const CLW_BE_SYNC = (canvasNoteId, noteId, cfg, cleanPatterns) => {
             const canvasNote = api.getNote(canvasNoteId);
             if (!canvasNote) return 0;
             let data;
-            try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+            try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
 
             const link = '#root/' + noteId;
             const rect = (data.elements || []).find(e => !e.isDeleted && e.type === 'rectangle' && e.link === link);
@@ -1238,7 +1275,7 @@ const CLW_BE_SYNC = (canvasNoteId, noteId, cfg, cleanPatterns) => {
 
             const linkedNote = api.getNote(noteId);
             if (!linkedNote) return 0;
-            const newTitle = linkedNote.title || 'Sem título';
+            const newTitle = linkedNote.title || (L && L.untitled) || 'Sem título';
             const excerpt = wrapText(clean(linkedNote.getContent() || '', cfg.excerptSlice), 40);
 
             const texts = (data.elements || []).filter(e =>
@@ -1270,6 +1307,30 @@ const CLW_BE_SYNC = (canvasNoteId, noteId, cfg, cleanPatterns) => {
                 count++;
             }
 
+            // Card criado a partir de nota vazia não tem elemento de trecho:
+            // cria quando o conteúdo aparecer (antes ficava sem trecho para sempre)
+            if (texts.length === 1 && excerpt) {
+                const excrH = estimateTextHeight(excerpt, cfg.excerptFontSize, 1.3, cfg.width - cfg.padX * 2);
+                const tituloH = Math.ceil(cfg.titleFontSize * 1.25) + 4;
+                data.elements.push({
+                    id: 'clw_e_' + Math.random().toString(36).substr(2, 14),
+                    type: 'text',
+                    x: rect.x + cfg.padX,
+                    y: rect.y + cfg.padY + tituloH + 6,
+                    width: cfg.width - cfg.padX * 2, height: excrH, angle: 0,
+                    strokeColor: '#6c7086', backgroundColor: 'transparent',
+                    fillStyle: 'solid', strokeWidth: 1, strokeStyle: 'solid',
+                    roughness: cfg.roughness, opacity: 100, groupIds: [...(rect.groupIds || [])],
+                    seed: Math.floor(Math.random() * 999999), version: 1,
+                    versionNonce: Math.floor(Math.random() * 999999),
+                    isDeleted: false, updated: now,
+                    text: excerpt, fontSize: cfg.excerptFontSize, fontFamily: cfg.fontFamily,
+                    textAlign: 'left', verticalAlign: 'top',
+                    originalText: excerpt, lineHeight: 1.3, autoResize: false,
+                });
+                count++;
+            }
+
             const titleH = Math.ceil(cfg.titleFontSize * 1.25) + 4;
             const excerptH = excerpt
                 ? estimateTextHeight(excerpt, cfg.excerptFontSize, 1.3, cfg.width - cfg.padX * 2)
@@ -1289,9 +1350,9 @@ const CLW_BE_EDITOR_LOAD = (noteId) => {
             return { title: n.title, content: n.getContent() || '' };
         };
 
-const CLW_BE_EDITOR_SAVE = (noteId, title, content) => {
+const CLW_BE_EDITOR_SAVE = (noteId, title, content, L) => {
                 const n = api.getNote(noteId);
-                if (!n) return;
+                if (!n) throw new Error((L && L.noteMissing) || 'Nota não encontrada');
                 n.title = title;
                 n.setContent(content);
             };
@@ -1300,7 +1361,7 @@ const CLW_BE_REMOVE = (canvasNoteId, targetNoteId, L) => {
                 const canvasNote = api.getNote(canvasNoteId);
                 if (!canvasNote) throw new Error(L.canvasMissing);
                 let data;
-                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 const elements = data.elements || [];
 
                 const link = '#root/' + targetNoteId;
@@ -1326,7 +1387,7 @@ const CLW_BE_REL_PAIRS = (canvasNoteId, L) => {
                 if (!note) throw new Error(L.canvasMissing);
                 let data;
                 try { data = JSON.parse(note.getContent() || '{}'); }
-                catch (_) { data = {}; }
+                catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 const elements = (data.elements || []).filter(e => !e.isDeleted);
 
                 const cardMap = {};
@@ -1399,7 +1460,7 @@ const CLW_BE_REL_PAIRS = (canvasNoteId, L) => {
                 return { pairs };
             };
 
-const CLW_BE_REL_SAVE = (canvasNoteId, relations) => {
+const CLW_BE_REL_SAVE = (canvasNoteId, relations, L) => {
                 let count = 0;
                 for (const { fromNoteId, toNoteId, relType } of relations) {
                     try {
@@ -1417,7 +1478,7 @@ const CLW_BE_REL_SAVE = (canvasNoteId, relations) => {
                 const canvasNote = api.getNote(canvasNoteId);
                 if (canvasNote) {
                     let data;
-                    try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+                    try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                     let dirty = false;
                     for (const { textElId, newText } of relations) {
                         if (!textElId || !newText) continue;
@@ -1443,7 +1504,7 @@ const CLW_BE_LONGFORM = (canvasNoteId, noteIds, canvasTitle) => {
                     const raw = (note.getContent() || '')
                         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
                         .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-                    content += `<h2>${note.title}</h2>\n${raw}\n<br><hr><br>\n`;
+                    content += `<h2>${escapeHtml(note.title)}</h2>\n${raw}\n<br><hr><br>\n`;
                 }
                 const result = api.createNewNote({
                     parentNoteId: canvasNoteId,
@@ -1485,6 +1546,9 @@ const CLW_BE_LONGFORM = (canvasNoteId, noteIds, canvasTitle) => {
             tplInvalid:     t('tpl.invalid'),
             whereParent:    t('flow.where_parent'),
             whereTemplates: t('flow.where_templates'),
+            canvasJson:     t('common.canvas_json'),
+            noteMissing:    t('editor.no_note'),
+            untitled:       t('common.untitled'),
         };
     }
 
@@ -1763,7 +1827,12 @@ const CLW_BE_LONGFORM = (canvasNoteId, noteIds, canvasTitle) => {
         status('📝 …');
         try {
             const novoId = await api.runOnBackend(CLW_BE_NEWNOTE, [nota.noteId, titulo]);
-            await api.runOnBackend(CLW_BE_INSERT, [nota.noteId, novoId, titulo, '', CARD_CONFIG, getCleanPatterns(), backendLabels()]);
+            try {
+                await api.runOnBackend(CLW_BE_INSERT, [nota.noteId, novoId, titulo, '', CARD_CONFIG, getCleanPatterns(), backendLabels()]);
+            } catch (e) {
+                status('❌ ' + t('newnote.orphan'));
+                return;
+            }
             input.value = '';
             status(t('newnote.created', { title: titulo }));
         } catch (e) {
@@ -1782,7 +1851,7 @@ const CLW_BE_LONGFORM = (canvasNoteId, noteIds, canvasTitle) => {
             if (!cards.length) { status('ℹ️ ' + t('sync.none')); return; }
             let n = 0;
             for (const c of cards) {
-                n += await api.runOnBackend(CLW_BE_SYNC, [nota.noteId, c.noteId, CARD_CONFIG, getCleanPatterns()]);
+                n += await api.runOnBackend(CLW_BE_SYNC, [nota.noteId, c.noteId, CARD_CONFIG, getCleanPatterns(), backendLabels()]);
             }
             status(t('sync.done', { n }));
         } catch (e) {
@@ -1858,16 +1927,16 @@ const CLW_BE_LONGFORM = (canvasNoteId, noteIds, canvasTitle) => {
             const div = document.getElementById('clwm-sub-conteudo');
             div.innerHTML = `
                 <input type="text" id="clwm-ed-titulo" value="${escapeHtml(dados.title || '')}" autocomplete="off">
-                <div class="clwm-ed-conteudo" id="clwm-ed-conteudo" contenteditable="true" spellcheck="false">${dados.content || ''}</div>
+                <div class="clwm-ed-conteudo" id="clwm-ed-conteudo" contenteditable="true" spellcheck="false">${sanitizarHtml(dados.content || '')}</div>
                 <button class="clwm-btn" id="clwm-ed-salvar">💾 ${escapeHtml(t('editor.save'))}</button>`;
 
             document.getElementById('clwm-ed-salvar').addEventListener('click', async () => {
-                const titulo = (document.getElementById('clwm-ed-titulo').value || '').trim() || 'Sem título';
+                const titulo = (document.getElementById('clwm-ed-titulo').value || '').trim() || t('common.untitled');
                 const conteudo = document.getElementById('clwm-ed-conteudo').innerHTML;
                 status('💾 …');
                 try {
-                    await api.runOnBackend(CLW_BE_EDITOR_SAVE, [noteId, titulo, conteudo]);
-                    await api.runOnBackend(CLW_BE_SYNC, [canvasNoteId, noteId, CARD_CONFIG, getCleanPatterns()]);
+                    await api.runOnBackend(CLW_BE_EDITOR_SAVE, [noteId, titulo, conteudo, backendLabels()]);
+                    await api.runOnBackend(CLW_BE_SYNC, [canvasNoteId, noteId, CARD_CONFIG, getCleanPatterns(), backendLabels()]);
                     status(t('editor.saved'));
                     voltarMenu();
                 } catch (e) {
@@ -1945,7 +2014,17 @@ const CLW_BE_LONGFORM = (canvasNoteId, noteIds, canvasTitle) => {
                 if (p.arrowText) {
                     const low = p.arrowText.toLowerCase().trim();
                     const achou = RELATION_TYPES.find((r) => r.value === low || t(r.labelKey).toLowerCase() === low);
-                    if (achou) bloco.querySelector('select').value = achou.value;
+                    if (achou) {
+                        bloco.querySelector('select').value = achou.value;
+                    } else {
+                        // valor custom: preserva o texto da seta (paridade com o desktop)
+                        const sel = bloco.querySelector('select');
+                        const opt = document.createElement('option');
+                        opt.value = p.arrowText.slice(0, 60);
+                        opt.textContent = p.arrowText.slice(0, 60) + ' (custom)';
+                        opt.selected = true;
+                        sel.appendChild(opt);
+                    }
                 }
             });
 
@@ -1957,18 +2036,17 @@ const CLW_BE_LONGFORM = (canvasNoteId, noteIds, canvasTitle) => {
                 pares.forEach((p, i) => {
                     const sel = document.getElementById('clwm-rel-sel-' + i);
                     if (!sel || sel.value === 'none') return;
-                    const rel = RELATION_TYPES.find((r) => r.value === sel.value);
                     relations.push({
                         fromNoteId: p.fromNoteId,
                         toNoteId:   p.toNoteId,
                         relType:    sel.value,
                         textElId:   p.arrowTextElId || '',
-                        newText:    p.arrowTextElId && rel ? rel.label : '',
+                        newText:    p.arrowTextElId ? clwArrowLabel(sel.value, t) : '',
                     });
                 });
                 if (!relations.length) { status('ℹ️ ' + t('relations.none')); return; }
                 try {
-                    const n = await api.runOnBackend(CLW_BE_REL_SAVE, [nota.noteId, relations]);
+                    const n = await api.runOnBackend(CLW_BE_REL_SAVE, [nota.noteId, relations, backendLabels()]);
                     status(t('relations.saved', { n }));
                     voltarMenu();
                 } catch (e) {

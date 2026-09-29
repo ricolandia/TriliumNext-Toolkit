@@ -30,6 +30,9 @@
             tplInvalid:     t('tpl.invalid'),
             whereParent:    t('flow.where_parent'),
             whereTemplates: t('flow.where_templates'),
+            canvasJson:     t('common.canvas_json'),
+            noteMissing:    t('editor.no_note'),
+            untitled:       t('common.untitled'),
         };
     }
 
@@ -308,7 +311,12 @@
         status('📝 …');
         try {
             const novoId = await api.runOnBackend(CLW_BE_NEWNOTE, [nota.noteId, titulo]);
-            await api.runOnBackend(CLW_BE_INSERT, [nota.noteId, novoId, titulo, '', CARD_CONFIG, getCleanPatterns(), backendLabels()]);
+            try {
+                await api.runOnBackend(CLW_BE_INSERT, [nota.noteId, novoId, titulo, '', CARD_CONFIG, getCleanPatterns(), backendLabels()]);
+            } catch (e) {
+                status('❌ ' + t('newnote.orphan'));
+                return;
+            }
             input.value = '';
             status(t('newnote.created', { title: titulo }));
         } catch (e) {
@@ -327,7 +335,7 @@
             if (!cards.length) { status('ℹ️ ' + t('sync.none')); return; }
             let n = 0;
             for (const c of cards) {
-                n += await api.runOnBackend(CLW_BE_SYNC, [nota.noteId, c.noteId, CARD_CONFIG, getCleanPatterns()]);
+                n += await api.runOnBackend(CLW_BE_SYNC, [nota.noteId, c.noteId, CARD_CONFIG, getCleanPatterns(), backendLabels()]);
             }
             status(t('sync.done', { n }));
         } catch (e) {
@@ -403,16 +411,16 @@
             const div = document.getElementById('clwm-sub-conteudo');
             div.innerHTML = `
                 <input type="text" id="clwm-ed-titulo" value="${escapeHtml(dados.title || '')}" autocomplete="off">
-                <div class="clwm-ed-conteudo" id="clwm-ed-conteudo" contenteditable="true" spellcheck="false">${dados.content || ''}</div>
+                <div class="clwm-ed-conteudo" id="clwm-ed-conteudo" contenteditable="true" spellcheck="false">${sanitizarHtml(dados.content || '')}</div>
                 <button class="clwm-btn" id="clwm-ed-salvar">💾 ${escapeHtml(t('editor.save'))}</button>`;
 
             document.getElementById('clwm-ed-salvar').addEventListener('click', async () => {
-                const titulo = (document.getElementById('clwm-ed-titulo').value || '').trim() || 'Sem título';
+                const titulo = (document.getElementById('clwm-ed-titulo').value || '').trim() || t('common.untitled');
                 const conteudo = document.getElementById('clwm-ed-conteudo').innerHTML;
                 status('💾 …');
                 try {
-                    await api.runOnBackend(CLW_BE_EDITOR_SAVE, [noteId, titulo, conteudo]);
-                    await api.runOnBackend(CLW_BE_SYNC, [canvasNoteId, noteId, CARD_CONFIG, getCleanPatterns()]);
+                    await api.runOnBackend(CLW_BE_EDITOR_SAVE, [noteId, titulo, conteudo, backendLabels()]);
+                    await api.runOnBackend(CLW_BE_SYNC, [canvasNoteId, noteId, CARD_CONFIG, getCleanPatterns(), backendLabels()]);
                     status(t('editor.saved'));
                     voltarMenu();
                 } catch (e) {
@@ -490,7 +498,17 @@
                 if (p.arrowText) {
                     const low = p.arrowText.toLowerCase().trim();
                     const achou = RELATION_TYPES.find((r) => r.value === low || t(r.labelKey).toLowerCase() === low);
-                    if (achou) bloco.querySelector('select').value = achou.value;
+                    if (achou) {
+                        bloco.querySelector('select').value = achou.value;
+                    } else {
+                        // valor custom: preserva o texto da seta (paridade com o desktop)
+                        const sel = bloco.querySelector('select');
+                        const opt = document.createElement('option');
+                        opt.value = p.arrowText.slice(0, 60);
+                        opt.textContent = p.arrowText.slice(0, 60) + ' (custom)';
+                        opt.selected = true;
+                        sel.appendChild(opt);
+                    }
                 }
             });
 
@@ -502,18 +520,17 @@
                 pares.forEach((p, i) => {
                     const sel = document.getElementById('clwm-rel-sel-' + i);
                     if (!sel || sel.value === 'none') return;
-                    const rel = RELATION_TYPES.find((r) => r.value === sel.value);
                     relations.push({
                         fromNoteId: p.fromNoteId,
                         toNoteId:   p.toNoteId,
                         relType:    sel.value,
                         textElId:   p.arrowTextElId || '',
-                        newText:    p.arrowTextElId && rel ? rel.label : '',
+                        newText:    p.arrowTextElId ? clwArrowLabel(sel.value, t) : '',
                     });
                 });
                 if (!relations.length) { status('ℹ️ ' + t('relations.none')); return; }
                 try {
-                    const n = await api.runOnBackend(CLW_BE_REL_SAVE, [nota.noteId, relations]);
+                    const n = await api.runOnBackend(CLW_BE_REL_SAVE, [nota.noteId, relations, backendLabels()]);
                     status(t('relations.saved', { n }));
                     voltarMenu();
                 } catch (e) {

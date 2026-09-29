@@ -38,8 +38,8 @@ const vinculada = notaFake('n2', 'Nota vinculada', '<p>Olá mundo — trecho de 
 const template = notaFake('n3', 'Template', JSON.stringify({
     type: 'excalidraw', version: 2,
     elements: [
-        { id: 'r1', type: 'rectangle', x: 10, y: 20, width: 100, height: 50, boundElements: [{ id: 't1', type: 'text' }] },
-        { id: 't1', type: 'text', x: 15, y: 25, width: 80, height: 20, containerId: 'r1' },
+        { id: 'r1', type: 'rectangle', x: 10, y: 20, width: 100, height: 50, groupIds: ['tg1'], boundElements: [{ id: 't1', type: 'text' }] },
+        { id: 't1', type: 'text', x: 15, y: 25, width: 80, height: 20, groupIds: ['tg1'], containerId: 'r1' },
     ],
 }));
 
@@ -58,7 +58,7 @@ const globalThisApi = {
 };
 
 globalThis.api = globalThisApi;
-eval(nucleo + '\nglobalThis.CLW = { CLW_BE_INSERT, CLW_BE_TPL, CLW_BE_FLOW, CLW_BE_CARDS, CLW_BE_NEWNOTE, CLW_BE_SYNC, CLW_BE_EDITOR_LOAD, CLW_BE_EDITOR_SAVE, CLW_BE_REMOVE, CLW_BE_REL_PAIRS, CLW_BE_REL_SAVE, CLW_BE_LONGFORM, parseFlowSpec, buildFlowElements, clwOrdenarCards, getCleanPatterns, CARD_CONFIG, FLOW_CONFIG, clwTranslate };');
+eval(nucleo + '\nglobalThis.CLW = { CLW_BE_INSERT, CLW_BE_TPL, CLW_BE_FLOW, CLW_BE_CARDS, CLW_BE_NEWNOTE, CLW_BE_SYNC, CLW_BE_EDITOR_LOAD, CLW_BE_EDITOR_SAVE, CLW_BE_REMOVE, CLW_BE_REL_PAIRS, CLW_BE_REL_SAVE, CLW_BE_LONGFORM, parseFlowSpec, buildFlowElements, clwOrdenarCards, getCleanPatterns, CARD_CONFIG, FLOW_CONFIG, clwTranslate, clwArrowLabel };');
 
 const C = CLW;
 
@@ -182,6 +182,61 @@ console.log('\n11) Erro em canvas inexistente');
     let erro = null;
     try { C.CLW_BE_FLOW('inexistente', [], 60, labels); } catch (e) { erro = e.message; }
     ok('lança erro com a mensagem do label', erro === 'canvas-missing-msg', erro);
+}
+
+console.log('\n12) Rótulo da seta (clwArrowLabel) e atualização do texto');
+{
+    const t = (k, v) => C.clwTranslate('pt', k, v);
+    ok('tipo padrão → rótulo traduzido', C.clwArrowLabel('inspires', t) === t('relation.inspires'), C.clwArrowLabel('inspires', t));
+    ok('valor custom volta como está', C.clwArrowLabel('causa', t) === 'causa', C.clwArrowLabel('causa', t));
+
+    const data = JSON.parse(canvas.conteudo());
+    data.elements.push({ id: 'txt1', type: 'text', x: 0, y: 0, width: 50, height: 10, text: 'antigo', originalText: 'antigo' });
+    canvas.setContent(JSON.stringify(data));
+    const n = C.CLW_BE_REL_SAVE('n1', [{
+        fromNoteId: 'n2', toNoteId: 'n3', relType: 'inspires',
+        textElId: 'txt1', newText: C.clwArrowLabel('inspires', t),
+    }], labels);
+    ok('salvou a relação com rótulo', n === 1, n);
+    const el = JSON.parse(canvas.conteudo()).elements.find((e) => e.id === 'txt1');
+    ok('texto da seta atualizado com o rótulo', el && el.text === t('relation.inspires'), el && el.text);
+}
+
+console.log('\n13) Template clonado: grupos com ids próprios');
+{
+    const antes = els().length;
+    C.CLW_BE_TPL('n1', 'n3', C.FLOW_CONFIG.marginX, labels);
+    const copia1 = els().slice(antes, antes + 2);
+    const antes2 = els().length;
+    C.CLW_BE_TPL('n1', 'n3', C.FLOW_CONFIG.marginX, labels);
+    const copia2 = els().slice(antes2, antes2 + 2);
+    const g1 = [...new Set(copia1.flatMap((e) => e.groupIds || []))];
+    const g2 = [...new Set(copia2.flatMap((e) => e.groupIds || []))];
+    ok('cada cópia tem um grupo próprio', g1.length === 1 && g2.length === 1 && g1[0] !== g2[0], { g1, g2 });
+    ok('grupo não é o id original do template', !g1.includes('tg1') && !g2.includes('tg1'), { g1, g2 });
+}
+
+console.log('\n14) Sync cria o trecho quando a nota vazia ganha conteúdo');
+{
+    const vazia = notaFake('n4', 'Nota vazia', '');
+    notas.n4 = vazia;
+    C.CLW_BE_INSERT('n1', 'n4', 'Nota vazia', '', C.CARD_CONFIG, C.getCleanPatterns(), labels);
+    let textos = els().filter((e) => e.type === 'text' && e.text === 'Nota vazia');
+    ok('card criado sem trecho (nota vazia)', textos.length === 1, textos.length);
+
+    vazia.setContent('<p>Conteúdo que apareceu depois.</p>');
+    C.CLW_BE_SYNC('n1', 'n4', C.CARD_CONFIG, C.getCleanPatterns(), labels);
+    textos = els().filter((e) => e.type === 'text' && /Conteúdo que apareceu/.test(e.text || ''));
+    ok('sync criou o elemento de trecho', textos.length === 1, textos.length);
+}
+
+console.log('\n15) Canvas com JSON corrompido: erro em vez de sobrescrever');
+{
+    canvas.setContent('isto não é JSON');
+    let erro = null;
+    try { C.CLW_BE_REMOVE('n1', 'n2', labels); } catch (e) { erro = e.message; }
+    ok('lança erro (não sobrescreve)', erro !== null, erro);
+    ok('conteúdo do canvas intacto', canvas.conteudo() === 'isto não é JSON', canvas.conteudo());
 }
 
 console.log('\n' + (falhas === 0 ? '✅ Todos os testes passaram' : `❌ ${falhas} falha(s)`));

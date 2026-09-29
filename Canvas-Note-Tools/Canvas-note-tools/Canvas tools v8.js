@@ -22,7 +22,7 @@ const CARD_CONFIG = {
     roughness:       0,
     cornerRadius:    { type: 3 },
     cols:            5,
-    colGap:          280,
+    colGap:          360,
     rowGap:          40,
     originX:         60,
     originY:         60,
@@ -43,6 +43,15 @@ const RELATION_TYPES = [
 function relationOptionsHtml(t) {
     return '<option value="none">' + t('relations.skip') + '</option>' +
         RELATION_TYPES.map(r => `<option value="${r.value}">${t(r.labelKey)}</option>`).join('');
+}
+
+/**
+ * Rótulo (traduzido) para o texto da seta a partir do valor selecionado.
+ * Valor desconhecido (custom) volta como está — é o texto que o usuário digitou.
+ */
+function clwArrowLabel(relType, t) {
+    const rel = RELATION_TYPES.find((r) => r.value === relType);
+    return rel ? t(rel.labelKey) : String(relType || '');
 }
 
 const TEXT_TO_RELATION = {
@@ -98,6 +107,21 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+/**
+ * Sanitização defensiva do HTML de notas antes de exibi-lo no editor/diálogo:
+ * remove scripts/frames, atributos on* e URLs javascript:. Mitigação para
+ * conteúdo importado; não substitui um sanitizador completo.
+ */
+function sanitizarHtml(html) {
+    return String(html || '')
+        .replace(/<\s*script\b[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, '')
+        .replace(/<\s*script\b[^>]*\/?>/gi, '')
+        .replace(/<\s*(iframe|object|embed)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+        .replace(/<\s*(iframe|object|embed)\b[^>]*\/?>/gi, '')
+        .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/(href|src)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*'|javascript:[^\s>]+)/gi, '$1="#"');
 }
 
 /**
@@ -620,6 +644,8 @@ const CLW_I18N = {
         /* comum */
         'common.no_canvas':      'Nenhuma nota Canvas ativa.',
         'common.error':          '✗ Erro: ',
+        'common.canvas_json':    'Conteúdo do canvas inválido (JSON corrompido). Operação cancelada.',
+        'common.untitled':       'Sem título',
 
         /* busca / inserir nota */
         'search.title':          'Inserir nota no Canvas',
@@ -638,6 +664,7 @@ const CLW_I18N = {
         'newnote.no_title':      'Digite um título para a nova nota.',
         'newnote.created':       '✅ Nota "{title}" criada e inserida no canvas.',
         'newnote.error':         'Erro ao criar nota: ',
+        'newnote.orphan':        '⚠️ A nota foi criada, mas o card não pôde ser inserido no canvas.',
 
         /* modo captura */
         'capture.no_canvas':     'Abra um Canvas para ativar a captura.',
@@ -778,6 +805,8 @@ const CLW_I18N = {
         /* common */
         'common.no_canvas':      'No active Canvas note.',
         'common.error':          '✗ Error: ',
+        'common.canvas_json':    'Invalid canvas content (corrupted JSON). Operation cancelled.',
+        'common.untitled':       'Untitled',
 
         /* search / insert note */
         'search.title':          'Insert note into Canvas',
@@ -796,6 +825,7 @@ const CLW_I18N = {
         'newnote.no_title':      'Type a title for the new note.',
         'newnote.created':       '✅ Note "{title}" created and inserted into the canvas.',
         'newnote.error':         'Error creating note: ',
+        'newnote.orphan':        '⚠️ The note was created, but the card could not be inserted into the canvas.',
 
         /* capture mode */
         'capture.no_canvas':     'Open a Canvas to enable capture.',
@@ -1012,6 +1042,9 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             tplInvalid:     this._t('tpl.invalid'),
             whereParent:    this._t('flow.where_parent'),
             whereTemplates: this._t('flow.where_templates'),
+            canvasJson:     this._t('common.canvas_json'),
+            noteMissing:    this._t('editor.no_note'),
+            untitled:       this._t('common.untitled'),
         };
     }
 
@@ -1821,7 +1854,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             api.showMessage(this._t('newnote.created', { title }));
         } catch (err) {
             console.error('[CanvasLinker] createNote error:', err);
-            api.showError(this._t('newnote.error') + err.message);
+            api.showError(this._t('newnote.error') + ((err && err.message) || err));
         }
     }
 
@@ -1853,7 +1886,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 const note = api.getNote(canvasNoteId);
                 if (!note) throw new Error(L.canvasMissing);
                 let data;
-                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 return (data.elements || [])
                     .filter(e => !e.isDeleted && e.type === 'rectangle' && e.link?.startsWith('#root/'))
                     .map(e => {
@@ -1893,7 +1926,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
         } catch (err) {
             console.error('[CanvasLinker] openRemovePanel error:', err);
-            api.showError(this._t('cards.list_error') + err.message);
+            api.showError(this._t('cards.list_error') + ((err && err.message) || err));
             $panel.style.display = 'none';
         }
     }
@@ -1908,7 +1941,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 const canvasNote = api.getNote(canvasNoteId);
                 if (!canvasNote) throw new Error(L.canvasMissing);
                 let data;
-                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 const elements = data.elements || [];
 
                 const link = '#root/' + targetNoteId;
@@ -1936,7 +1969,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             }
         } catch (err) {
             console.error('[CanvasLinker] doRemoveCard error:', err);
-            api.showError(this._t('remove.error') + err.message);
+            api.showError(this._t('remove.error') + ((err && err.message) || err));
         }
     }
 
@@ -1963,7 +1996,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 const note = api.getNote(canvasNoteId);
                 if (!note) throw new Error(L.canvasMissing);
                 let data;
-                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 return (data.elements || [])
                     .filter(e => !e.isDeleted && e.type === 'rectangle' && e.link?.startsWith('#root/'))
                     .map(e => {
@@ -1996,7 +2029,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
         } catch (err) {
             console.error('[CanvasLinker] openEditPanel error:', err);
-            api.showError(this._t('cards.list_error') + err.message);
+            api.showError(this._t('cards.list_error') + ((err && err.message) || err));
             $panel.style.display = 'none';
         }
     }
@@ -2018,7 +2051,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         const $content = this._el('clw-editor-content');
 
         $title.value       = note.title;
-        $content.innerHTML = note.content;
+        $content.innerHTML = sanitizarHtml(note.content);
 
         this._hide('clw-edit-panel');
         this._hide('clw-panel');
@@ -2034,19 +2067,19 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         const noteId       = this._editorNoteId;
         if (!canvasNoteId || !noteId) return;
 
-        const newTitle   = this._el('clw-editor-note-title').value.trim() || 'Sem título';
+        const newTitle   = this._el('clw-editor-note-title').value.trim() || this._t('common.untitled');
         const newContent = this._el('clw-editor-content').innerHTML;
 
         const $save = this._el('clw-editor-save');
         $save.disabled = true;
 
         try {
-            await api.runOnBackend(/* CLW-BE-EDITOR-SAVE-START */ (noteId, title, content) => {
+            await api.runOnBackend(/* CLW-BE-EDITOR-SAVE-START */ (noteId, title, content, L) => {
                 const n = api.getNote(noteId);
-                if (!n) return;
+                if (!n) throw new Error((L && L.noteMissing) || 'Nota não encontrada');
                 n.title = title;
                 n.setContent(content);
-            }, /* CLW-BE-EDITOR-SAVE-END */ [noteId, newTitle, newContent]);
+            }, /* CLW-BE-EDITOR-SAVE-END */ [noteId, newTitle, newContent, this._backendLabels()]);
 
             await this._updateCardText(canvasNoteId, noteId);
 
@@ -2054,7 +2087,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             api.showMessage(this._t('editor.saved'));
         } catch (err) {
             console.error('[CanvasLinker] saveEditor error:', err);
-            api.showError(this._t('editor.error') + err.message);
+            api.showError(this._t('editor.error') + ((err && err.message) || err));
         } finally {
             $save.disabled = false;
         }
@@ -2067,7 +2100,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
      */
     async _updateCardText(canvasNoteId, noteId) {
         const cleanConfig = getCleanPatterns();
-        return await api.runOnBackend(/* CLW-BE-SYNC-START */ (canvasNoteId, noteId, cfg, cleanPatterns) => {
+        return await api.runOnBackend(/* CLW-BE-SYNC-START */ (canvasNoteId, noteId, cfg, cleanPatterns, L) => {
             const patterns = cleanPatterns.map(([src, flags, repl]) => [new RegExp(src, flags), repl]);
 
             function clean(raw, max) {
@@ -2109,7 +2142,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             const canvasNote = api.getNote(canvasNoteId);
             if (!canvasNote) return 0;
             let data;
-            try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+            try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
 
             const link = '#root/' + noteId;
             const rect = (data.elements || []).find(e => !e.isDeleted && e.type === 'rectangle' && e.link === link);
@@ -2119,7 +2152,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
             const linkedNote = api.getNote(noteId);
             if (!linkedNote) return 0;
-            const newTitle = linkedNote.title || 'Sem título';
+            const newTitle = linkedNote.title || (L && L.untitled) || 'Sem título';
             const excerpt = wrapText(clean(linkedNote.getContent() || '', cfg.excerptSlice), 40);
 
             const texts = (data.elements || []).filter(e =>
@@ -2151,6 +2184,30 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 count++;
             }
 
+            // Card criado a partir de nota vazia não tem elemento de trecho:
+            // cria quando o conteúdo aparecer (antes ficava sem trecho para sempre)
+            if (texts.length === 1 && excerpt) {
+                const excrH = estimateTextHeight(excerpt, cfg.excerptFontSize, 1.3, cfg.width - cfg.padX * 2);
+                const tituloH = Math.ceil(cfg.titleFontSize * 1.25) + 4;
+                data.elements.push({
+                    id: 'clw_e_' + Math.random().toString(36).substr(2, 14),
+                    type: 'text',
+                    x: rect.x + cfg.padX,
+                    y: rect.y + cfg.padY + tituloH + 6,
+                    width: cfg.width - cfg.padX * 2, height: excrH, angle: 0,
+                    strokeColor: '#6c7086', backgroundColor: 'transparent',
+                    fillStyle: 'solid', strokeWidth: 1, strokeStyle: 'solid',
+                    roughness: cfg.roughness, opacity: 100, groupIds: [...(rect.groupIds || [])],
+                    seed: Math.floor(Math.random() * 999999), version: 1,
+                    versionNonce: Math.floor(Math.random() * 999999),
+                    isDeleted: false, updated: now,
+                    text: excerpt, fontSize: cfg.excerptFontSize, fontFamily: cfg.fontFamily,
+                    textAlign: 'left', verticalAlign: 'top',
+                    originalText: excerpt, lineHeight: 1.3, autoResize: false,
+                });
+                count++;
+            }
+
             const titleH = Math.ceil(cfg.titleFontSize * 1.25) + 4;
             const excerptH = excerpt
                 ? estimateTextHeight(excerpt, cfg.excerptFontSize, 1.3, cfg.width - cfg.padX * 2)
@@ -2162,7 +2219,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
             if (count > 0) canvasNote.setContent(JSON.stringify(data));
             return 1;
-        }, /* CLW-BE-SYNC-END */ [canvasNoteId, noteId, CARD_CONFIG, cleanConfig]);
+        }, /* CLW-BE-SYNC-END */ [canvasNoteId, noteId, CARD_CONFIG, cleanConfig, this._backendLabels()]);
     }
 
     async _syncCards() {
@@ -2172,15 +2229,15 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         api.showMessage(this._t('sync.running'));
 
         try {
-            const cards = await api.runOnBackend((canvasNoteId) => {
+            const cards = await api.runOnBackend((canvasNoteId, L) => {
                 const note = api.getNote(canvasNoteId);
                 if (!note) return [];
                 let data;
-                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 return (data.elements || [])
                     .filter(e => !e.isDeleted && e.type === 'rectangle' && e.link?.startsWith('#root/'))
                     .map(e => e.link.replace('#root/', ''));
-            }, [canvasNoteId]);
+            }, [canvasNoteId, this._backendLabels()]);
 
             if (!cards || cards.length === 0) {
                 api.showMessage(this._t('sync.none'));
@@ -2195,7 +2252,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             api.showMessage(this._t('sync.done', { n: found }));
         } catch (err) {
             console.error('[CanvasLinker] syncCards error:', err);
-            api.showError(this._t('sync.error') + err.message);
+            api.showError(this._t('sync.error') + ((err && err.message) || err));
         }
     }
 
@@ -2220,7 +2277,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 if (!note) throw new Error(L.canvasMissing);
                 let data;
                 try { data = JSON.parse(note.getContent() || '{}'); }
-                catch (_) { data = {}; }
+                catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 const elements = (data.elements || []).filter(e => !e.isDeleted);
 
                 const cardMap = {};
@@ -2336,9 +2393,10 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
 
                     // 4. Se não casou com nenhum, vira opção custom
                     if (!selectedValue && lower) {
-                        const safeValue = lower.replace(/"/g, '').slice(0, 60);
-                        customOption = `<option value="${safeValue}" selected>${safeValue} (custom)</option>`;
-                        selectedValue = safeValue;
+                        const customText = lower.slice(0, 60);
+                        const customEsc  = escapeHtml(customText);
+                        customOption = `<option value="${customEsc}" selected>${customEsc} (custom)</option>`;
+                        selectedValue = customText;
                     }
                 }
 
@@ -2367,7 +2425,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             $save.style.display = 'block';
         } catch (err) {
             console.error('[CanvasLinker] openRelationsPanel error:', err);
-            api.showError(this._t('longform.read_error') + err.message);
+            api.showError(this._t('longform.read_error') + ((err && err.message) || err));
             $panel.style.display = 'none';
         }
     }
@@ -2387,8 +2445,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             const textElId = row.dataset.textElId;
             let newText = '';
             if (textElId) {
-                const rel = RELATION_TYPES.find(r => r.value === select.value);
-                newText = rel ? rel.label : select.value;
+                newText = clwArrowLabel(select.value, (k) => this._t(k));
             }
 
             relations.push({
@@ -2407,7 +2464,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         }
 
         try {
-            const saved = await api.runOnBackend(/* CLW-BE-REL-SAVE-START */ (canvasNoteId, relations) => {
+            const saved = await api.runOnBackend(/* CLW-BE-REL-SAVE-START */ (canvasNoteId, relations, L) => {
                 let count = 0;
                 for (const { fromNoteId, toNoteId, relType } of relations) {
                     try {
@@ -2425,7 +2482,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 const canvasNote = api.getNote(canvasNoteId);
                 if (canvasNote) {
                     let data;
-                    try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+                    try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                     let dirty = false;
                     for (const { textElId, newText } of relations) {
                         if (!textElId || !newText) continue;
@@ -2440,13 +2497,13 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 }
 
                 return count;
-            }, /* CLW-BE-REL-SAVE-END */ [canvasNoteId, relations]);
+            }, /* CLW-BE-REL-SAVE-END */ [canvasNoteId, relations, this._backendLabels()]);
 
             this._hide('clw-relmap-panel');
             api.showMessage(this._t('relations.saved', { n: saved }));
         } catch (err) {
             console.error('[CanvasLinker] confirmSaveRelations error:', err);
-            api.showError(this._t('relations.error') + err.message);
+            api.showError(this._t('relations.error') + ((err && err.message) || err));
         }
     }
 
@@ -2461,7 +2518,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 const note = api.getNote(canvasNoteId);
                 if (!note) throw new Error(L.canvasMissing);
                 let data;
-                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(note.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 return {
                     elements:    (data.elements || []).filter(e => !e.isDeleted),
                     canvasTitle: note.title
@@ -2502,7 +2559,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                     const raw = (note.getContent() || '')
                         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
                         .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-                    content += `<h2>${note.title}</h2>\n${raw}\n<br><hr><br>\n`;
+                    content += `<h2>${escapeHtml(note.title)}</h2>\n${raw}\n<br><hr><br>\n`;
                 }
                 const result = api.createNewNote({
                     parentNoteId: canvasNoteId,
@@ -2516,7 +2573,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             setTimeout(() => api.activateNote(newNoteId), 300);
         } catch (err) {
             console.error('[CanvasLinker] longform error:', err);
-            api.showError(this._t('longform.error') + err.message);
+            api.showError(this._t('longform.error') + ((err && err.message) || err));
         }
     }
 
@@ -2668,6 +2725,12 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 const idMap = new Map();
                 for (const el of src) if (el.id) idMap.set(el.id, 'tpl_' + Math.random().toString(36).slice(2, 14));
                 const mapRef = (v) => (v && idMap.get(v)) || v;
+                // grupos também recebem ids novos: duas cópias do mesmo template
+                // não podem ficar presas (mover/remover afetaria as duas)
+                const gidMap = new Map();
+                for (const el of src) for (const gid of el.groupIds || []) {
+                    if (!gidMap.has(gid)) gidMap.set(gid, 'tplg_' + Math.random().toString(36).slice(2, 14));
+                }
 
                 const now = Date.now();
                 const clones = [];
@@ -2681,6 +2744,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                     if (c.endBinding)   c.endBinding   = { ...c.endBinding,   elementId: mapRef(c.endBinding.elementId) };
                     if (c.containerId)  c.containerId  = mapRef(c.containerId);
                     if (c.frameId)      c.frameId      = mapRef(c.frameId);
+                    if (Array.isArray(c.groupIds)) c.groupIds = c.groupIds.map(g => gidMap.get(g) || g);
                     if (typeof c.x === 'number') c.x += dx;
                     if (typeof c.y === 'number') c.y += dy;
                     c.seed = Math.floor(Math.random() * 999999);
@@ -2701,8 +2765,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             await api.activateNote(canvasNoteId);
         } catch (err) {
             console.error('[CanvasLinker] insertTemplate error:', err);
-            this._tplStatus(this._t('common.error') + err.message, true);
-            api.showError(this._t('tpl.insert_error') + err.message);
+            this._tplStatus(this._t('common.error') + ((err && err.message) || err), true);
+            api.showError(this._t('tpl.insert_error') + ((err && err.message) || err));
         }
     }
 
@@ -2755,7 +2819,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 const canvasNote = api.getNote(canvasNoteId);
                 if (!canvasNote) throw new Error(L.canvasMissing);
                 let data;
-                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 if (!data.type)     data.type     = 'excalidraw';
                 if (!data.version)  data.version  = 2;
                 if (!data.elements) data.elements = [];
@@ -2781,8 +2845,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             await api.activateNote(canvasNoteId);
         } catch (err) {
             console.error('[CanvasLinker] generateFlow error:', err);
-            this._flowStatus(this._t('common.error') + err.message, true);
-            api.showError(this._t('flow.generate_error') + err.message);
+            this._flowStatus(this._t('common.error') + ((err && err.message) || err), true);
+            api.showError(this._t('flow.generate_error') + ((err && err.message) || err));
         }
     }
 
@@ -2818,8 +2882,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             setTimeout(() => api.activateNote(info.noteId), 250);
         } catch (err) {
             console.error('[CanvasLinker] createFlowNote error:', err);
-            this._flowStatus(this._t('common.error') + err.message, true);
-            api.showError(this._t('newnote.error') + err.message);
+            this._flowStatus(this._t('common.error') + ((err && err.message) || err), true);
+            api.showError(this._t('newnote.error') + ((err && err.message) || err));
         }
     }
 
@@ -2858,8 +2922,8 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             setTimeout(() => api.activateNote(info.noteId), 250);
         } catch (err) {
             console.error('[CanvasLinker] saveFlowTemplate error:', err);
-            this._flowStatus(this._t('common.error') + err.message, true);
-            api.showError(this._t('flow.tpl_error') + err.message);
+            this._flowStatus(this._t('common.error') + ((err && err.message) || err), true);
+            api.showError(this._t('flow.tpl_error') + ((err && err.message) || err));
         }
     }
 
@@ -2930,7 +2994,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
             });
             $results.appendChild(fragment);
         } catch (err) {
-            $status.textContent = this._t('search.error') + err.message;
+            $status.textContent = this._t('search.error') + ((err && err.message) || err);
             $status.style.display = 'block';
             console.error('[CanvasLinker] search error', err);
         }
@@ -3006,7 +3070,7 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 if (!canvasNote) throw new Error(L.canvasMissing + ' (' + canvasNoteId + ')');
 
                 let data;
-                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { data = {}; }
+                try { data = JSON.parse(canvasNote.getContent() || '{}'); } catch (_) { throw new Error((L && L.canvasJson) || 'Canvas JSON inválido'); }
                 if (!data.type)     data.type     = 'excalidraw';
                 if (!data.version)  data.version  = 2;
                 if (!data.elements) data.elements = [];
@@ -3099,10 +3163,10 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
         } catch (err) {
             console.error('[CanvasLinker] insert error', err);
             if ($status) {
-                $status.textContent = this._t('common.error') + err.message;
+                $status.textContent = this._t('common.error') + ((err && err.message) || err);
                 $status.style.display = 'block';
             }
-            api.showError('CanvasLinker: ' + err.message);
+            api.showError('CanvasLinker: ' + ((err && err.message) || err));
         }
     }
 
