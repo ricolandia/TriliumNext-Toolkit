@@ -81,15 +81,17 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 | 4 | Shared-Notes (widget + handler) | `Shared-Notes/shared-notes-widget.js`, `shared-notes-handler.js` | 29/09/2026 | 47 achados (0C/4A/21M/16B/6S) | 31 achados (1C/7A/16M/5B/2S) | 16 itens (S/M) | **Batches 1-2 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; 70 chaves i18n em paridade; testes hostis); ✅ token do E2E rotacionado (29/09); residual no `ROADMAP-RESIDUAIS.md` |
 | 5 | AI-Chat (render note) | `AI-Chat/AI-Chat/AI Code.js` | 29/09/2026 | 50 achados (2C/9A/18M/17B/4S) | 40 achados (3C/11A/16M/9B/1S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/zip com sha256 idêntico; demo: instalação nova via ETAPI com sha idêntico e config pelo label; 85 chaves i18n em paridade; `test-chat.js` + `test-smoke.js`); residual no `ROADMAP-RESIDUAIS.md` |
 | 6 | Minimalist Pomodoro + Time Tracker | `Minimalist-Pomodoro/Pomodoro-mini/Pomodoro mini.js` | 29/09/2026 | 36 achados (2C/4A/16M/9B/5S) | 33 achados (1C/8A/14M/8B/3S) | 20 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; `test-pomodoro.js` 35 ✅ + `test-smoke.js` 30 ✅; STOP em 2 toques que só limpa após salvar; relatório em `<tr>` com escaping e label `#pomodoro`; i18n 30 chaves em paridade); residual no `ROADMAP-RESIDUAIS.md` |
+| 7 | Word Counter | `Word-Counter/Word count.js` | 29/09/2026 | 34 achados (0C/4A/13M/13B/4S) | 29 achados (1C/6A/12M/7B/3S) | 17 itens (S/M) | **Auditoria concluída; nenhuma correção aplicada** (batches após triagem: 1) integridade da contagem + eventos + storage, 2) UI/a11y/estado + i18n + decisão da semântica do "escrito hoje", 3) harness + README/zip) |
 
 ### 🔁 Fila proposta (ajustável)
 
 ~~2. Writers-Tools (Fountain + Longform)~~ ✅ 29/09 · ~~3. Canvas-Note-Tools~~ ✅ 29/09 ·
 ~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · ~~6. Daily-Note-Map~~ ⛔ removido da
 coleção (29/09 — o mapa nativo do Trilium cobre; decisão no `SESSION.md`) ·
-~~6. Minimalist Pomodoro + Time Tracker~~ ✅ 29/09 · **7. Word-Counter (próximo — prioridade do
-release)** · 8. Daily-Note-Navigator · 9. Knowledge-Dashboard · 10. Attribute-GC · 11. UI-Tweaks ·
-12. Kanboard · 13. Mastodon · 14. Canvas-Template-Loader · 15. Canvas-Templates.
+~~6. Minimalist Pomodoro + Time Tracker~~ ✅ 29/09 · ~~7. Word-Counter~~ ✅ 29/09 ·
+**8. Daily-Note-Navigator (próximo — prioridade do release)** · 9. Knowledge-Dashboard ·
+10. Attribute-GC · 11. UI-Tweaks · 12. Kanboard · 13. Mastodon · 14. Canvas-Template-Loader ·
+15. Canvas-Templates.
 
 ---
 
@@ -1801,3 +1803,190 @@ repo=VPS=demo**; zip regenerado com o mesmo sha.
 configuráveis (`#pomoWorkMin`/`#pomoBreakMin`), idempotência do `cssBlock` + ids globais,
 vínculo para a nota do relatório, prévia do relatório, ícone do relatório, smoke da retomada
 após reload e capturas do README.
+
+---
+
+## Rodada 7 — Word-Counter (29/09/2026)
+
+**Escopo:** `Word-Counter/Word count.js` (217 linhas), `README.md`, `Word-counter.zip`;
+registry `word-counter`.
+**Verificação:** `bun build` (sintaxe) ✅ · **zip defasado**: JS interno `0311e6c9…` (versão de
+12/05, sem a meta semanal) × repo `028791b3…` (21/07) · **sem harness de teste** · registry
+`0.8.0` com `sourceUrl` + labels (sem manifest, ok) · 3 especialistas (read-only) + conferência
+direta dos achados graves.
+**Baseline conferido:** `api.dayjs().format('GGGG-WW')` **funciona** no 0.106 (advancedFormat +
+isoWeek carregados — não é bug); `getLabelValue` inclui labels herdados; `getNoteComplement()`
+está **deprecado** no 0.106 (migrar para `getContent()`); os pesos de contraste da UI foram
+medidos nos temas oficiais (light/next-light/dark/next-dark).
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 0 | 4 | 13 | 13 | 4 | 34 |
+| 🎨 UI/UX | 1 | 6 | 12 | 7 | 3 | 29 |
+| ⚡ Quick wins | — | — | — | — | — | 17 itens |
+
+**Top 5 (triagem sugerida):**
+1. **[Alta · C7/D2]** Zip defasado: o README manda importar o zip, que entrega a versão **sem a meta semanal** (`0311e6c9…` × `028791b3…`) — o registry anuncia "daily and weekly goals". Regenerar é a correção mais barata da rodada.
+2. **[Alta · C4/D2]** **Semântica do máximo**: abrir uma nota longa credita o tamanho inteiro ao dia (`4222/500` com a nota de 87 palavras na captura); apagar/editar para menos não reduz. **Decisão pendente do dono** (documentar × baseline+delta × só notas editadas).
+3. **[Alta · C5]** `entitiesReloadedEvent` **sem `isEnabled()`**: editar/salvar uma nota de **código** com o widget oculto credita as palavras do código no total diário (`99-108`, `110-123`).
+4. **[Alta · C5/C4]** **Corrida do `noteId`**: `getNoteComplement()` é aguardado, mas `_trackDaily` lê `this.note.noteId` **depois** do await → palavras da nota A entram na B / UI de B sobrescrita (`113` × `134`/`156`).
+5. **[Crítica · D7]** **Barra semanal invisível** em todos os temas: `--accented-background-color` com opacity 0.6 sobre trilho `--main-border-color` mede **1.16–1.93:1** (WCAG pede 3:1); a diária reprova no theme-dark clássico (1.30:1).
+
+**Nota de dedupe:** zip defasado aparece nas três listas (Código 1, UI 7, QW-15/17); semântica do
+máximo em Código 2/6, UI 4/17 e QW-11/12; storage/eventos em Código 3-5/11/16 e UI 8/18; i18n em
+Código 13, UI 5 e QW-4; barras em Código 27, UI 1/2/12/13 e QW-5.
+
+### 👨‍💻 Código — achados
+
+**Alta**
+
+- **C7.1 · Zip desatualizado** (zip × repo): JS interno de 12/05 (`0311e6c9…`) sem `WEEKLY_GOAL_DEFAULT`/`_trackWeekly`/linha "Semana"; meta `appVersion 0.103.0`. Correção: regenerar do repo. (verificar na instalação)
+- **C4.1 · Máximo por nota credita nota pré-existente inteira e nunca reduz** (`137-140`, `159-162`): abrir/tocar uma nota grava o tamanho atual; apagar nota mantém a contribuição. Correção: delta positivo com baseline (`{total,last}`), filtro por `dateModified` de hoje, ou documentar; **decisão de semântica na triagem**.
+- **C5.1 · `entitiesReloadedEvent` sem `isEnabled()`** (`99-108`, `110-123`): salvar nota de código credita o conteúdo no total com o widget oculto. Correção: `if (!this.isEnabled()) return;` (ou validar tipo em `_updateNoteCounts`). (verificar em runtime)
+- **C5.2/C4.2 · Corrida do `noteId` após o await** (`110-123` × `134`/`156`): troca de nota no meio do fetch credita a nota errada/sobrescreve a UI. Correção: capturar `noteId`/geração antes do await e descartar resultado obsoleto.
+
+**Média**
+
+- **C1.1 · Nota protegida sem sessão exibe 0 em silêncio** (`113-118`; `processContent` devolve `""`): sem aviso e sem recarregar ao desbloquear. Correção: estado "nota protegida" + reagir à sessão protegida. (verificar em runtime)
+- **C4.3/C3.1 · localStorage eterno e `setItem` fora do try** (`126`, `139`, `148`, `161`): uma chave por dia/semana para sempre; cota cheia lança e o catch mudo engole, **pulando `_trackWeekly`**. Correção: helpers com try/catch (padrão Pomodoro), poda de chaves antigas, schema versionado.
+- **C4.4 · Entidades e `<` cru quebram a contagem** (`18-25`): `<p>&nbsp;</p>` = 1 palavra/6 chars; `foo&nbsp;bar` = 1 palavra; `a < b` = 1 char (a regex engole o resto). Correção: `htmlToText()` com mapa de entidades + parser seguro.
+- **C4.5 · `_readGoal` aceita lixo/negativo** (`186-192`): `'500abc'`→500, `'1e3'`→1, `'-100'` passa (percentual negativo). Correção: `Number()` + `Number.isFinite` + clamp `>= 1`/teto.
+- **C4.6 · Denominador da meta congelado no 1º render** (`59`, `66` × `173`, `182`): trocar para nota com outro `#dailyGoal` deixa "N/500" com a barra de outro denominador. Correção: spans separados + reagir a recarga de atributos.
+- **C5.3 · `_updatePending` global descarta o evento em voo sem trailing** (`16`, `101-107`): o último save só entra no próximo evento/troca; flag compartilhada entre instâncias. Correção: debounce trailing (~150 ms) por instância (é o que o README promete).
+- **C6.1 · `getNoteComplement()` deprecado no 0.106** (`113`): funciona hoje, quebra em versão futura. Correção: `await this.note.getContent()`.
+- **C7.2 · Sem i18n** (`42`, `57`, `64`, `71`, `75`): "Contagem"/"Hoje/Semana/Palavras/Caracteres" fixos. Correção: `WC_I18N` + `tr()` pelo locale (inclui `widgetTitle`).
+- **C8.1 · Sem testes nem funções puras acessíveis** (`18-25`, `217`): extrair `htmlToText`/`countWords`/`countChars`/`parseGoalValue` com marcadores + harness e smoke.
+- **C7.3 · README enganoso/defasado** (`3`, `8-11`, `16-18`): falta `#weeklyGoal`; "debounces" falso; "words written" esconde o máximo; "character count" sem critério; aponta o zip defasado.
+- **C4.7/C1.2 · Storage sem validação de forma** (`128-132`, `142`, `197-202`): array perde contribuições; valor não numérico vira `NaN` na tela (`NaN%`). Correção: validar objeto + `Number.isFinite`.
+- **C4.8/C5.4 · Edição em split não ativo não é contada** (`100`): só a nota ativa; palavras de outro painel entram só quando a nota vira ativa (e nunca se o app fechar antes). Evolução: registrar por nota com o delta (liga ao C4.1).
+
+**Baixa**
+
+- **C1.3 · `_trackDaily`/`_trackWeekly` usam `this.note.noteId` sem guarda** (`134`, `156`): `TypeError` cai no catch mudo se a nota sumir no await.
+- **C1.4 · Catch mudo mantém valores antigos/"—"** (`120-122`): sem `console.warn`, sem estado de erro.
+- **C4.9 · Virada do dia com o app aberto não re-renderiza** (`126`, `195`): "Hoje" mostra ontem até a próxima troca/save. Correção: `visibilitychange`/timer.
+- **C4.10 · Semana ISO não anunciada** (`148`, `206`): troca na segunda (`2027-01-01` → `2026-53`, verificado); a UI só diz "Semana". Documentar/exibir intervalo.
+- **C4.11 · `countChars` conta entidades e unidades UTF-16 e não documenta "sem espaços"** (`23-25`).
+- **C4.12 · Ruído na contagem** (`18-21`): pontuação isolada conta palavra; CJK = 1; conteúdo de `<style>/<script>` conta.
+- **C7.4 · Namespace curto sem versão** (`126`, `148`): `wc-`/`wcw-` no origin do app; sem migração.
+- **C7.5 · Lógica de storage duplicada 4×** (`128-132` ≈ `150-154` ≈ `197-201` ≈ `208-212`): helpers `readStore/sumStore/writeStore`.
+- **C7.6 · Versões desalinhadas** (header "v0.102+"; registry 0.8.0; zip 0.103.0; README sem versão).
+- **C7.7 · Barras sem ARIA e sem reduced-motion** (`30`, `32`, `62`, `69`).
+- **C7.8 · CSS com ids globais e token de fundo como preenchimento** (`28-35`).
+- **C5.5 · Corrida read-modify-write entre janelas** (`128-139`): última gravação ganha; documentar.
+- **C6.2 · `isEnabled()` redundante e doc do `SESSION.md:127` desatualizada** (`40-41`, `45`; nota do `static` já corrigida na rodada 6).
+- **C7.9 · `position = 1`** (`40`): único no toolkit (GC=2, Pomodoro/DNN/Canvas=100, Shared=200); documentar slot.
+
+**Sugestão**
+
+- **C7.10 · Registry × zip × manifest** (registry 137-147): decidir entre manifest ou remover o zip do README.
+- **C4.13/C7.11 · Meta global vs. da nota ativa** (`186-192`): label na nota do widget ou em opções daria meta estável; documentar o atual (inclui herdados).
+- **C2.1 · Superfície limpa** (markup estático, `.text()`, `parseInt`): manter com o validador de forma (C4.7).
+- **C3.2 · Sem poda de notas apagadas** (`134-140`, `156-162`): total inflado permanentemente.
+
+### 🎨 UI/UX — achados
+
+**Crítica**
+
+- **D7.1 · Barra semanal invisível** (`32`; trilho `29`/`31`): fill `--accented-background-color` + opacity 0.6 sobre `--main-border-color` = **1.27:1 (light), 1.16:1 (next-light), 1.93:1 (dark), 1.17:1 (next-dark)**. Correção: token de primeiro plano como a diária, sem opacity, ≥3:1. (verificar em runtime)
+
+**Alta**
+
+- **D3.1 · Progresso sem semântica** (`62`, `69`): sem `role="progressbar"`/`aria-valuenow/min/max`/label; WCAG 4.1.2. Correção: ARIA completo com `aria-valuetext` acima de 100%.
+- **D5.1 · Meta atingida sem feedback** (`172`, `181`): 100% e 844% renderizam igual. Correção: estado `wc-goal-hit` + texto/✓ + anúncio único.
+- **D2.1 · "Hoje/Semana" não são "palavras escritas"** (`137-143`, `159-164`; README 9): máximo por nota; captura 4222/500 com nota de 87. Correção: decidir semântica (ver C4.1) + rotular honestamente.
+- **D2.2 · i18n ausente** (`42`, `57`, `64`, `71`, `75`): PT fixo no demo EN. Correção: `tr()` por locale.
+- **D5.2 · Erro engolido deixa "—"/valores velhos** (`110-122`). Correção: estado de erro discreto + retry.
+- **D2.3 · README/captura/zip sem a linha "Semana" e sem `#weeklyGoal`** (README 3/8-11/18/26; zip): instalação pelo zip entrega UI diferente da documentada. (raiz também em C7.1/C7.3)
+
+**Média**
+
+- **D5.3 · Troca de nota sem estado de carga** (`94-97`, `110-118`): mantém números da nota anterior; usar "…"/skeleton + `aria-busy`.
+- **D3.2 · Atualizações não anunciadas; valor × barra sem associação** (`54-77`, `117-118`): `role="status"` nos contadores + `aria-label` referenciando o texto.
+- **D1.1 · Hierarquia plana: metas globais × contadores da nota misturados** (`55-77`): a captura precisou de overlay explicativo. Correção: agrupar/rotular "nesta nota".
+- **D1.2 · Título "Contagem" vago e PT** (`42`): "Contador de Palavras"/"Word Count".
+- **D7.2 · Trilho reprova 3:1 e parece divisor** (`29`, `31`): 1.38–1.61:1 nos temas claros.
+- **D7.3 · Barra diária reprova no theme-dark clássico** (`30`): `--main-text-color` 0.7 sobre trilho = 1.30:1.
+- **D6.1 · `transition: width` sem reduced-motion** (`30`, `32`).
+- **D8.1 · Números sem separador de milhar/locale/unidade** (`59`, `66`, `173`, `182`): "4222/500" sem "palavras".
+- **D2.4 · "Caracteres" exclui espaços sem explicar** (`23-25`; README 7).
+- **D5.4 · Meta lida só da nota ativa; a barra "salta" ao navegar** (`51-52`, `186-192`): tooltip indicando a origem.
+- **D5.5 · Evento descartado durante update** (`16`, `99-108`): defasagem silenciosa; reexecução final. (raiz em C5.3)
+- **D4.1 · `.wc-row` sem `gap`/`min-width:0`/`nowrap`** (`33-35`): risco de quebra em painel estreito.
+
+**Baixa**
+
+- **D1.3 · Barras de 5px com margens assimétricas** (`29-32`).
+- **D5.6 · Meta inválida sem validação visível** (`186-192`). (raiz em C4.5)
+- **D5.7 · "—" inicial sem skeleton/alternativa textual** (`72`, `76`).
+- **D2.5 · CSS por ids em vez de classes escopadas** (`28-35`, `54-77`).
+- **D6.2 · Animar `width` gera reflow** (`30`, `32`): `transform: scaleX()`.
+- **D2.6 · README EN × UI PT; sem versão** (README 1-26).
+- **D2.7 · "Semana" ISO sem definição na UI** (`148`).
+- **D5.8 · Affordance "?" explicando a metodologia** (regras não documentadas na UI).
+
+**Sugestão**
+
+- **D6.3 · Pulso de "meta atingida"** (`172-183`) com reduced-motion.
+- **D7.4 · Fallback nos tokens de tema** (`28-32`).
+- **D2.8 · Tooltip "como contamos"** (unidade + semântica + origem da meta).
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
+|---|----------|------|-------|:-------:|:-----:|-----------|
+| 1 | Contagem com entidades HTML (`htmlToText` puro) | `18-25` | Fim de `&nbsp;`=palavra e `a < b`=1 char | S/M | Baixo | fixtures CKEditor no harness |
+| 2 | Falha de leitura visível (fim do catch mudo) | `110-123` | UI não "mente" | S | Baixo | smoke com rejeição |
+| 3 | Estado "meta atingida" (texto/cor + anúncio único) | `168-184` | Fecha o ciclo da meta | S | Baixo | pura `isGoalReached` + smoke |
+| 4 | i18n PT/EN pelo `locale` | `42`, `57-75` | Demo EN e paridade | M | Baixo/Médio | paridade + smoke EN |
+| 5 | Barras `role=progressbar`/`aria-*` + reduced-motion | `30-32`, `62`, `69` | A11y do dado central | S | Baixo | smoke com atributos |
+| 6 | Guard com reexecução final (debounce trailing) | `16`, `99-108` | Fim do evento perdido | S | Baixo | smoke com 2 eventos |
+| 7 | Rollover dia/semana ao voltar o foco | `126`, `148` | "Hoje" não fica velho | S | Baixo/Médio | smoke com dayjs fake |
+| 8 | Tooltip com detalhes (notas, critério, origem da meta) | `125-145`, `194-214` | Explica o número | S | Baixo | asserção de `title` |
+| 9 | Validação/clamp da meta | `186-192` | Fim de `-100`/`500abc` | S | Baixo | puras com casos |
+| 10 | Critério de caracteres explícito ("sem espaços" + com espaços) | `23-25`, `75-76` | Fim da desconfiança | S | Baixo | puras com `&nbsp;` |
+| 11 | Documentar a semântica no rótulo/tooltip | `125-145` | Honestidade do número | S | Baixo | revisão |
+| 12 | Semântica baseline/delta (decisão pendente) | `125-145` | "Escrito hoje" de verdade | M | Médio | `progressUpdate` pura |
+| 13 | Harness `test-wordcount.js` | plugin | Rede de proteção | S/M | Baixo | `bun` |
+| 14 | Smoke `test-smoke.js` do `doRenderBody` | plugin | Pega regressão de render | M | Baixo | Chrome headless |
+| 15 | Zip regenerado do repo | zip | Instalação correta | S | Baixo | sha256 |
+| 16 | Higiene de release (versão/captura/labels) | registry/README/imagens | Consistência | S | Baixo | revisão |
+| 17 | README fiel ao código | README | Doc confiável | S | Baixo | revisão |
+
+**Descartes explícitos:** contagem da seleção (exige ler o CKEditor; L sem demanda); contador na lista de notas (sem API pública); botão "copiar contagem" (ruído minimalista); exportar histórico CSV/JSON (sem demanda); `aria-live` a cada N palavras / streaks (spam de leitor de tela — o anúncio único da meta basta); trocar ids por classes (churn; os ids já são namespaceados).
+
+### Claims do README × código
+
+| README | Promessa | Código | Situação |
+|---|---|---|---|
+| 3 | "daily progress bar" | `48-91` | Incompleto: existe barra/meta **semanal** (`64-69`) |
+| 7 | "Live Counting" | `94-123` | Verdade com staleness (QW-6) |
+| 8 | "`#dailyGoal` … default 500" | `51-52`, `186-192` | Verdade; `#weeklyGoal` (3500) não é documentado |
+| 9 | "Tracks **words written** across all notes" | `125-145` | **Não cumprido**: máximo por nota; abrir nota longa credita o total |
+| 10 | "monochromatic progress bar" | `27-36` | Duas barras; a semanal é quase invisível (D7.1) |
+| 11 | "debounces on content save" | `16`, `99-108` | **Não cumprido**: guard de reentrância descarta eventos |
+| 16 | "Paste the code or import the `.zip`" | zip | **Não cumprido**: zip v0.102 sem Semana |
+| 18 | "Add `#dailyGoal=N` … to any text note" | `186-192` | Impreciso: vale a nota ativa (com herdados) |
+| 26 | captura | UI | Antiga (sem a linha "Semana") |
+
+### Pontos fortes (não mexer)
+
+- Paleta 100% em tokens do tema (sem hardcode; o problema é a escolha de token/opacidade).
+- `tabular-nums` nos valores; contraste dos textos passa AA (valor 21:1 no claro; labels 5.7:1+).
+- `isEnabled()` restringe a notas de texto; `try/catch` em todas as leituras/parse de storage.
+- Markup estático + `.text()` (sem vetor de XSS); `GGGG-WW` válido no 0.106; demo já roda o sha do repo.
+
+### Veredito da rodada 7
+
+Widget pequeno e correto no básico, mas com **um artefato de release quebrado** (zip sem a meta
+semanal — a rota de instalação do README), **contagem imprecisa** com entidades HTML, **eventos
+creditando nota errada** (código oculto e corrida do `noteId`) e **semântica de "escrito hoje"
+enganosa** (máximo por nota) — esta última precisa de decisão do dono antes do batch de correção.
+A UI tem uma **crítica de contraste** (barra semanal) e dívidas de a11y/i18n/feedback já
+padronizadas nas rodadas anteriores. Nenhuma correção aplicada nesta rodada — batches após
+triagem (candidatos: 1) integridade da contagem + eventos + storage, 2) UI/a11y/estado + i18n +
+decisão da semântica, 3) harness + README/zip).
+
+**Próximo da lista:** Daily-Note-Navigator (rodada 8 — prioridade do release).
