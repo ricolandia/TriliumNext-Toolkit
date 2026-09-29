@@ -124,7 +124,7 @@
     const WP_MESES     = { pt: ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'],
                            en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] };
     let wpLang = (typeof navigator !== 'undefined' && /^en/i.test(String(navigator.language || ''))) ? 'en' : 'pt';
-    function t(key, vars) {
+    function tr(key, vars) {
         const d = WP_I18N[wpLang] || WP_I18N.pt;
         let s = d[key] != null ? d[key] : (WP_I18N.pt[key] != null ? WP_I18N.pt[key] : key);
         if (vars) for (const k of Object.keys(vars)) s = s.split('{' + k + '}').join(String(vars[k]));
@@ -372,7 +372,7 @@
                 <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2"
                         stroke-dasharray="28" stroke-dashoffset="10"/>
             </svg>
-            ${t('loading')}
+            ${tr('loading')}
         </div>`;
 
     $pl.html(telaCarregando());
@@ -434,7 +434,7 @@
             console.error('save error:', err);
             saveState = 'error';
             atualizarSaveStatus();
-            aviso(t('saveError', { err: err.message || err }));
+            aviso(tr('saveError', { err: err.message || err }));
             return false;
         }
     }
@@ -447,7 +447,7 @@
             await fetchTasks();
         } catch (err) {
             console.error('reload error:', err);
-            aviso(t('reloadError', { err: err.message || err }));
+            aviso(tr('reloadError', { err: err.message || err }));
         }
         renderPlanner();
         renderTasks();
@@ -750,7 +750,7 @@
                 if (tasks.length) {
                     result.push({
                         noteId: row.noteId,
-                        title:  row.title || t('untitled'),
+                        title:  row.title || tr('untitled'),
                         tasks,
                         checkedCbs,
                         totalCbs: cbIndex,
@@ -921,7 +921,7 @@
         // persiste a remoção
         await save();
 
-        oferecerDesfazer(t('donePrefix') + recortar(task.text, 44), async () => {
+        oferecerDesfazer(tr('donePrefix') + recortar(task.text, 44), async () => {
             await definirCheckbox(task, false);
             if (oldDay != null) plannerData[task.id] = oldDay;
             if (oldOrder) plannerData._order[oldDay] = oldOrder;
@@ -1008,7 +1008,7 @@
     let saveState = 'idle';
     function renderSaveStatus() {
         if (saveState === 'idle') return '';
-        const texto = saveState === 'saving' ? t('saving') : saveState === 'error' ? t('saveFailed') : t('saved');
+        const texto = saveState === 'saving' ? tr('saving') : saveState === 'error' ? tr('saveFailed') : tr('saved');
         const cls = saveState === 'error' ? ' wp-save--error' : ' wp-save--ok';
         return `<span class="wp-save${cls}" id="wp-save-status">${esc(texto)}</span>`;
     }
@@ -1016,7 +1016,7 @@
         const el = $pl.find('#wp-save-status')[0];
         if (!el) return;
         if (saveState === 'idle') { el.remove(); return; }
-        const texto = saveState === 'saving' ? t('saving') : saveState === 'error' ? t('saveFailed') : t('saved');
+        const texto = saveState === 'saving' ? tr('saving') : saveState === 'error' ? tr('saveFailed') : tr('saved');
         el.textContent = texto;
         el.className = 'wp-save' + (saveState === 'error' ? ' wp-save--error' : ' wp-save--ok');
     }
@@ -1091,7 +1091,7 @@
                     <div class="pl-day-sheet">
                         <h4>${esc(titulo)}</h4>
                         <button class="pl-day-btn" id="wp-confirm-ok" style="text-align:center;font-weight:600;">${esc(okLabel)}</button>
-                        <button class="pl-cancel-btn" id="wp-confirm-cancel">${t('cancel')}</button>
+                        <button class="pl-cancel-btn" id="wp-confirm-cancel">${tr('cancel')}</button>
                     </div>
                 </div>`);
             const fechar = (val) => { $root.find('#wp-confirm').remove(); resolve(val); };
@@ -1112,7 +1112,7 @@
             $root.append(`
                 <div id="wp-undo" class="wp-undo">
                     <span class="wp-undo-text"></span>
-                    <button type="button" class="wp-undo-btn">${t('undo')}</button>
+                    <button type="button" class="wp-undo-btn">${tr('undo')}</button>
                 </div>`);
             $bar = $root.find('#wp-undo');
             $bar.on('click', '.wp-undo-btn', async function () {
@@ -1122,7 +1122,7 @@
                 if (acao.timer) clearTimeout(acao.timer);
                 $root.find('#wp-undo').removeClass('wp-undo--on');
                 try { await acao.desfazer(); }
-                catch (err) { console.error('undo error:', err); aviso(t('undoError', { err: err.message || err })); }
+                catch (err) { console.error('undo error:', err); aviso(tr('undoError', { err: err.message || err })); }
             });
         }
         $bar.find('.wp-undo-text').text(rotulo);
@@ -1136,8 +1136,8 @@
     // Limpa as datas de um conjunto de dias com contagem + desfazer
     async function limparPlanejamento(keys, rotulo) {
         const afetadas = allTasks.filter(t => keys.has(plannerData[t.id])).length;
-        if (!afetadas) { aviso(t('nothingToClear', { rotulo })); return; }
-        const ok = await confirmar(t('clearAsk', { rotulo, n: afetadas }), t('clearOk'));
+        if (!afetadas) { aviso(tr('nothingToClear', { rotulo })); return; }
+        const ok = await confirmar(tr('clearAsk', { rotulo, n: afetadas }), tr('clearOk'));
         if (!ok) return;
         const backup = JSON.parse(JSON.stringify(plannerData));
         for (const t of allTasks) {
@@ -1150,7 +1150,7 @@
         await save();
         renderPlanner();
         renderTasks();
-        oferecerDesfazer(t('cleared', { n: afetadas }), async () => {
+        oferecerDesfazer(tr('cleared', { n: afetadas }), async () => {
             plannerData = backup;
             invalidarIndice();
             await save();
@@ -1171,7 +1171,7 @@
     }
     function botaoMais(ocultos, chave) {
         if (!ocultos) return '';
-        return `<button type="button" class="wp-mais" data-expandir="${esc(chave)}">+${ocultos} ${esc(t('moreTasks'))}</button>`;
+        return `<button type="button" class="wp-mais" data-expandir="${esc(chave)}">+${ocultos} ${esc(tr('moreTasks'))}</button>`;
     }
     /* LIMITE (fim) */
 
@@ -1201,7 +1201,7 @@
     async function rolarSemana(weekCols) {
         const origem = new Set(weekCols.map(c => c.key));
         const afetadas = allTasks.filter(t => origem.has(plannerData[t.id]));
-        if (!afetadas.length) { aviso(t('nothingToDuplicate')); return; }
+        if (!afetadas.length) { aviso(tr('nothingToDuplicate')); return; }
         const backup = JSON.parse(JSON.stringify(plannerData));
         const mais7 = (iso) => {
             const d = new Date(iso + 'T12:00:00');
@@ -1220,7 +1220,7 @@
         await save();
         renderPlanner();
         renderTasks();
-        oferecerDesfazer(t('duplicated', { n: afetadas.length }), async () => {
+        oferecerDesfazer(tr('duplicated', { n: afetadas.length }), async () => {
             plannerData = backup;
             invalidarIndice();
             await save();
@@ -1281,10 +1281,10 @@
                 ${opcoes.map(o => `
                 <button type="button" class="pl-day-btn${current === o.key ? ' active' : ''}"
                         data-col="${esc(o.key)}">${o.isBacklog
-                            ? t('backToBacklog')
+                            ? tr('backToBacklog')
                             : `${esc(o.label)} <span style="opacity:.5;font-size:15px;">${esc(o.sub || '')}</span>`}</button>`).join('')}
-                <button type="button" class="pl-cancel-btn" id="wp-picker-cancel">${t('cancel')}</button>
-                <button type="button" class="pl-cancel-btn" style="margin-top:6px;" id="wp-picker-open">${t('openNote')}</button>
+                <button type="button" class="pl-cancel-btn" id="wp-picker-cancel">${tr('cancel')}</button>
+                <button type="button" class="pl-cancel-btn" style="margin-top:6px;" id="wp-picker-open">${tr('openNote')}</button>
             </div>
         </div>`);
         $root.find('#wp-picker').on('click', function (e) { if (e.target === this) $(this).remove(); });
@@ -1311,16 +1311,16 @@
 
     function modeSwitcher() {
         const modes = [
-            { id: 'kanban', label: t('week') },
-            { id: 'month',  label: t('month') },
-            { id: 'gantt',  label: t('gantt') },
+            { id: 'kanban', label: tr('week') },
+            { id: 'month',  label: tr('month') },
+            { id: 'gantt',  label: tr('gantt') },
         ];
         return `<span class="pl-mode-switch">
             ${modes.map(m => `
                 <span class="pl-mode-btn${viewMode === m.id ? ' pl-mode-btn--active' : ''}"
-                      tabindex="0" role="button" aria-label="${t('viewMode', { label: m.label })}"
+                      tabindex="0" role="button" aria-label="${tr('viewMode', { label: m.label })}"
                       aria-current="${viewMode === m.id ? 'true' : 'false'}"
-                      data-mode="${m.id}" title="${t('viewMode', { label: m.label })}">${m.label}</span>
+                      data-mode="${m.id}" title="${tr('viewMode', { label: m.label })}">${m.label}</span>
             `).join('')}
         </span>`;
     }
@@ -1450,7 +1450,7 @@
 
     function renderLinkBadge(n) {
         if (!n) return '';
-        return `<span class="task-links" title="${t('linksInNote', { n })}">🔗 ${n}</span>`;
+        return `<span class="task-links" title="${tr('linksInNote', { n })}">🔗 ${n}</span>`;
     }
 
     const isMobile   = () => window.matchMedia('(max-width:1024px)').matches;
@@ -1525,7 +1525,7 @@
         const planned       = allTasks.filter(t => weekKeys.has(plannerData[t.id])).length;
 
         const allCols = [
-            { key: 'backlog', label: t('backlog'), dateStr: t('noDate'), isToday: false, isBacklog: true },
+            { key: 'backlog', label: tr('backlog'), dateStr: tr('noDate'), isToday: false, isBacklog: true },
             ...weekCols.map(c => ({ ...c, isBacklog: false })),
         ];
 
@@ -1591,20 +1591,20 @@
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
                         flex-wrap:wrap;">
-                <span style="font-size:19px;font-weight:700;">${t('planner')}</span>
-                <button class="pl-nav-btn" id="pl-prev" title="${t('prevWeek')}">‹</button>
+                <span style="font-size:19px;font-weight:700;">${tr('planner')}</span>
+                <button class="pl-nav-btn" id="pl-prev" title="${tr('prevWeek')}">‹</button>
                 <span style="font-size:16px;color:var(--muted-text-color);white-space:nowrap;">
                     ${esc(label)}
                 </span>
-                <button class="pl-nav-btn" id="pl-next" title="${t('nextWeek')}">›</button>
-                ${!isCurrentWeek ? `<button class="pl-today-btn" id="pl-now">${t('today')}</button>` : ''}
+                <button class="pl-nav-btn" id="pl-next" title="${tr('nextWeek')}">›</button>
+                ${!isCurrentWeek ? `<button class="pl-today-btn" id="pl-now">${tr('today')}</button>` : ''}
                 <span style="font-size:14px;color:var(--muted-text-color);margin-left:auto;">
                     ${planned}/${total}
                 </span>
                 ${renderSaveStatus()}
-                <button class="pl-icon-btn" id="pl-clear"  title="${t('clearWeek')}">↺</button>
-                <button class="pl-icon-btn" id="pl-reload" title="${t('reload')}">⟳</button>
-                <button class="pl-icon-btn" id="pl-roll" title="${t('duplicateWeek')}">⇥</button>
+                <button class="pl-icon-btn" id="pl-clear"  title="${tr('clearWeek')}">↺</button>
+                <button class="pl-icon-btn" id="pl-reload" title="${tr('reload')}">⟳</button>
+                <button class="pl-icon-btn" id="pl-roll" title="${tr('duplicateWeek')}">⇥</button>
                 modeSwitcher()
             </div>
 
@@ -1633,12 +1633,12 @@
                     ${corte.visiveis.map(t => `
                     <div class="pl-task"
                          tabindex="0" role="button" aria-label="${esc(t.text)}"
-                         title="${esc(t.text)} · ${esc(t('moveHint'))}"
+                         title="${esc(t.text)} · ${esc(tr('moveHint'))}"
                          draggable="${!mobile}"
                          data-task-id="${esc(t.id)}"
                          data-note-id="${esc(t.noteId)}"
                          data-cb-index="${t.checkboxIndex}">
-                        <span class="pl-done-btn" tabindex="0" role="button" aria-label="${t('markDone')}" title="${t('markDone')}">✓</span>
+                        <span class="pl-done-btn" tabindex="0" role="button" aria-label="${tr('markDone')}" title="${tr('markDone')}">✓</span>
                         <div>${esc(t.text)}</div>
                         ${renderLinkBadge(t.noteLinks)}
                         ${t.tags && t.tags.length
@@ -1650,7 +1650,7 @@
                             : ''}
                     </div>`).join('')}
                     ${botaoMais(corte.ocultos, corte.chave)}
-                    ${!tasks.length ? `<div class="pl-col-empty">${t('dropHere')}</div>` : ''}
+                    ${!tasks.length ? `<div class="pl-col-empty">${tr('dropHere')}</div>` : ''}
                     <div class="pl-drop"></div>
                 </div>
             </div>`;
@@ -1794,20 +1794,20 @@
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
                         flex-wrap:wrap;">
-                <span style="font-size:19px;font-weight:700;">${t('gantt')}</span>
-                <button class="pl-nav-btn" id="gantt-prev" title="${t('prevWeek')}">‹</button>
+                <span style="font-size:19px;font-weight:700;">${tr('gantt')}</span>
+                <button class="pl-nav-btn" id="gantt-prev" title="${tr('prevWeek')}">‹</button>
                 <span style="font-size:16px;color:var(--muted-text-color);white-space:nowrap;">
                     ${esc(label)}
                 </span>
-                <button class="pl-nav-btn" id="gantt-next" title="${t('nextWeek')}">›</button>
-                ${!isCurrentWeek ? `<button class="pl-today-btn" id="gantt-now">${t('today')}</button>` : ''}
+                <button class="pl-nav-btn" id="gantt-next" title="${tr('nextWeek')}">›</button>
+                ${!isCurrentWeek ? `<button class="pl-today-btn" id="gantt-now">${tr('today')}</button>` : ''}
                 <span style="font-size:14px;color:var(--muted-text-color);margin-left:auto;">
                     ${planned}/${total}
                 </span>
                 ${renderSaveStatus()}
-                <button class="pl-icon-btn" id="gantt-clear" title="${t('clearWeek')}">↺</button>
-                <button class="pl-icon-btn" id="gantt-reload" title="${t('reload')}">⟳</button>
-                <button class="pl-icon-btn" id="gantt-roll" title="${t('duplicateWeek')}">⇥</button>
+                <button class="pl-icon-btn" id="gantt-clear" title="${tr('clearWeek')}">↺</button>
+                <button class="pl-icon-btn" id="gantt-reload" title="${tr('reload')}">⟳</button>
+                <button class="pl-icon-btn" id="gantt-roll" title="${tr('duplicateWeek')}">⇥</button>
                 modeSwitcher()
             </div>
 
@@ -1840,8 +1840,8 @@
 
         if (groups.size === 0) {
             html += `<div class="gantt-empty" style="grid-column:1/-1;grid-row:2">
-                <div>${t('noWeekTasks')}</div>
-                <div class="gantt-empty-sub">${t('dragFromBacklog')}</div>
+                <div>${tr('noWeekTasks')}</div>
+                <div class="gantt-empty-sub">${tr('dragFromBacklog')}</div>
             </div>`;
         }
 
@@ -1878,7 +1878,7 @@
                               data-note-id="${esc(item.noteId)}"
                               style="cursor:pointer;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(item.text)}</span>
                         <span class="gantt-done-btn"
-                              tabindex="0" role="button" aria-label="${t('markDone')}"
+                              tabindex="0" role="button" aria-label="${tr('markDone')}"
                               data-task-id="${esc(item.id)}"
                               data-note-id="${esc(item.noteId)}"
                               data-cb-index="${item.checkboxIndex}"
@@ -1912,13 +1912,13 @@
         if (backlogTasks.length) {
             html += `<div class="gantt-backlog">
                 <details>
-                    <summary>${t('backlog')} (${t('backlogCount', { n: backlogTasks.length })})</summary>
+                    <summary>${tr('backlog')} (${tr('backlogCount', { n: backlogTasks.length })})</summary>
                     <div style="margin-top:6px;">
                     ${backlogTasks.map(t => {
                         const tagsHtml = renderTagBadges(t.tags);
                         return `<div class="gantt-blog-item" tabindex="0" role="button" aria-label="${esc(t.text)}">
                             <span class="gantt-blog-check"
-                                  tabindex="0" role="button" aria-label="${t('markDone')}"
+                                  tabindex="0" role="button" aria-label="${tr('markDone')}"
                                   data-task-id="${esc(t.id)}"
                                   data-note-id="${esc(t.noteId)}"
                                   data-cb-index="${t.checkboxIndex}">✓</span>
@@ -1999,7 +1999,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('gantt markDone error:', err); aviso(t('taskError', { err: err.message || err })); }
+            } catch (err) { console.error('gantt markDone error:', err); aviso(tr('taskError', { err: err.message || err })); }
         });
 
         // Done on backlog items
@@ -2014,7 +2014,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('gantt blog markDone error:', err); aviso(t('taskError', { err: err.message || err })); }
+            } catch (err) { console.error('gantt blog markDone error:', err); aviso(tr('taskError', { err: err.message || err })); }
         });
     }
 
@@ -2147,19 +2147,19 @@
             <div style="display:flex;align-items:center;gap:7px;padding:10px 16px;
                         flex-shrink:0;border-bottom:1px solid var(--main-border-color,#313244);
                         flex-wrap:wrap;">
-                <span style="font-size:19px;font-weight:700;">${t('month')}</span>
-                <button class="pl-nav-btn" id="month-prev" title="${t('prevMonth')}">‹</button>
+                <span style="font-size:19px;font-weight:700;">${tr('month')}</span>
+                <button class="pl-nav-btn" id="month-prev" title="${tr('prevMonth')}">‹</button>
                 <span style="font-size:16px;color:var(--muted-text-color);white-space:nowrap;text-transform:capitalize;">
                     ${esc(label)}
                 </span>
-                <button class="pl-nav-btn" id="month-next" title="${t('nextMonth')}">›</button>
-                ${!isCurrent ? `<button class="pl-today-btn" id="month-now">${t('today')}</button>` : ''}
+                <button class="pl-nav-btn" id="month-next" title="${tr('nextMonth')}">›</button>
+                ${!isCurrent ? `<button class="pl-today-btn" id="month-now">${tr('today')}</button>` : ''}
                 <span style="font-size:14px;color:var(--muted-text-color);margin-left:auto;">
                     ${planned}/${total}
                 </span>
                 ${renderSaveStatus()}
-                <button class="pl-icon-btn" id="month-clear" title="${t('clearMonth')}">↺</button>
-                <button class="pl-icon-btn" id="month-reload" title="${t('reload')}">⟳</button>
+                <button class="pl-icon-btn" id="month-clear" title="${tr('clearMonth')}">↺</button>
+                <button class="pl-icon-btn" id="month-reload" title="${tr('reload')}">⟳</button>
                 modeSwitcher()
             </div>
 
@@ -2190,13 +2190,13 @@
                             const done = t.tags.some(tag => tag.type === 'status' && tag.value === 'done');
                             return `<div class="mn-task${done ? ' done' : ''}"
                                          tabindex="0" role="button" aria-label="${esc(t.text)}"
-                                         title="${esc(t.text)} · ${esc(t('moveHint'))}"
+                                         title="${esc(t.text)} · ${esc(tr('moveHint'))}"
                                          draggable="${!mobile}"
                                          data-task-id="${esc(t.id)}"
                                          data-note-id="${esc(t.noteId)}"
                                          data-cb-index="${t.checkboxIndex}"
                                          title="${esc(t.text)}">
-                                    <span class="mn-done-btn" tabindex="0" role="button" aria-label="${t('markDone')}" title="${t('markDone')}">✓</span>
+                                    <span class="mn-done-btn" tabindex="0" role="button" aria-label="${tr('markDone')}" title="${tr('markDone')}">✓</span>
                                     ${esc(t.text)}
                                     ${renderLinkBadge(t.noteLinks)}
                                 </div>`;
@@ -2215,7 +2215,7 @@
         if (backlogTasks.length) {
             html += `<div class="mn-backlog" data-col="backlog">
                 <details>
-                    <summary>${t('backlog')} (${t('backlogCount', { n: backlogTasks.length })})</summary>
+                    <summary>${tr('backlog')} (${tr('backlogCount', { n: backlogTasks.length })})</summary>
                     <div style="margin-top:6px;">
                     ${backlogTasks.map(t => `
                         <div class="mn-blog-item"
@@ -2293,7 +2293,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('month markDone error:', err); aviso(t('taskError', { err: err.message || err })); }
+            } catch (err) { console.error('month markDone error:', err); aviso(tr('taskError', { err: err.message || err })); }
         });
 
         /* ── Desktop: drag-and-drop entre células ───────────── */
@@ -2567,7 +2567,7 @@
                 await markDone({ id: taskId, noteId, checkboxIndex: cbIndex });
                 renderPlanner();
                 renderTasks();
-            } catch (err) { console.error('markDone error:', err); aviso(t('taskError', { err: err.message || err })); }
+            } catch (err) { console.error('markDone error:', err); aviso(tr('taskError', { err: err.message || err })); }
         });
     }
 
@@ -2631,7 +2631,7 @@
 
             <!-- CABEÇALHO TAREFAS -->
             <div class="tk-head">
-                <span class="tk-head-title">${t('tasks')}</span>
+                <span class="tk-head-title">${tr('tasks')}</span>
                 <span class="tk-total">${total}</span>
             </div>
 
@@ -2641,7 +2641,7 @@
 
         if (total === 0) {
             html += `
-                <p class="tk-empty">${t('noOpenTasks')}</p>`;
+                <p class="tk-empty">${tr('noOpenTasks')}</p>`;
         } else {
             for (const [, group] of grouped) {
                 const stats = cbStats[group.noteId];
@@ -2674,7 +2674,7 @@
                                  data-note-id="${esc(t.noteId)}"
                                  data-cb-index="${t.checkboxIndex}">
 
-                                <span class="tk-check" tabindex="0" role="button" aria-label="${t('markDone')}" title="${t('markDone')}">✓</span>
+                                <span class="tk-check" tabindex="0" role="button" aria-label="${tr('markDone')}" title="${tr('markDone')}">✓</span>
 
                                 <div style="flex:1;min-width:0;">
                                     <span class="tk-task-text" tabindex="0" role="link" data-note-id="${esc(t.noteId)}">
@@ -2750,7 +2750,7 @@
                 renderTasks();
             } catch (err) {
                 console.error('markDone error:', err);
-                aviso(t('taskError', { err: err.message || err }));
+                aviso(tr('taskError', { err: err.message || err }));
                 $check.removeClass('completing').css({
                     borderColor:   'var(--main-border-color,#45475a)',
                     background:    'transparent',
@@ -2778,10 +2778,10 @@
         const loaded = await loadPlannerData();
         plannerData = loaded.data || {};
         if (loaded.missing) {
-            aviso(t('missingData'));
+            aviso(tr('missingData'));
         } else if (loaded.corrupt) {
             console.error('planner-data.json ilegível (conteúdo bruto para recuperação):', loaded.raw);
-            aviso(t('corruptData'));
+            aviso(tr('corruptData'));
         }
         if (plannerData._viewMode === 'gantt' || plannerData._viewMode === 'kanban' || plannerData._viewMode === 'month') {
             viewMode = plannerData._viewMode;
@@ -2791,9 +2791,9 @@
     } catch (err) {
         const msg = esc(String(err.message || err));
         $pl.html(`<div style="padding:24px;color:var(--main-text-color);font-size:17px">
-            ${t('initError', { err: msg })}
+            ${tr('initError', { err: msg })}
             <div style="margin-top:14px;">
-                <button type="button" id="pl-init-retry" style="padding:6px 14px;cursor:pointer;">${t('retry')}</button>
+                <button type="button" id="pl-init-retry" style="padding:6px 14px;cursor:pointer;">${tr('retry')}</button>
             </div>
         </div>`);
         $tk.html('');
@@ -2801,9 +2801,19 @@
         return;
     }
 
-    renderPlanner();
-    renderTasks();
-    bindTaskEvents();
+    // Se o primeiro render falhar, mostra o erro em vez de ficar preso no "carregando"
+    try {
+        renderPlanner();
+        renderTasks();
+        bindTaskEvents();
+    } catch (err) {
+        console.error('render error:', err);
+        $pl.html(`<div style="padding:24px;color:var(--main-text-color);font-size:17px">
+            ${tr('initError', { err: esc(String(err.message || err)) })}
+        </div>`);
+        $tk.html('');
+        return;
+    }
 
     // Enter/Espaço ativam os controles focáveis (a11y)
     $root.on('keydown', function (e) {
