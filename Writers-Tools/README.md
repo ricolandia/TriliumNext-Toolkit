@@ -2,22 +2,26 @@
 
 Two fully functional workflows designed to bridge the gap between Knowledge Management and Content Creation inside Trilium.
 
+Both scripts follow the Trilium interface language (PT/EN).
+
 ## 1. Longform Compiler (Grid View)
 Visually organize and compile smaller atomic notes into one master document.
 * **Drag & Drop:** Generates a visual grid of child notes that you can reorder (drop before/after a card, or on the empty area to send it to the end).
+* **Reorder anywhere:** each card has ↑/↓ buttons (handy on touch) and the arrow keys move the focused card — the order is saved automatically.
 * **Persistence:** Your custom order is preserved even after a reload (`#gridOrder` label).
-* **Click to open:** Clicking a card opens the note.
-* **Word count per card.**
+* **Click to open:** Clicking a card opens the note (Enter also works).
+* **Word count per card and total words in the header.**
 * **Compilation:** A single click generates a consolidated master note. The compiled note is created as a child with the `#compiledDoc` label, stays hidden from the grid and is **updated in place** on the next run (no duplicate documents).
 * Script notes (JS/CSS) are ignored by the grid.
 
 ## 2. Fountain Screenplay Renderer
 For audiovisual scriptwriters.
-* **Standard Formatting:** Displays your note text beautifully formatted as a standard screenplay using Fountain syntax — accented character names (JOÃO, ANTÔNIO, LUÍSA), dual dialogue, title page, sections, synopsis and page breaks (`===`).
+* **Standard Formatting:** Displays your note text beautifully formatted as a standard screenplay using Fountain syntax — accented character names (JOÃO, ANTÔNIO, LUÍSA), dual dialogue, title page, sections, synopsis, page breaks (`===`) and boneyard blocks (`/* … */`, hidden from the page, the stats and the PDF).
 * **Advanced Tracking:** WGA-style page estimate (~55 lines/page), estimated duration, scene list with active-scene highlight, per-character line counts and dialogue ratio.
-* **Export:** Dedicated buttons to download a `.fountain` file and a **📄 PDF** — a real A4 PDF generated in-app (Courier, page numbers, `===` page breaks, accented characters) with no print dialog and no printer needed, so it works on the desktop app too. A **🖨 Imprimir** button (browser only) opens the browser print dialog.
+* **Export:** Dedicated buttons to download a `.fountain` file and a **📄 PDF** — a real A4 PDF generated in-app (Courier, page numbers, scene numbers in the margin, `===` page breaks, accented characters) with no print dialog and no printer needed, so it works on the desktop app too. A **🖨 Imprimir** button (browser only) opens the browser print dialog.
 * **Draft picker:** With multiple candidate notes, a selector chooses the draft; the choice is saved in the `#fountainDraft` label of the render note (you can also tag a draft note itself with `#fountainDraft`).
 * **Refresh:** The ⟳ button (or F5) reloads the draft content.
+* **Keyboard:** F5 refreshes, `Esc` exits focus mode, `Ctrl+=` / `Ctrl+-` / `Ctrl+0` zoom the script (only while the viewer is open, so the app zoom works elsewhere).
 
 ## General Setup
 1. Create a "Render Note" and set it as the parent.

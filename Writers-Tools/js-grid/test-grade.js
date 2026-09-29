@@ -24,7 +24,12 @@ globalThis.api = {
     showMessage: (msg) => chamadas.mensagens.push(msg),
 };
 
+// Bloco de i18n (consts + tr/lgPlural/lgCultura) extraído por marcadores
+const i18nBloco = src.slice(src.indexOf('const LG_I18N = {'), src.indexOf('function escaparHtml'));
+if (!i18nBloco.includes('function tr(')) throw new Error('não achei o bloco de i18n');
+
 eval(
+    i18nBloco + '\n' +
     extrairFuncao('escaparHtml') + '\n' +
     extrairFuncao('contarPalavras') + '\n' +
     extrairFuncao('avisar') + '\n' +
@@ -32,6 +37,7 @@ eval(
     extrairFuncao('ehNotaDeScript') + '\n' +
     extrairFuncao('ehCompilado') + '\n' +
     extrairFuncao('abrirNota') + '\n' +
+    'globalThis.tr = tr; globalThis.lgPlural = lgPlural; globalThis.lgCultura = lgCultura;' +
     'globalThis.escaparHtml = escaparHtml; globalThis.contarPalavras = contarPalavras;' +
     'globalThis.avisar = avisar; globalThis.sanitizarHtml = sanitizarHtml;' +
     'globalThis.ehNotaDeScript = ehNotaDeScript;' +
@@ -102,6 +108,22 @@ let lancou = false;
 try { abrirNota('GHI'); } catch (e) { lancou = true; }
 ok('abrirNota não lança quando os dois caminhos falham', !lancou);
 ok('abrirNota avisa quando os dois caminhos falham', chamadas.mensagens.length === 1, chamadas.mensagens);
+
+console.log('\n5b) i18n (PT padrão + interpolação)');
+ok('tr("ordemSalva") → PT', tr('ordemSalva') === 'Ordem salva', tr('ordemSalva'));
+ok('tr interpola {n} e {s}', tr('palavras', { n: '5', s: 's' }) === '5 palavras', tr('palavras', { n: '5', s: 's' }));
+ok('lgPlural(1) → "" e (2) → "s"', lgPlural(1) === '' && lgPlural(2) === 's');
+ok('lgCultura() → pt-BR por padrão', lgCultura() === 'pt-BR', lgCultura());
+ok('dicionário EN completo (mesmas chaves do PT)', (() => {
+    const bloco = src.slice(src.indexOf('const LG_I18N = {'), src.indexOf('let lgLocale'));
+    const chaves = (nome) => {
+        const m = bloco.match(new RegExp(nome + ': \\{([\\s\\S]*?)\\n    \\},'));
+        return m ? [...m[1].matchAll(/^\s{8}(\w+):/gm)].map((x) => x[1]).sort() : [];
+    };
+    const pt = chaves('pt');
+    const en = chaves('en');
+    return pt.length > 15 && JSON.stringify(pt) === JSON.stringify(en);
+})(), null);
 
 console.log('\n6) CSS escopado em #lg-root (não pode vazar para o app)');
 const css = src.match(/const CSS = `([\s\S]*?)`;/);

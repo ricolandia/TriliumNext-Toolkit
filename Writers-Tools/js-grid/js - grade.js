@@ -60,6 +60,7 @@ const CSS = `
   /* Tudo escopado em #lg-root e com classes próprias (lg-*): este CSS não pode
      afetar o app, mesmo que o Trilium não envolva o estilo em @scope */
   #lg-root, #lg-root * { box-sizing: border-box; }
+  #lg-root { max-width: 1500px; margin: 0 auto; }
 
   #lg-root .lg-header {
     display: flex;
@@ -70,12 +71,12 @@ const CSS = `
     padding: 15px 20px;
     border-bottom: 1px solid var(--main-border-color);
   }
-  #lg-root .lg-info { font-family: monospace; font-size: 12px; opacity: 0.6; }
+  #lg-root .lg-info { font-family: monospace; font-size: 12px; color: var(--muted-text-color, #6b6b6b); }
   #lg-root .lg-actions { display: flex; gap: 8px; }
 
   #lg-root .lg-btn {
-    background: var(--button-background-color);
-    color: var(--button-text-color);
+    background: var(--button-background-color, var(--accented-background-color, #e8e8e8));
+    color: var(--button-text-color, var(--main-text-color, #222));
     border: 1px solid var(--main-border-color);
     padding: 10px 18px;
     border-radius: 6px;
@@ -83,8 +84,8 @@ const CSS = `
     font-weight: bold;
     transition: filter 0.15s;
   }
-  #lg-root .lg-btn:hover { filter: brightness(1.1); }
-  #lg-root .lg-btn:disabled { opacity: 0.6; cursor: default; }
+  #lg-root .lg-btn:not(:disabled):hover { filter: brightness(1.1); }
+  #lg-root .lg-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   #lg-root .lg-btn-sec { font-weight: normal; opacity: 0.85; }
 
   #lg-root .lg-grid {
@@ -98,10 +99,13 @@ const CSS = `
   }
   #lg-root .lg-grid.lg-over {
     background: var(--hover-item-background-color, rgba(128,128,128,0.08));
-    box-shadow: inset 0 0 0 2px var(--active-item-background-color);
+    box-shadow: inset 0 0 0 2px var(--active-item-background-color, var(--main-border-color, #888));
   }
 
   #lg-root .lg-card {
+    display: flex;
+    flex-direction: column;
+    position: relative;
     background: var(--main-background-color);
     border: 1px solid var(--main-border-color);
     border-radius: 8px;
@@ -111,11 +115,44 @@ const CSS = `
   }
   #lg-root .lg-card:active { cursor: grabbing; }
   #lg-root .lg-card.lg-dragging { opacity: 0.5; }
-  #lg-root .lg-card.lg-drop { border: 2px dashed var(--active-item-background-color); }
+  #lg-root .lg-card.lg-drop { border: 2px dashed var(--active-item-background-color, var(--main-border-color, #888)); }
+  #lg-root .lg-card:focus-visible {
+    outline: 2px solid var(--active-item-background-color, #4a90d9);
+    outline-offset: 2px;
+  }
 
   #lg-root .lg-card h3 { margin-top: 0; font-size: 16px; overflow-wrap: anywhere; }
-  #lg-root .lg-card p  { font-size: 13px; opacity: 0.8; margin-bottom: 8px; overflow-wrap: anywhere; }
-  #lg-root .lg-footer { font-family: monospace; font-size: 11px; opacity: 0.55; }
+  #lg-root .lg-card p  { font-size: 13px; opacity: 0.85; margin-bottom: 8px; overflow-wrap: anywhere; }
+  #lg-root .lg-footer { font-family: monospace; font-size: 12px; color: var(--muted-text-color, #6b6b6b); margin-top: auto; }
+
+  /* Botões de mover (alternativa ao drag no teclado e no toque) */
+  #lg-root .lg-mover {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  #lg-root .lg-card:hover .lg-mover,
+  #lg-root .lg-card:focus-within .lg-mover { opacity: 1; }
+  #lg-root .lg-mover-btn {
+    width: 30px;
+    height: 30px;
+    line-height: 1;
+    border-radius: 6px;
+    border: 1px solid var(--main-border-color);
+    background: var(--button-background-color, var(--accented-background-color, #e8e8e8));
+    color: var(--button-text-color, var(--main-text-color, #222));
+    cursor: pointer;
+    font-size: 14px;
+  }
+  #lg-root .lg-mover-btn:hover { filter: brightness(1.1); }
+  #lg-root .lg-mover-btn:focus-visible {
+    outline: 2px solid var(--active-item-background-color, #4a90d9);
+    outline-offset: 1px;
+  }
 
   #lg-root .lg-empty {
     grid-column: 1 / -1;
@@ -123,7 +160,7 @@ const CSS = `
     text-align: center;
     font-family: monospace;
     font-size: 13px;
-    opacity: 0.55;
+    color: var(--muted-text-color, #6b6b6b);
     line-height: 1.8;
   }
 
@@ -132,14 +169,88 @@ const CSS = `
     #lg-root .lg-header { padding: 12px; gap: 8px; }
     #lg-root .lg-info { font-size: 11px; }
     #lg-root .lg-actions { width: 100%; gap: 6px; }
-    #lg-root .lg-btn { flex: 1; padding: 9px 8px; font-size: 13px; }
+    #lg-root .lg-btn { flex: 1; padding: 9px 8px; font-size: 13px; min-height: 44px; }
     #lg-root .lg-grid { padding: 12px; gap: 12px; grid-template-columns: 1fr; }
     #lg-root .lg-card { padding: 12px; }
+    #lg-root .lg-mover { opacity: 1; } /* sem hover no toque: sempre visível */
+    #lg-root .lg-mover-btn { width: 40px; height: 40px; }
+  }
+
+  /* ── Acessibilidade: menos movimento quando o sistema pede ── */
+  @media (prefers-reduced-motion: reduce) {
+    #lg-root *, #lg-root *::before, #lg-root *::after {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 `;
 
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
+
+// ── i18n (segue o idioma do Trilium; palpite síncrono e confirmação no boot) ──
+const LG_I18N = {
+    pt: {
+        notas: '{n} nota{s}',
+        palavras: '{n} palavra{s}',
+        dica: 'arraste (ou ↑/↓) para ordenar · clique para abrir',
+        atualizar: '⟳ Atualizar',
+        gerar: '📝 Gerar documento',
+        gerando: '⏳ Gerando…',
+        vazio: 'Nenhuma nota de conteúdo ainda.<br>Crie notas filhas desta para montar o seu documento.',
+        erroCarregar: 'Erro ao carregar o grid: {msg}',
+        tentar: '⟳ Tentar de novo',
+        ordemSalva: 'Ordem salva',
+        ordemErro: 'Não foi possível salvar a ordem: {msg}',
+        semNotas: 'Não há notas para compilar.',
+        criado: 'Documento criado ({n} nota{s}).',
+        atualizado: 'Documento atualizado ({n} nota{s}).',
+        erroGerar: 'Erro ao gerar: {msg}',
+        erroAbrir: 'Não foi possível abrir a nota.',
+        moverCima: 'Mover para cima',
+        moverBaixo: 'Mover para baixo',
+        notaVazia: 'Nota vazia…',
+        ariaCard: '{titulo} (Enter abre · setas movem)',
+        titleCard: '{titulo} · Enter abre · ↑/↓ reordena',
+    },
+    en: {
+        notas: '{n} note{s}',
+        palavras: '{n} word{s}',
+        dica: 'drag (or ↑/↓) to reorder · click to open',
+        atualizar: '⟳ Refresh',
+        gerar: '📝 Generate document',
+        gerando: '⏳ Generating…',
+        vazio: 'No content notes yet.<br>Create child notes under this one to build your document.',
+        erroCarregar: 'Error loading the grid: {msg}',
+        tentar: '⟳ Try again',
+        ordemSalva: 'Order saved',
+        ordemErro: 'Could not save the order: {msg}',
+        semNotas: 'There are no notes to compile.',
+        criado: 'Document created ({n} note{s}).',
+        atualizado: 'Document updated ({n} note{s}).',
+        erroGerar: 'Error generating: {msg}',
+        erroAbrir: 'Could not open the note.',
+        moverCima: 'Move up',
+        moverBaixo: 'Move down',
+        notaVazia: 'Empty note…',
+        ariaCard: '{titulo} (Enter opens · arrows move)',
+        titleCard: '{titulo} · Enter opens · ↑/↓ reorders',
+    },
+};
+
+let lgLocale = (() => {
+    try { return String(navigator.language || '').toLowerCase().startsWith('en') ? 'en' : 'pt'; } catch (e) { return 'pt'; }
+})();
+
+/** Traduz com interpolação {var} — chamado de tr() para não colidir com mapas */
+function tr(chave, vars) {
+    const dic = LG_I18N[lgLocale] || LG_I18N.pt;
+    let txt = dic[chave] || LG_I18N.pt[chave] || chave;
+    if (vars) for (const k of Object.keys(vars)) txt = txt.replace('{' + k + '}', vars[k]);
+    return txt;
+}
+function lgPlural(n) { return n === 1 ? '' : 's'; }
+function lgCultura() { return lgLocale === 'en' ? 'en-US' : 'pt-BR'; }
 
 function escaparHtml(texto) {
     return String(texto == null ? '' : texto)
@@ -189,7 +300,7 @@ function abrirNota(noteId) {
     try {
         if (api.openTabWithNote) { api.openTabWithNote(noteId, true); return; }
     } catch (e) { /* tenta o fallback */ }
-    try { api.activateNote(noteId); } catch (e) { avisar('Não foi possível abrir a nota.'); }
+    try { api.activateNote(noteId); } catch (e) { avisar(tr('erroAbrir')); }
 }
 
 
@@ -254,10 +365,14 @@ async function renderizar() {
             return {
                 palavras,
                 html: `
-            <div class="lg-card" data-id="${child.noteId}" draggable="true" tabindex="0" role="button" title="${escaparHtml(child.title)} · Enter abre · ↑/↓ reordena">
+            <div class="lg-card" data-id="${child.noteId}" draggable="true" tabindex="0" role="group" aria-label="${escaparHtml(tr('ariaCard', { titulo: child.title }))}" title="${escaparHtml(tr('titleCard', { titulo: child.title }))}">
+                <div class="lg-mover">
+                    <button type="button" class="lg-mover-btn" data-dir="up" aria-label="${tr('moverCima')}">↑</button>
+                    <button type="button" class="lg-mover-btn" data-dir="down" aria-label="${tr('moverBaixo')}">↓</button>
+                </div>
                 <h3>${escaparHtml(child.title)}</h3>
-                <p>${escaparHtml(preview) || 'Nota vazia…'}</p>
-                <div class="lg-footer">📝 ${palavras.toLocaleString('pt-BR')} palavra${palavras !== 1 ? 's' : ''}</div>
+                <p>${escaparHtml(preview) || tr('notaVazia')}</p>
+                <div class="lg-footer">📝 ${tr('palavras', { n: palavras.toLocaleString(lgCultura()), s: lgPlural(palavras) })}</div>
             </div>`,
             };
         }));
@@ -267,15 +382,15 @@ async function renderizar() {
         api.$container.html(`
         <style>${CSS}</style>
         <div id="lg-root">
-            <div class="lg-header">
-                <div class="lg-info">
-                    ${children.length} nota${children.length !== 1 ? 's' : ''} · 📝 ${totalPalavras.toLocaleString('pt-BR')} palavra${totalPalavras !== 1 ? 's' : ''} · arraste para ordenar · clique para abrir
+                <div class="lg-header">
+                    <div class="lg-info">
+                        ${tr('notas', { n: children.length, s: lgPlural(children.length) })} · 📝 ${tr('palavras', { n: totalPalavras.toLocaleString(lgCultura()), s: lgPlural(totalPalavras) })} · ${tr('dica')}
+                    </div>
+                    <div class="lg-actions">
+                        <button id="btn-refresh" class="lg-btn lg-btn-sec">${tr('atualizar')}</button>
+                        <button id="btn-generate" class="lg-btn">${tr('gerar')}</button>
+                    </div>
                 </div>
-                <div class="lg-actions">
-                    <button id="btn-refresh" class="lg-btn lg-btn-sec">⟳ Atualizar</button>
-                    <button id="btn-generate" class="lg-btn">📝 Gerar documento</button>
-                </div>
-            </div>
             <div class="lg-grid" id="grid"></div>
         </div>
     `);
@@ -283,7 +398,7 @@ async function renderizar() {
         const $grid = api.$container.find('#grid');
 
         if (!children.length) {
-            $grid.html('<div class="lg-empty">Nenhuma nota de conteúdo ainda.<br>Crie notas filhas desta para montar o seu documento.</div>');
+            $grid.html(`<div class="lg-empty">${tr('vazio')}</div>`);
             return;
         }
 
@@ -294,8 +409,8 @@ async function renderizar() {
             <style>${CSS}</style>
             <div id="lg-root">
                 <div class="lg-empty">
-                    Erro ao carregar o grid: ${escaparHtml(err.message)}<br><br>
-                    <button id="btn-retry" class="lg-btn">⟳ Tentar de novo</button>
+                    ${tr('erroCarregar', { msg: escaparHtml(err.message) })}<br><br>
+                    <button id="btn-retry" class="lg-btn">${tr('tentar')}</button>
                 </div>
             </div>
         `);
@@ -319,9 +434,9 @@ async function salvarOrdem() {
             api.getNote(noteId).setLabel('gridOrder', JSON.stringify(order));
         }, [dashboardNote.noteId, order]);
         ultimaOrdem = json;
-        avisar('Ordem salva');
+        avisar(tr('ordemSalva'));
     } catch (e) {
-        avisar('Não foi possível salvar a ordem: ' + ((e && e.message) || e));
+        avisar(tr('ordemErro', { msg: (e && e.message) || e }));
     }
 }
 
@@ -398,6 +513,18 @@ api.$container.on('click.lg', '.lg-card', function (e) {
     abrirNota($(this).attr('data-id'));
 });
 
+/** Move o card uma posição (↑/↓) e salva — usado pelo teclado e pelos botões */
+function moverCard($card, dir) {
+    const $irmaos = $card.parent().find('.lg-card');
+    const pos = $irmaos.index($card);
+    if (dir === 'up' && pos > 0) $card.insertBefore($irmaos.eq(pos - 1));
+    else if (dir === 'down' && pos < $irmaos.length - 1) $card.insertAfter($irmaos.eq(pos + 1));
+    else return false;
+    $card.trigger('focus');
+    salvarOrdem();
+    return true;
+}
+
 // Teclado: Enter/Espaço abre; ↑/↓ move o card (alternativa sem mouse)
 api.$container.on('keydown.lg', '.lg-card', function (e) {
     const $card = $(this);
@@ -408,14 +535,14 @@ api.$container.on('keydown.lg', '.lg-card', function (e) {
     }
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault();
-        const $irmaos = $card.parent().find('.lg-card');
-        const pos = $irmaos.index($card);
-        if (e.key === 'ArrowUp' && pos > 0) $card.insertBefore($irmaos.eq(pos - 1));
-        else if (e.key === 'ArrowDown' && pos < $irmaos.length - 1) $card.insertAfter($irmaos.eq(pos + 1));
-        else return;
-        $card.trigger('focus');
-        salvarOrdem();
+        moverCard($card, e.key === 'ArrowUp' ? 'up' : 'down');
     }
+});
+
+// Botões ↑/↓: reordenar por clique/toque (funciona onde o drag não vai)
+api.$container.on('click.lg', '.lg-mover-btn', function (e) {
+    e.stopPropagation();
+    moverCard($(this).closest('.lg-card'), $(this).data('dir'));
 });
 
 api.$container.on('click.lg', '#btn-refresh', () => renderizar());
@@ -427,7 +554,7 @@ api.$container.on('click.lg', '#btn-retry', () => renderizar());
 async function gerarDocumento() {
     const $btn = api.$container.find('#btn-generate');
     if ($btn.prop('disabled')) return;
-    $btn.prop('disabled', true).text('⏳ Gerando…');
+    $btn.prop('disabled', true).text(tr('gerando'));
     api.$container.find('#btn-refresh').prop('disabled', true);
 
     try {
@@ -436,7 +563,7 @@ async function gerarDocumento() {
         }).get();
 
         if (!ids.length) {
-            avisar('Não há notas para compilar.');
+            avisar(tr('semNotas'));
             return;
         }
 
@@ -475,19 +602,28 @@ async function gerarDocumento() {
             return 'criado';
         }, [dashboardNote.noteId, titulo, content]);
 
-        avisar(`Documento ${acao} (${ids.length} nota${ids.length !== 1 ? 's' : ''}).`);
+        avisar(tr(acao === 'criado' ? 'criado' : 'atualizado', { n: ids.length, s: lgPlural(ids.length) }));
         await renderizar();
 
     } catch (err) {
-        avisar('Erro ao gerar: ' + err.message);
+        avisar(tr('erroGerar', { msg: err.message }));
     } finally {
-        api.$container.find('#btn-generate').prop('disabled', false).text('📝 Gerar documento');
+        api.$container.find('#btn-generate').prop('disabled', false).text(tr('gerar'));
         api.$container.find('#btn-refresh').prop('disabled', false);
     }
 }
 
-api.$container.on('click', '#btn-generate', gerarDocumento);
+api.$container.on('click.lg', '#btn-generate', gerarDocumento);
 
 
 // ── START ─────────────────────────────────────────────────────────────────────
+// Confere o idioma real do Trilium (o palpite pode errar) e re-renderiza se mudar
+(async () => {
+    try {
+        const loc = await api.runOnBackend(() => api.getOption('locale'));
+        const novo = String(loc || '').toLowerCase().startsWith('en') ? 'en' : 'pt';
+        if (novo !== lgLocale) { lgLocale = novo; renderizar(); }
+    } catch (e) { /* mantém o palpite */ }
+})();
+
 renderizar();

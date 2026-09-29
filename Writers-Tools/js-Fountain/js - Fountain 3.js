@@ -365,7 +365,7 @@ const CSS = `
   #fv-root #fv-aviso-f5 {
     font-family: monospace;
     font-size: 12px;
-    opacity: 0.5;
+    opacity: 0.75;
     user-select: none;
   }
 
@@ -472,10 +472,11 @@ const CSS = `
     flex-shrink: 0;
     position: sticky;
     top: 16px;
+    max-height: calc(100vh - 40px); /* a sidebar inteira rola em telas baixas */
     background: var(--accented-background-color, var(--main-background-color));
     border: 1px solid var(--main-border-color);
     border-radius: 6px;
-    overflow: hidden;
+    overflow: auto;
   }
 
   #fv-root .fv-section-header {
@@ -483,15 +484,24 @@ const CSS = `
     justify-content: space-between;
     align-items: center;
     padding: 9px 12px;
+    width: 100%;
+    background: none;
+    color: var(--main-text-color);
+    border: 0;
     border-bottom: 1px solid var(--main-border-color);
+    text-align: left;
     font-family: monospace;
     font-size: 13px;
     font-weight: bold;
-    opacity: 0.75;
+    opacity: 0.85;
     cursor: pointer;
     user-select: none;
   }
   #fv-root .fv-section-header:hover { opacity: 1; }
+  #fv-root .fv-section-header:focus-visible {
+    outline: 2px solid var(--main-accent-color, var(--active-item-background-color, #4a90d9));
+    outline-offset: -2px;
+  }
   #fv-root .fv-section-header + .fv-list { border-bottom: 1px solid var(--main-border-color); }
   #fv-root .fv-toggle { font-size: 11px; }
 
@@ -531,10 +541,10 @@ const CSS = `
     border-left: 2px solid var(--main-accent-color, var(--active-item-background-color, #888));
     padding-left: 10px;
   }
-  #fv-root .fv-num { opacity: 0.55; flex-shrink: 0; }
+  #fv-root .fv-num { color: var(--muted-text-color, #767676); flex-shrink: 0; }
   #fv-root .fv-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   #fv-root .fv-char-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-  #fv-root .fv-char-count { margin-left: auto; opacity: 0.6; flex-shrink: 0; }
+  #fv-root .fv-char-count { margin-left: auto; color: var(--muted-text-color, #767676); flex-shrink: 0; }
 
   /* ── Stats ── */
   #fv-root #fv-stats {
@@ -662,7 +672,7 @@ const CSS = `
     #fv-root #fv-toolbar, #fv-root #fv-stats, #fv-root #fv-sidebar { display: none !important; }
     #fv-root { padding: 0; }
     #fv-root #fv-body { display: block; max-width: none; }
-    #fv-root #fv-page { border: none; box-shadow: none; padding: 0; max-width: none; }
+    #fv-root #fv-page { border: none; box-shadow: none; padding: 0; max-width: none; color: #000; background: #fff; }
     #fv-root #fv-page h3 { page-break-after: avoid; }
     #fv-root #fv-page .dialogue, #fv-root #fv-page .dual-dialogue { page-break-inside: avoid; }
     #fv-root #fv-page .page-break { border: none; margin: 0; page-break-before: always; }
@@ -677,8 +687,10 @@ const CSS = `
     #fv-root #fv-toolbar-esq { width: 100%; }
     #fv-root #fv-select-rascunho { max-width: none; width: 100%; }
     #fv-root #fv-toolbar-dir { width: 100%; gap: 6px; }
-    #fv-root .fv-btn { flex: 1 1 auto; padding: 9px 8px; font-size: 12px; text-align: center; }
-    #fv-root .fv-btn-peq { flex: 0 0 auto; padding: 9px 8px; }
+    #fv-root .fv-btn { flex: 1 1 auto; padding: 9px 8px; font-size: 12px; text-align: center; min-height: 44px; }
+    #fv-root .fv-btn-peq { flex: 0 0 auto; padding: 9px 8px; min-height: 44px; }
+    #fv-root .fv-section-header { padding: 12px; min-height: 44px; }
+    #fv-root .fv-list li a, #fv-root .fv-list li .fv-item { padding: 10px 12px; font-size: 13px; }
     #fv-root #fv-btn-print { display: none; } /* no mobile, o caminho é o 📄 PDF */
     #fv-root.fv-foco #fv-page { padding: 16px 10px; }
     #fv-root #fv-page h3[data-scene]::before { display: none; }
@@ -697,6 +709,15 @@ const CSS = `
     #fv-root #fv-page .dialogue p.parenthetical { margin: 0 12% 0 10%; }
     #fv-root #fv-page .dialogue p:not(.parenthetical) { margin: 0.1em 4% 0.5em 4%; }
     #fv-root #fv-page .dual-dialogue { display: block; }
+  }
+
+  /* ── Acessibilidade: menos movimento quando o sistema pede ── */
+  @media (prefers-reduced-motion: reduce) {
+    #fv-root *, #fv-root *::before, #fv-root *::after {
+      transition: none !important;
+      animation: none !important;
+      scroll-behavior: auto !important;
+    }
   }
 `;
 
@@ -786,6 +807,127 @@ function avisar(mensagem) {
     try { api.showMessage(mensagem); return; } catch (e) { /* opcional */ }
     try { console.warn('[Fountain]', mensagem); } catch (e) { /* sem console */ }
 }
+
+// ── i18n (segue o idioma do Trilium; palpite síncrono e confirmação no boot) ──
+const FV_I18N = {
+    pt: {
+        f5: '⟳ F5 também atualiza',
+        selectRascunho: 'Escolher a nota de rascunho',
+        sairFoco: '✕ Sair do foco',
+        sairFocoTitle: 'Voltar ao modo normal',
+        zoomOutTitle: 'Diminuir fonte (Ctrl+-)',
+        zoomResetTitle: 'Fonte padrão (Ctrl+0)',
+        zoomInTitle: 'Aumentar fonte (Ctrl+=)',
+        zoomOutAria: 'Diminuir fonte',
+        zoomResetAria: 'Fonte padrão',
+        zoomInAria: 'Aumentar fonte',
+        foco: '⛶ Foco',
+        focoTitle: 'Só o roteiro (sem sidebar)',
+        html: '📃 HTML',
+        htmlTitle: 'Baixar o roteiro em HTML formatado',
+        importar: '📂 Importar',
+        importarTitle: 'Importar um arquivo .fountain para o rascunho',
+        atualizar: '⟳ Atualizar',
+        atualizarTitle: 'Recarregar o rascunho',
+        atualizando: '⏳ Atualizando…',
+        pdf: '📄 PDF',
+        pdfTitle: 'Baixar o roteiro em PDF (A4, Courier)',
+        imprimir: '🖨 Imprimir',
+        imprimirTitle: 'Abrir a impressão do navegador',
+        baixarFountain: '📥 .fountain',
+        baixarFountainTitle: 'Baixar o texto Fountain',
+        pagTitle: 'Estimativa por linhas (padrão WGA: ~55 linhas/página)',
+        pag: 'pág.',
+        min: 'min',
+        cenas: 'cenas',
+        personagens: 'personagens',
+        dialogo: 'diálogo',
+        palavras: 'palavras',
+        indice: 'Índice do roteiro',
+        secCenas: '🎬 CENAS',
+        secPersonagens: '👥 PERSONAGENS',
+        secLocais: '📍 LOCAIS',
+        secAtos: '📑 ATOS',
+        vazio: '⚠ Nenhuma nota de rascunho encontrada.<br>Crie uma nota filha do tipo <b>text</b> ou <b>code</b> dentro desta nota.<br><span style="opacity:.6">Dica: com várias notas, use o label <b>#fountainDraft</b> na nota desejada.</span>',
+        erroCarregar: '⚠ Erro ao carregar o roteiro: {msg}',
+        tentar: '⟳ Tentar de novo',
+        erroImpressao: 'Não foi possível abrir a impressão.',
+        pdfGerado: 'PDF gerado.',
+        erroPdf: 'Não foi possível gerar o PDF.',
+        fountainBaixado: 'Fountain baixado.',
+        htmlGerado: 'HTML gerado.',
+        erroHtml: 'Não foi possível gerar o HTML.',
+        importConfirm: 'Substituir o rascunho atual pelo conteúdo de "{nome}"?',
+        importado: 'Rascunho importado.',
+        erroImportar: 'Não foi possível importar: {msg}',
+        erroRascunho: 'Não foi possível salvar a escolha do rascunho.',
+    },
+    en: {
+        f5: '⟳ F5 also refreshes',
+        selectRascunho: 'Choose the draft note',
+        sairFoco: '✕ Exit focus',
+        sairFocoTitle: 'Back to normal view',
+        zoomOutTitle: 'Smaller font (Ctrl+-)',
+        zoomResetTitle: 'Default font (Ctrl+0)',
+        zoomInTitle: 'Larger font (Ctrl+=)',
+        zoomOutAria: 'Smaller font',
+        zoomResetAria: 'Default font',
+        zoomInAria: 'Larger font',
+        foco: '⛶ Focus',
+        focoTitle: 'Script only (no sidebar)',
+        html: '📃 HTML',
+        htmlTitle: 'Download the script as formatted HTML',
+        importar: '📂 Import',
+        importarTitle: 'Import a .fountain file into the draft',
+        atualizar: '⟳ Refresh',
+        atualizarTitle: 'Reload the draft',
+        atualizando: '⏳ Refreshing…',
+        pdf: '📄 PDF',
+        pdfTitle: 'Download the script as PDF (A4, Courier)',
+        imprimir: '🖨 Print',
+        imprimirTitle: 'Open the browser print dialog',
+        baixarFountain: '📥 .fountain',
+        baixarFountainTitle: 'Download the Fountain text',
+        pagTitle: 'Line-based estimate (WGA style: ~55 lines/page)',
+        pag: 'pg.',
+        min: 'min',
+        cenas: 'scenes',
+        personagens: 'characters',
+        dialogo: 'dialogue',
+        palavras: 'words',
+        indice: 'Script index',
+        secCenas: '🎬 SCENES',
+        secPersonagens: '👥 CHARACTERS',
+        secLocais: '📍 LOCATIONS',
+        secAtos: '📑 ACTS',
+        vazio: '⚠ No draft note found.<br>Create a child note of type <b>text</b> or <b>code</b> under this one.<br><span style="opacity:.6">Tip: with several notes, use the <b>#fountainDraft</b> label on the desired note.</span>',
+        erroCarregar: '⚠ Error loading the script: {msg}',
+        tentar: '⟳ Try again',
+        erroImpressao: 'Could not open the print dialog.',
+        pdfGerado: 'PDF generated.',
+        erroPdf: 'Could not generate the PDF.',
+        fountainBaixado: 'Fountain downloaded.',
+        htmlGerado: 'HTML generated.',
+        erroHtml: 'Could not generate the HTML.',
+        importConfirm: 'Replace the current draft with the contents of "{nome}"?',
+        importado: 'Draft imported.',
+        erroImportar: 'Could not import: {msg}',
+        erroRascunho: 'Could not save the draft choice.',
+    },
+};
+
+let fvLocale = (() => {
+    try { return String(navigator.language || '').toLowerCase().startsWith('en') ? 'en' : 'pt'; } catch (e) { return 'pt'; }
+})();
+
+/** Traduz com interpolação {var} — chamado de tr() para não colidir com mapas */
+function tr(chave, vars) {
+    const dic = FV_I18N[fvLocale] || FV_I18N.pt;
+    let txt = dic[chave] || FV_I18N.pt[chave] || chave;
+    if (vars) for (const k of Object.keys(vars)) txt = txt.replace('{' + k + '}', vars[k]);
+    return txt;
+}
+function fvCultura() { return fvLocale === 'en' ? 'en-US' : 'pt-BR'; }
 
 /** Bytes → base64 (em blocos, para não estourar a pilha em arquivos maiores) */
 function bytesParaBase64(bytes) {
@@ -1073,7 +1215,7 @@ function imprimirRoteiro(titulo, htmlRoteiro) {
             setTimeout(remover, 10 * 60 * 1000);
         } catch (e) {
             remover();
-            avisar('Não foi possível abrir a impressão.');
+            avisar(tr('erroImpressao'));
         }
     };
 
@@ -1232,6 +1374,12 @@ function pdfGerar(tokens) {
         switch (t.type) {
             case 'scene_heading':
                 if (linha > 0) pular(1);
+                if (t.scene_number) {
+                    // número de cena na margem, como no HTML (paridade de produção)
+                    if (linha >= PDF_LINHAS_PAGINA) { fecharPagina(); linha = 0; }
+                    const yNum = PDF_PAGINA.altura - PDF_MARGEM - PDF_FONTE - linha * PDF_ALTURA_LINHA;
+                    addTexto(t.scene_number, PDF_MARGEM - 26, yNum, 9);
+                }
                 escrever(pdfQuebrar(texto.toUpperCase(), maxChars(1)), PDF_MARGEM);
                 pular(1);
                 break;
@@ -1361,10 +1509,20 @@ function pdfMontar(paginas) {
 
 // ── ZOOM (fonte do roteiro) ─────────────────────────────────
 let zoomFonte = 12;
+let zoomUsuario = false; // até o usuário mexer no zoom, o CSS decide (11pt no mobile)
 
 function aplicarZoom() {
     const page = api.$container[0]?.querySelector('#fv-page');
-    if (page) page.style.fontSize = zoomFonte + 'pt';
+    if (page) page.style.fontSize = zoomUsuario ? zoomFonte + 'pt' : '';
+    const rotulo = api.$container[0]?.querySelector('#fv-btn-zoom-reset');
+    if (rotulo) rotulo.textContent = Math.round((zoomFonte / 12) * 100) + '%';
+}
+
+/** Rola até o elemento respeitando prefers-reduced-motion */
+function rolarAte(alvo) {
+    if (!alvo) return;
+    const reduzir = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    alvo.scrollIntoView({ behavior: reduzir ? 'auto' : 'smooth', block: 'start' });
 }
 
 // Atalhos globais (zoom Ctrl+=/−/0, F5 e Esc): só agem com o visor montado no
@@ -1376,9 +1534,9 @@ function fvTratarAtalhos(e) {
     if (!root || !document.body.contains(root)) return;
 
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
-        if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomFonte = Math.min(24, zoomFonte + 1); aplicarZoom(); return; }
-        if (e.key === '-') { e.preventDefault(); zoomFonte = Math.max(8, zoomFonte - 1); aplicarZoom(); return; }
-        if (e.key === '0') { e.preventDefault(); zoomFonte = 12; aplicarZoom(); return; }
+        if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomFonte = Math.min(24, zoomFonte + 1); zoomUsuario = true; aplicarZoom(); return; }
+        if (e.key === '-') { e.preventDefault(); zoomFonte = Math.max(8, zoomFonte - 1); zoomUsuario = true; aplicarZoom(); return; }
+        if (e.key === '0') { e.preventDefault(); zoomFonte = 12; zoomUsuario = false; aplicarZoom(); return; }
         return;
     }
 
@@ -1390,7 +1548,7 @@ function fvTratarAtalhos(e) {
         const emCampo = alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT' || alvo.isContentEditable);
         if (!emCampo) {
             root.classList.remove('fv-foco');
-            root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            rolarAte(root);
         }
     }
 }
@@ -1400,7 +1558,11 @@ document.addEventListener('keydown', fvTratarAtalhos);
 
 
 // ── 8. RENDERIZAÇÃO ───────────────────────────────────────────────────────────
+let renderizando = false;
+
 async function renderizar() {
+    if (renderizando) return; // evita renders concorrentes (ex.: clique duplo no ⟳)
+    renderizando = true;
     try {
         if (observerCenas) { observerCenas.disconnect(); observerCenas = null; }
 
@@ -1416,9 +1578,7 @@ async function renderizar() {
         if (!rascunho) {
             api.$container.html(`
                 <div style="padding:24px;font-family:monospace;color:var(--main-text-color);line-height:1.8">
-                    ⚠ Nenhuma nota de rascunho encontrada.<br>
-                    Crie uma nota filha do tipo <b>text</b> ou <b>code</b> dentro desta nota.<br>
-                    <span style="opacity:.6">Dica: com várias notas, use o label <b>#fountainDraft</b> na nota desejada.</span>
+                    ${tr('vazio')}
                 </div>
             `);
             return;
@@ -1435,7 +1595,7 @@ async function renderizar() {
         const stats       = calcularStats(resultado.tokens || []);
 
         const seletorRascunho = candidatas.length > 1 ? `
-            <select id="fv-select-rascunho" title="Escolher a nota de rascunho">
+            <select id="fv-select-rascunho" title="${tr('selectRascunho')}">
                 ${candidatas.map((n) => `
                     <option value="${n.noteId}"${n.noteId === rascunho.noteId ? ' selected' : ''}>
                         ${escaparHtml(n.title)}
@@ -1465,62 +1625,62 @@ async function renderizar() {
         api.$container.html(`
             <style>${CSS}</style>
             <div id="fv-root">
-                <button id="fv-btn-foco-sair" title="Voltar ao modo normal">✕ Sair do foco</button>
+                <button id="fv-btn-foco-sair" title="${tr('sairFocoTitle')}">${tr('sairFoco')}</button>
                 <div id="fv-toolbar">
                     <div id="fv-toolbar-esq">
-                        <span id="fv-aviso-f5">⟳ F5 também atualiza</span>
+                        <span id="fv-aviso-f5">${tr('f5')}</span>
                         ${seletorRascunho}
                     </div>
                     <div id="fv-toolbar-dir">
                         <span class="fv-zoom-grupo">
-                            <button id="fv-btn-zoom-out" class="fv-btn-peq" title="Diminuir fonte (Ctrl+-)">−</button>
-                            <button id="fv-btn-zoom-reset" class="fv-btn-peq fv-zoom-reset" title="Fonte padrão (Ctrl+0)">100%</button>
-                            <button id="fv-btn-zoom-in" class="fv-btn-peq" title="Aumentar fonte (Ctrl+=)">+</button>
+                            <button id="fv-btn-zoom-out" class="fv-btn-peq" title="${tr('zoomOutTitle')}" aria-label="${tr('zoomOutAria')}">−</button>
+                            <button id="fv-btn-zoom-reset" class="fv-btn-peq fv-zoom-reset" title="${tr('zoomResetTitle')}" aria-label="${tr('zoomResetAria')}">${Math.round((zoomFonte / 12) * 100)}%</button>
+                            <button id="fv-btn-zoom-in" class="fv-btn-peq" title="${tr('zoomInTitle')}" aria-label="${tr('zoomInAria')}">+</button>
                         </span>
-                        <button id="fv-btn-foco" class="fv-btn" title="Só o roteiro (sem sidebar)">⛶ Foco</button>
-                        <button id="fv-btn-html" class="fv-btn" title="Baixar o roteiro em HTML formatado">📄 HTML</button>
-                        <button id="fv-btn-import" class="fv-btn" title="Importar um arquivo .fountain para o rascunho">⬆ Importar</button>
-                        <button id="fv-btn-refresh" class="fv-btn" title="Recarregar o rascunho">⟳ Atualizar</button>
-                        <button id="fv-btn-pdf" class="fv-btn" title="Baixar o roteiro em PDF (A4, Courier)">📄 PDF</button>
-                        ${ehElectron ? '' : '<button id="fv-btn-print" class="fv-btn" title="Abrir a impressão do navegador">🖨 Imprimir</button>'}
-                        <button id="fv-btn-download" class="fv-btn" title="Baixar o texto Fountain">📥 .fountain</button>
+                        <button id="fv-btn-foco" class="fv-btn" title="${tr('focoTitle')}">${tr('foco')}</button>
+                        <button id="fv-btn-html" class="fv-btn" title="${tr('htmlTitle')}">${tr('html')}</button>
+                        <button id="fv-btn-import" class="fv-btn" title="${tr('importarTitle')}">${tr('importar')}</button>
+                        <button id="fv-btn-refresh" class="fv-btn" title="${tr('atualizarTitle')}">${tr('atualizar')}</button>
+                        <button id="fv-btn-pdf" class="fv-btn" title="${tr('pdfTitle')}">${tr('pdf')}</button>
+                        ${ehElectron ? '' : `<button id="fv-btn-print" class="fv-btn" title="${tr('imprimirTitle')}">${tr('imprimir')}</button>`}
+                        <button id="fv-btn-download" class="fv-btn" title="${tr('baixarFountainTitle')}">${tr('baixarFountain')}</button>
                     </div>
                 </div>
                 <div id="fv-stats">
-                    <span title="Estimativa por linhas (padrão WGA: ~55 linhas/página)">📄 <b>${stats.paginas}</b> pág.</span>
-                    <span>⏱ ~<b>${stats.duracao}</b> min</span>
-                    <span>🎬 <b>${stats.cenas}</b> cenas</span>
-                    <span>💬 <b>${stats.personagens}</b> personagens</span>
-                    <span>🗣 <b>${stats.pctDialogo}%</b> diálogo</span>
-                    <span>📝 <b>${stats.palavras.toLocaleString('pt-BR')}</b> palavras</span>
+                    <span title="${tr('pagTitle')}">📄 <b>${stats.paginas}</b> ${tr('pag')}</span>
+                    <span>⏱ ~<b>${stats.duracao}</b> ${tr('min')}</span>
+                    <span>🎬 <b>${stats.cenas}</b> ${tr('cenas')}</span>
+                    <span>💬 <b>${stats.personagens}</b> ${tr('personagens')}</span>
+                    <span>🗣 <b>${stats.pctDialogo}%</b> ${tr('dialogo')}</span>
+                    <span>📝 <b>${stats.palavras.toLocaleString(fvCultura())}</b> ${tr('palavras')}</span>
                 </div>
                 <div id="fv-body">
-                    <nav id="fv-sidebar">
-                        <div class="fv-section-header" data-alvo="cenas">
-                            🎬 CENAS
-                            <span class="fv-toggle">${estadoSidebar.cenas ? '▼' : '▶'}</span>
-                        </div>
+                    <nav id="fv-sidebar" aria-label="${tr('indice')}">
+                        <button type="button" class="fv-section-header" data-alvo="cenas" aria-expanded="${estadoSidebar.cenas}" aria-controls="fv-list-cenas">
+                            ${tr('secCenas')} (${stats.cenas})
+                            <span class="fv-toggle" aria-hidden="true">${estadoSidebar.cenas ? '▼' : '▶'}</span>
+                        </button>
                         <ul class="fv-list${estadoSidebar.cenas ? '' : ' collapsed'}" id="fv-list-cenas">
                             ${listaCenas}
                         </ul>
-                        <div class="fv-section-header" data-alvo="personagens">
-                            👥 PERSONAGENS
-                            <span class="fv-toggle">${estadoSidebar.personagens ? '▼' : '▶'}</span>
-                        </div>
+                        <button type="button" class="fv-section-header" data-alvo="personagens" aria-expanded="${estadoSidebar.personagens}" aria-controls="fv-list-personagens">
+                            ${tr('secPersonagens')} (${stats.personagens})
+                            <span class="fv-toggle" aria-hidden="true">${estadoSidebar.personagens ? '▼' : '▶'}</span>
+                        </button>
                         <ul class="fv-list${estadoSidebar.personagens ? '' : ' collapsed'}" id="fv-list-personagens">
                             ${listaPersonagens}
                         </ul>
-                        <div class="fv-section-header" data-alvo="locais">
-                            📍 LOCAIS
-                            <span class="fv-toggle">${estadoSidebar.locais ? '▼' : '▶'}</span>
-                        </div>
+                        <button type="button" class="fv-section-header" data-alvo="locais" aria-expanded="${estadoSidebar.locais}" aria-controls="fv-list-locais">
+                            ${tr('secLocais')} (${stats.locais.length})
+                            <span class="fv-toggle" aria-hidden="true">${estadoSidebar.locais ? '▼' : '▶'}</span>
+                        </button>
                         <ul class="fv-list${estadoSidebar.locais ? '' : ' collapsed'}" id="fv-list-locais">
                             ${listaLocais}
                         </ul>
-                        <div class="fv-section-header" data-alvo="atos">
-                            📑 ATOS
-                            <span class="fv-toggle">${estadoSidebar.atos ? '▼' : '▶'}</span>
-                        </div>
+                        <button type="button" class="fv-section-header" data-alvo="atos" aria-expanded="${estadoSidebar.atos}" aria-controls="fv-list-atos">
+                            ${tr('secAtos')} (${stats.atos.length})
+                            <span class="fv-toggle" aria-hidden="true">${estadoSidebar.atos ? '▼' : '▶'}</span>
+                        </button>
                         <ul class="fv-list${estadoSidebar.atos ? '' : ' collapsed'}" id="fv-list-atos">
                             ${listaAtos || '<li><span class="fv-item" style="opacity:.5">Nenhum ato (use # Ato N)</span></li>'}
                         </ul>
@@ -1536,16 +1696,19 @@ async function renderizar() {
         `);
 
         // ── Ações da barra ──
-        api.$container.find('#fv-btn-refresh').on('click', () => renderizar());
+        api.$container.find('#fv-btn-refresh').on('click', function () {
+            $(this).prop('disabled', true).text(tr('atualizando'));
+            renderizar();
+        });
 
         api.$container.find('#fv-btn-pdf').on('click', () => {
             try {
                 const bytes = pdfMontar(pdfGerar(resultado.tokens || []));
                 const base64 = bytesParaBase64(bytes);
                 baixarArquivo(nomeArquivo + '.pdf', 'data:application/pdf;base64,' + base64, base64);
-                avisar('PDF gerado.');
+                avisar(tr('pdfGerado'));
             } catch (e) {
-                avisar('Não foi possível gerar o PDF.');
+                avisar(tr('erroPdf'));
             }
         });
 
@@ -1559,12 +1722,13 @@ async function renderizar() {
         api.$container.find('#fv-btn-download').on('click', () => {
             const base64 = textoParaBase64(textoCru);
             baixarArquivo(nomeArquivo + '.fountain', 'data:text/plain;charset=utf-8;base64,' + base64, base64);
+            avisar(tr('fountainBaixado'));
         });
 
         // ── Zoom ──
-        api.$container.find('#fv-btn-zoom-out').on('click', () => { zoomFonte = Math.max(8, zoomFonte - 1); aplicarZoom(); });
-        api.$container.find('#fv-btn-zoom-in').on('click', () => { zoomFonte = Math.min(24, zoomFonte + 1); aplicarZoom(); });
-        api.$container.find('#fv-btn-zoom-reset').on('click', () => { zoomFonte = 12; aplicarZoom(); });
+        api.$container.find('#fv-btn-zoom-out').on('click', () => { zoomFonte = Math.max(8, zoomFonte - 1); zoomUsuario = true; aplicarZoom(); });
+        api.$container.find('#fv-btn-zoom-in').on('click', () => { zoomFonte = Math.min(24, zoomFonte + 1); zoomUsuario = true; aplicarZoom(); });
+        api.$container.find('#fv-btn-zoom-reset').on('click', () => { zoomFonte = 12; zoomUsuario = false; aplicarZoom(); });
 
         // ── Foco (só o roteiro) ──
         const alternarFoco = (ativo) => {
@@ -1573,7 +1737,7 @@ async function renderizar() {
             const ligar = ativo === undefined ? !root.classList.contains('fv-foco') : ativo;
             root.classList.toggle('fv-foco', ligar);
             // rola o topo do root à vista (no foco mostra a página; ao sair mostra a toolbar)
-            root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            rolarAte(root);
         };
         api.$container.find('#fv-btn-foco').on('click', () => alternarFoco());
         api.$container.find('#fv-btn-foco-sair').on('click', () => alternarFoco(false));
@@ -1595,9 +1759,9 @@ async function renderizar() {
 </html>`;
                 const base64 = textoParaBase64(doc);
                 baixarArquivo(nomeArquivo + '.html', 'data:text/html;charset=utf-8;base64,' + base64, base64);
-                avisar('HTML gerado.');
+                avisar(tr('htmlGerado'));
             } catch (e) {
-                avisar('Não foi possível gerar o HTML.');
+                avisar(tr('erroHtml'));
             }
         });
 
@@ -1611,14 +1775,14 @@ async function renderizar() {
             if (!arquivo) return;
             try {
                 const texto = await arquivo.text();
-                if (!confirm('Substituir o rascunho atual pelo conteúdo de "' + arquivo.name + '"?')) return;
+                if (!confirm(tr('importConfirm', { nome: arquivo.name }))) return;
                 await api.runOnBackend((noteId, conteudo) => {
                     api.getNote(noteId).setContent(conteudo);
                 }, [rascunho.noteId, texto]);
-                avisar('Rascunho importado.');
+                avisar(tr('importado'));
                 renderizar();
             } catch (e) {
-                avisar('Não foi possível importar: ' + ((e && e.message) || e));
+                avisar(tr('erroImportar', { msg: (e && e.message) || e }));
             }
         });
         api.$container.find('#fv-btn-import').on('click', () => inputArquivo.click());
@@ -1628,7 +1792,7 @@ async function renderizar() {
             e.preventDefault();
             const id = $(this).attr('href').slice(1);
             const alvo = api.$container[0].querySelector('#' + id);
-            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            rolarAte(alvo);
             marcarAtivo(api.$container[0], id);
         });
 
@@ -1641,7 +1805,7 @@ async function renderizar() {
                 }, [notaMae.noteId, id]);
                 renderizar();
             } catch (e) {
-                avisar('Não foi possível salvar a escolha do rascunho.');
+                avisar(tr('erroRascunho'));
             }
         });
 
@@ -1650,6 +1814,7 @@ async function renderizar() {
             const alvo = $(this).data('alvo');
             const aberto = !estadoSidebar[alvo];
             estadoSidebar[alvo] = aberto;
+            $(this).attr('aria-expanded', String(aberto));
             api.$container.find('#fv-list-' + alvo).toggleClass('collapsed', !aberto);
             $(this).find('.fv-toggle').text(aberto ? '▼' : '▶');
         });
@@ -1659,7 +1824,7 @@ async function renderizar() {
             e.preventDefault();
             const id = $(this).attr('href').slice(1);
             const alvo = api.$container[0].querySelector('#' + id);
-            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            rolarAte(alvo);
             marcarAtivo(api.$container[0], id);
         });
 
@@ -1667,12 +1832,25 @@ async function renderizar() {
         aplicarZoom();
 
     } catch (err) {
-        api.$container.html(
-            `<div style="padding:24px;color:red;font-family:monospace">
-                Erro: ${escaparHtml(err.message)}
-             </div>`
-        );
+        api.$container.html(`
+            <div style="padding:24px;font-family:monospace;color:var(--main-text-color,#222);line-height:1.8">
+                ${tr('erroCarregar', { msg: escaparHtml(err.message) })}<br>
+                <button id="fv-btn-retry" class="fv-btn" style="margin-top:8px">${tr('tentar')}</button>
+            </div>
+        `);
+        api.$container.find('#fv-btn-retry').on('click', () => renderizar());
+    } finally {
+        renderizando = false;
     }
 }
+
+// Confere o idioma real do Trilium (o palpite pode errar) e re-renderiza se mudar
+(async () => {
+    try {
+        const loc = await api.runOnBackend(() => api.getOption('locale'));
+        const novo = String(loc || '').toLowerCase().startsWith('en') ? 'en' : 'pt';
+        if (novo !== fvLocale) { fvLocale = novo; renderizar(); }
+    } catch (e) { /* mantém o palpite */ }
+})();
 
 renderizar();
