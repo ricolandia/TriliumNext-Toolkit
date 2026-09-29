@@ -8,6 +8,10 @@ com evidência (`arquivo:linha`), harness estático (`bun test-*.js`,
 maior severidade. **Nenhuma correção é feita durante a auditoria** — os fixes
 saem em rodada própria, após triagem do dono.
 
+**Fluxo dos residuais:** o que não entra nos batches de correção de cada rodada é
+migrado para o **`ROADMAP-RESIDUAIS.md`**. A execução do roadmap acontece **depois
+da rodada 16** (todos os plugins auditados), com uma triagem única de prioridade.
+
 Regra de leitura do relatório: prioridade = resultado do plugin; "verificar em
 runtime" marca o que depende de teste manual no Trilium.
 
@@ -70,8 +74,8 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 
 | # | Plugin | Arquivo(s) | Data | 👨‍💻 Código | 🎨 UI/UX | ⚡ Quick wins | Veredito |
 |---|--------|------------|------|-----------|----------|---------------|----------|
-| 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados + fix pós-batch 4** (`t`→`tr` + guard do render + `test-smoke.js`): ~65 correções/refactors; 49 asserções + smoke. Residual no batch 5 |
-| 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Relatório publicado** (29/09); correções em batches após triagem do dono |
+| 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados + fix pós-batch 4** (`t`→`tr` + guard do render + `test-smoke.js`): ~65 correções/refactors; 49 asserções + smoke. Residual no `ROADMAP-RESIDUAIS.md` |
+| 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smokes dos dois no Chrome headless); residual no `ROADMAP-RESIDUAIS.md` |
 
 ### 🔁 Fila proposta (ajustável)
 
@@ -370,8 +374,8 @@ não pegavam (era erro de escopo em runtime, e o primeiro render não tinha guar
 
 ## ⏭️ Backlog residual (batch 5, se houver)
 
-- **UI/UX:** D1.x/D2.x/D4.3 (hierarquia, terminologia, drag em trackpads), D5.3 (toast de sucesso dedicado; hoje o Desfazer cobre), D2.4 (título por view e glifos no WebView), D1.2 (densidade do mês).
-- **Manutenção:** C7.3 (versões `manifest` × registry publicado — junto do próximo release), C8.1 restante (`getWeekCols`/`getMonthDays`, `migrateIds`, `setOrder`) e virtualização real caso o vault cresça muito (hoje o limite + "+N" segura).
+Migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Weekly Planner): D1.2, D1.3, D2.2,
+D2.4, D2.5, D4.3, D5.2, D5.3, D8.2, C7.3, C8.1 restante e virtualização real.
 
 ---
 
@@ -666,8 +670,9 @@ no VPS/demo estava na versão de 26/09 (sem o hoist de CSS de 27/09) — agora a
 com o repo. Token novo do demo: `wrDeploy2909_…` (criado por linha em `etapi_tokens`
 + restart do container, procedimento conhecido).
 
-**Residual (não feito nesta rodada):** QW9 (filtro de cenas), QW14 (botão "abrir
-compilado"), C7.1 do Fountain (`CSS_IMPRESSAO` duplicado), C4.4 (entidades numéricas
-no `htmlParaTexto`), C4.7 (import com `confirm`), Grid C3.3 (payload da compilação em
-passos) e C4.4 (filtro por tipo/mime), C4.3 (alerta de `#compiledDoc` enganoso);
-versões `manifest` × registry (C7.3) e bump no registry ficam para o próximo release.
+**Residual (não feito nesta rodada):** migrado para o **`ROADMAP-RESIDUAIS.md`**
+(§ Writers-Tools): QW9 (filtro de cenas), QW14 (abrir compilado), C7.1
+(`CSS_IMPRESSAO` duplicado), C4.4 (entidades numéricas no `htmlParaTexto`), C4.7
+(import com `confirm`), Grid C3.3 (payload da compilação em passos), Grid C4.4
+(filtro por tipo/mime) e Grid C4.3 (alerta de `#compiledDoc` enganoso). O bump de
+registry/release segue no `SESSION.md`.
