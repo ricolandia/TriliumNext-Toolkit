@@ -2951,3 +2951,48 @@ de dupla instalação). README defasado em 5 pontos. Nenhuma correção aplicada
 reduced-motion, 3) harness `test-pills.js` + README/zip/capturas).
 
 **Próximo da lista:** Kanboard (rodada 12).
+
+## ✅ Correções aplicadas — rodada 11, batches 1-3 (29/09/2026)
+
+### Batch 1 — tema claro/tokens + escopo do reset + pillify
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C3.1/D7.1 | **15 cores fixas da tabela → `color-mix` com `--main-text-color`** (legível nos 2 temas; `#e2e8f0` 1.23:1 no claro eliminado) | `test-pills` (sem `#e2e8f0`) |
+| D7.2 | **Pills label/relation → `color-mix` com token do tema** (fim dos hex fixos 1.6:1) | `test-pills` |
+| C7.1 | **Reset de fonte escopado**: `body, body *` → classes reais (`.ck-content`, `.fancytree`, `.tabulator`, `.board-*`, `.note-book-*`, `.attr-pill`) | `test-pills` (sem `body,body *`) |
+| C7.2 | **`!important` do mono removido** (code/kbd/pre/samp herdam do sistema) | revisão |
+| C4.1 | **`OCULTOS` com valor quotado**: `nome = prefix.split('=')[0].replace(...)` (o caso documentado `#color="#4de64d"` agora é escondido) | `test-pills` (extraiNome + OCULTOS.has) |
+| C4.2 | **Guard de re-parse por conteúdo** (`dataset.pillified = textContent`, não flag fixa) | `test-pills` |
+| C5.1 | **Observer único com flag** `window.__uiTwPillsObserver` + filtro `childList` | `test-pills` (guarda) |
+| D6.1 | **`el.innerHTML=''` → `el.replaceChildren()`** (preserva a árvore original) | `test-pills` (sem innerHTML=) |
+
+### Batch 2 — UI/a11y/estado + reduced-motion
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D8.1 | **`@media (prefers-reduced-motion: reduce)`** global (fancytree/toolbar/board/resize-handle) | `test-pills` (guarda) |
+| D3.1 | **`:focus-visible`** na tree (nós + título), board (`:focus-within`) e resize handle | revisão |
+| D5.1 | **Opacidade dos botões de criação do kanban `0.3 → 0.7`** (`board-new-item`, `board-add-column`) | `test-pills` (0.7) |
+| D3.1/D7 | **Toolbar do editor `0.5 → 0.7`** + `:focus-within` no `.ck-toolbar` | revisão |
+| D3.2 | **`.fancytree-title:hover` com `color-mix`** (era `rgba(255,255,255,.06)` invisível no claro) | revisão |
+| D8.2 | **`.attr-pill` `1.2em/1.7 → 0.85em/1.5`** (default bate com a recomendação do README) | `test-pills` |
+| D8.3 | **`h1 { margin-top: 1.8em → 1.2em }`** | revisão |
+| D7.5 | **`tabulator-frozen-left` opacity `0.4 → 0.75`** | `test-pills` |
+
+### Batch 3 — harness + README + zip
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C8.1 | **`test-pills.js`** (extração de nome do OCULTOS quotado, guardas de fonte, referências CSS) | `bun test-pills.js` ✅ TODOS PASSARAM |
+| C1.2 | **README corrigido**: nome do zip (`UI_Tweaks_`), `line-height 1.65`, `OCULTOS` (era HIDDEN), pills 0.85em, nota de atualização | revisão |
+| C7.1 | **`UI_Tweaks_.zip` regenerado** (css `abe806d7…`, js `b163ba3d…` = repo) | `unzip` + sha |
+
+**Deploy (29/09):** VPS (appCss nota `2MRSVFXmQva2` + pills `meRNTWQA3Qa6`) via ETAPI — **sha256
+`abe806d7…` (css) e `b163ba3d…` (js) idênticos repo=VPS**. Demo não tem UI-Tweaks instalado
+(instalação manual; não está no registry).
+
+**Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ UI-Tweaks): adicionar `scrollbar-width`
+Firefox, `min-width:600px` das tabelas só no mobile, `::selection` 20→25% no claro, `minmax(420px)`
+revisar (769-900px), `overflow:hidden` do board pode clipar menus, `nth-child(1..5)` cores de kanban
+dependem da ordem DOM, e screenshots regenerar (imagens de 17/05, pré-V4).

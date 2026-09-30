@@ -2,8 +2,10 @@
 
 A set of CSS styles to improve readability and elegance of the TriliumNext interface.
 
+**Update (29/09/2026):** audited (round 11) and hardened — table column colors and pills now derive from theme tokens via `color-mix` (legible in light *and* dark themes), the global `body *` font reset is scoped to real UI classes, the pill script hides quoted values (`#color="#4de64d"`) and re-parses on content change, a single `MutationObserver` is installed with a global guard, `prefers-reduced-motion` and `:focus-visible` were added, and the kanban "add" buttons/toolbar opacity floors were raised.
+
 ## Installation
-1. Import `CSS_Tweaks_UI_Polished.zip` as an appearance note (or create a **Code – CSS** note with the code and apply it via settings).
+1. Import `UI_Tweaks_.zip` as a code note (or create a **Code – CSS** note with the CSS) (or create a **Code – CSS** note with the code and apply it via settings).
 2. Adjust the styles to your preference.
 3. Add the label `#appCss` to the note's attributes.
 
@@ -31,7 +33,7 @@ A set of CSS styles to improve readability and elegance of the TriliumNext inter
 
 ### 3. Obsidian-Style Text Editor
 
-* **Spacious Typography:** Increases line height (1.9) and margin spacing for paragraphs and lists to improve readability.
+* **Spacious Typography:** Increases line height (1.65) and margin spacing for paragraphs and lists to improve readability.
 * **Prominent Headers:** H1, H2, and H3 tags are bolder and feature increased top and bottom margins for distinct visual hierarchy.
 * **Auto-Hiding Toolbar:** The CKEditor top toolbar now fades out (50% opacity) when you are just reading, and fully appears (100% opacity) when you focus on the editor or hover over it.
 
@@ -86,7 +88,7 @@ There's no per-attribute markup, so CSS alone can't target individual labels or 
 
 The `.rendered-note-attributes` span contains a mix of raw text nodes and `<a>` anchor elements (for relation targets). The script walks those child nodes, identifies labels (`#`) and relations (`~`) by their prefix, and rebuilds the element as a sequence of individual `<span class="attr-pill ...">` elements. A `MutationObserver` watches for new list items so it works dynamically as you navigate.
 
-A configurable `HIDDEN` set lets you suppress noisy system attributes (like `#color`, `#subtreeHidden`, `#iconClass`) that are already expressed visually elsewhere in the UI.
+A configurable `OCULTOS` set lets you suppress noisy system attributes (like `#color`, `#subtreeHidden`, `#iconClass`) that are already expressed visually elsewhere in the UI.
 
 ---
 
@@ -174,7 +176,7 @@ new MutationObserver(mutations => {
 
 ## Customization
 
-- **Pill size:** adjust `font-size` in `.attr-pill` (e.g. `0.8em`) and `padding` as needed.
+- **Pill size:** adjust `font-size` in `.attr-pill` (default `0.85em`) and `padding` as needed.
 - **Hidden attributes:** edit the `HIDDEN` set in the script to add or remove attribute names you want suppressed.
 - **Colors:** the green/teal tones are for labels, blue/purple for relations — change `rgba()` values freely to match your theme.
 

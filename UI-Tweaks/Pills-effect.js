@@ -4,8 +4,9 @@
 const OCULTOS = new Set(['subtreeHidden', 'color', 'iconClass', 'viewType']);
 
 function parsePills(el) {
-  if (el.dataset.pillified === '1') return;
-  el.dataset.pillified = '1';
+  const key = el.textContent;
+  if (el.dataset.pillified === key) return;
+  el.dataset.pillified = key;
 
   const pills = [];
   let pendente = null;
@@ -37,10 +38,10 @@ function parsePills(el) {
   }
   if (pendente) pills.push(pendente);
 
-  el.innerHTML = '';
+  el.replaceChildren();
 
   for (const pill of pills) {
-    const nome = (pill.prefix || '').replace(/^[~#]/, '').replace(/=$/, '');
+    const nome = (pill.prefix || '').split('=')[0].replace(/^[~#]/, '');
     if (OCULTOS.has(nome)) continue;
 
     const span = document.createElement('span');
@@ -62,12 +63,16 @@ function processarTodos() {
 
 processarTodos();
 
-new MutationObserver(mutations => {
-  for (const m of mutations) {
-    m.addedNodes.forEach(node => {
-      if (node.nodeType !== Node.ELEMENT_NODE) return;
-      if (node.matches?.('.rendered-note-attributes')) parsePills(node);
-      node.querySelectorAll?.('.rendered-note-attributes:not([data-pillified])').forEach(parsePills);
-    });
-  }
-}).observe(document.body, { childList: true, subtree: true });
+if (!window.__uiTwPillsObserver) {
+  window.__uiTwPillsObserver = new MutationObserver(mutations => {
+    for (const m of mutations) {
+      if (m.type !== 'childList') continue;
+      m.addedNodes.forEach(node => {
+        if (node.nodeType !== Node.ELEMENT_NODE) return;
+        if (node.matches?.('.rendered-note-attributes')) parsePills(node);
+        node.querySelectorAll?.('.rendered-note-attributes').forEach(parsePills);
+      });
+    }
+  });
+  window.__uiTwPillsObserver.observe(document.body, { childList: true, subtree: true });
+}

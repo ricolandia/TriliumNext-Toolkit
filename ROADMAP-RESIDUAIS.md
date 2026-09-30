@@ -179,6 +179,19 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 | AGC-D2.5 | Captura/README screenshots defasados (imagens 15/05, 2 órfãs) — regenerar | Doc | S | Baixo | `imagens/` | QA visual |
 | AGC-C7.1 | Bump de versão/registry no release (já 0.8.3 no registry) | Release | S | Baixo | registry | revisão |
 
+## UI-Tweaks (rodada 11)
+
+| ID | Item | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+|----|------|-----------|:-------:|:-----:|------------------------------|-----------|
+| UTW-Q9 | `scrollbar-width: thin`/`scrollbar-color` para Firefox | Perf | S | Baixo | `::-webkit-scrollbar` | QA Firefox |
+| UTW-Q11 | `min-width:600px` das tabelas só no mobile (hoje força scroll no desktop) | UX | S | Baixo | `.ck-content table` | QA desktop/mobile |
+| UTW-Q12 | `::selection` 20% → 25-30% no claro | Contraste | S | Baixo | `::selection` | QA claro |
+| UTW-C3.3 | `minmax(420px,1fr)` revisar em 769-900px (1 coluna larga) | Responsivo | S | Baixo | `.note-book-content` | QA tablet |
+| UTW-C4.3 | `.board-column { overflow:hidden }` pode clipar menus/popovers | Robustez | S | Médio | kanban | manual |
+| UTW-C4.4 | Cores de coluna por `nth-child(1..5)` dependem da ordem DOM | Manutenção | S | Baixo | kanban | revisão |
+| UTW-D2.5 | Screenshots defasados (imagens 17/05, pré-V4) — regenerar | Doc | S | Baixo | `imagens/` | QA visual |
+| UTW-C7.1 | Registry: UI-Tweaks fora do manager (instalação manual) — avaliar entrada via `zipUrl` no release | Release | S | Baixo | registry | decisão |
+
 ## Pendências de produto (novas, 29/09/2026)
 
 Fora das rodadas de auditoria. Decisões do Ricardo: **nomenclatura em 2 camadas**
@@ -193,6 +206,7 @@ como está) e **hub mobile registrado para execução pós-rodada 15** junto do 
 
 ## Histórico
 
+- **29/09/2026** — adicionado o § UI-Tweaks (rodada 11; correções aplicadas em batches 1-3, deploy na VPS).
 - **29/09/2026** — adicionado o § Attribute-GC (rodada 10; correções aplicadas em batches 1-3, deploy sha idêntico).
 - **29/09/2026** — adicionado o § Knowledge-Dashboard (rodada 9; correções aplicadas em batches 1-3, deploy sha idêntico).
 - **29/09/2026** — `PROD-NOME` **concluída** (nomenclatura oficial aplicada em docs/UI; contrato mantido); `PROD-MOBILE` rebaixada para **ideia a avaliar no futuro** (decisão do Ricardo — não executar agora).
