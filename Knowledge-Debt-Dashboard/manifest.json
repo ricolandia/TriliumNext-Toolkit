@@ -13,9 +13,17 @@
     }
   ],
   "relations": [
-    { "type": "renderNote", "from": "Knowledge Debt", "to": "js knowledge" }
+    {
+      "type": "renderNote",
+      "from": "Knowledge Dashboard",
+      "to": "js knowledge"
+    }
   ],
   "labels": [
-    { "note": "js knowledge", "name": "readOnly", "value": "" }
+    {
+      "note": "js knowledge",
+      "name": "readOnly",
+      "value": ""
+    }
   ]
 }

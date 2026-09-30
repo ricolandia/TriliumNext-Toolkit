@@ -90,7 +90,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 ~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · ~~6. Daily-Note-Map~~ ⛔ removido da
 coleção (29/09 — o mapa nativo do Trilium cobre; decisão no `SESSION.md`) ·
 ~~6. Minimalist Pomodoro + Time Tracker~~ ✅ 29/09 · ~~7. Word-Counter~~ ✅ 29/09 ·
-~~8. Daily-Note-Navigator~~ ✅ 29/09 · **9. Knowledge-Dashboard (próximo)** · 10. Attribute-GC ·
+~~8. Daily-Note-Navigator~~ ✅ 29/09 · ~~9. Knowledge-Dashboard~~ ✅ 29/09 (auditado) · **10. Attribute-GC (próximo)** ·
 11. UI-Tweaks · 12. Kanboard · 13. Mastodon · 14. Canvas-Template-Loader · 15. Canvas-Templates.
 
 ---
@@ -2262,3 +2262,213 @@ correção aplicada nesta rodada — batches após triagem (candidatos: 1) naveg
 **Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Daily-Note-Navigator): card fora de
 daily notes no layout novo (Preact), prefetch/coalescing, criar nota no salto de mês, captura,
 QA visual de painel estreito e bump de release.
+
+## Rodada 9 — Knowledge-Dashboard (29/09/2026)
+
+**Escopo:** `Knowledge-Debt-Dashboard/Knowledge debt/js knowledge.js` (426 linhas), `README.md`,
+`manifest.json`, `Knowledge debt.zip`; registry `knowledge-debt`.
+**Verificação (Fase 0):** `bun build` ✅ (24,75 KB, 1 módulo) · **sem harness de teste** (`test-*.js`
+inexistente) · **`Knowledge debt.zip` DESSINCRONIZADO** (sha `ec7a53d6…` ≈ versão 16/05 com 5 abas,
+sem PDFs/Consulta Livre; o repo `e0dd1aed…` tem 27,9 KB e as 7 abas) · **manifest bugado no HEAD**
+(`from: "Knowledge Debt"` × 1ª nota "Knowledge Dashboard") — corrigido no working tree, **não
+commitado** · **registry `0.8.0` com descrição desatualizada** (omite PDFs e Consulta Livre) ·
+3 especialistas (read-only) + conferência direta + validação no banco real (schema 0.106).
+
+**Achados de plataforma confirmados no banco real:**
+1. `n.mime` **existe** na tabela `notes` (e `b.mime` NÃO existe em `blobs`) → a query de PDFs
+   funciona; o problema é só o filtro de protegidas/arquivadas.
+2. `api.openTabWithNote` e `api.activateNote` **são válidos** no 0.106 (padrão usado em AI-Chat e
+   no Grid) — o `catch (_) {}` do `openNote` é que engole falhas.
+3. Datas `'2026-02-19 17:22:07.810-0300'`: `new Date(d)` respeita o offset → **sem bug de fuso**.
+4. Precedência do `to`: `n.dateCreated <= '2026-09-29' || 'T23:59:59'` agrupa como
+   `a <= ('…' || 'T23:59:59')` (o `||` tem precedência maior) → **correto**.
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 0 | 5 | 7 | 5 | 0 | 17 |
+| 🎨 UI/UX | 3 | 4 | 12 | 4 | 0 | 23 |
+| ⚡ Quick wins | — | — | — | — | — | 10 + 3 bônus |
+
+**Top 5 (triagem sugerida):**
+1. **[Alta · C1]** **Scan all-or-nothing**: `stubs`/`empty`/`todos`/`abandoned` chamam
+   `api.sql.getRows` sem `safe()`/try (`311/314/317/320`); um erro em qualquer uma (schema antigo,
+   coluna renomeada — o README promete "auto-detects across versions") **derruba o scan inteiro**
+   num `log('Erro: …')` genérico (`344`), sem contexto e **descartando os resultados parciais**
+   (orphans/pdfs já computados se perdem).
+2. **[Alta · C2]** **PDFs vaza protegidas/arquivadas** (`324`): a query de PDFs não aplica
+   `NOT_PROTECTED` nem `NOT_ARCHIVED`, contrariando `README:19` ("all debt scans exclude …") —
+   título/tamanho de arquivo sensível fica exposto.
+3. **[Alta · C1]** **Boot crash por localStorage corrompido** (`86`): `JSON.parse(...)` sem
+   try/catch nem `Array.isArray` → valor corrompido derruba o render note inteiro no load.
+4. **[Alta · C1]** **"Base saudável" inalcançável + total inflado** (`340-342`): `for (var k in result)`
+   soma `typeCounts` (array sempre não-vazio) junto com os 6 scans → `total` nunca é 0 e o número
+   exibido é maior que a realidade.
+5. **[Média · C6/C7]** **`eval` desnecessário** (`379`): o padrão do repo é
+   `api.runOnBackend((sql) => api.sql.getRows(sql), [sql])` (args no 2º parâmetro) — o `eval` é
+   workaround red flag; junto com **zip defasado + sem harness** (Fase 0), fecha o pacote da rodada.
+
+**Nota de dedupe:** i18n ausente (Código 5, UI 12); scan/erros (Código 1/2/4, UI 3/4/5);
+`eval` (Código 4); filtro fantasma na Consulta Livre (UI 20).
+
+### 👨‍💻 Código — achados
+
+**Alta**
+
+- **C1.1 · Scan all-or-nothing** (`311/314/317/320` × `safe` só em orphans 305/307 e try em pdfs 324):
+  quatro queries sem try individual; erro genérico no catch geral (`344`) sem dizer qual falhou e
+  descartando parciais. Correção: `safe()` por query com `log` de contexto.
+- **C2.1 · PDFs sem `NOT_PROTECTED`/`NOT_ARCHIVED`** (`324`): contrato do README quebrado.
+  Correção: adicionar os dois filtros.
+- **C1.2 · localStorage sem guarda no boot** (`86`): `JSON.parse` + `rebuildSavedSelect` `.forEach`
+  (`392/423`) quebram com valor corrompido. Correção: try/catch + `Array.isArray`.
+- **C1.3 · Total inflado / saudável inalcançável** (`340-342`): `typeCounts` somado ao total.
+  Correção: excluir `['_tables','typeCounts']` da soma.
+- **C6.1 · `eval` para montar o backend** (`379`): substituir por args array do `runOnBackend`.
+
+**Média**
+
+- **C4.1 · Falha silenciosa de orphans** (`300-308`): se `linksTable` existe mas o `targetCol` não é
+  reconhecido, orphans fica `[]` sem cair no fallback de relations (`307`). Correção: se
+  `linksTable && !targetCol`, warn + fallback.
+- **C8.1 · Sem harness** (pasta): criar `test-kd.js` (SQL builder, `daysSince`, `fmtBytes`,
+  escaping) + `test-smoke.js`.
+- **C7.1 · Zero i18n** (`91-99`, `104-105`, `159-163`, `214`, `182`, `188`): abas/botões/`daysLabel`/
+  log em PT fixo, sem `tr()`/`api.getOption('locale')`. Correção: `KD_I18N` + `tr()` + paridade.
+- **C1.4 · `state.data.query` stale após scan** (`328/331/335`): o scan não zera `query`; Consulta
+  Livre mostra dado velho. Correção: `state.data.query = []` no início do scan.
+- **C4.2 · `Object.values(n)[ci]` como fallback de coluna** (`227`): pode mostrar coluna errada em
+  query custom. Correção: fallback `''`/`'—'`.
+- **C4.3 · `INFRA_IDS` código morto + dashboard não excluído** (`79`, `190`): Set nunca preenchido;
+  a nota do render (type `code`, sem filhos) pode aparecer em "Abandonadas" (o README promete excluir
+  "the dashboard note itself"). Correção: remover `INFRA_IDS` ou populá-lo; excluir a própria nota.
+- **C7.2 · ZIP defasado + manifest `from` bugado (HEAD)** — ver Fase 0. Correção: regenerar zip e
+  commitar o manifest corrigido.
+
+**Baixa**
+
+- **C1.5 · `openNote` catch mudo** (`186`): clique falho = silêncio. Correção: log no console.
+- **C3.1 · LIMIT 150-200 sem indicador "+N"** (`305-324`): padrão pós-auditoria do repo é
+  "limite + '+N' expandível"; irrelevante em 4.200 notas (scan 0,11s), registrar.
+- **C4.4 · `daysSince` sem guarda de `NaN`** (`187`): não ocorre com `dateModified` real; guarda
+  opcional.
+- **C1.6 · `setItem` sem try/catch** (`398/412`): risco menor que o parse do boot.
+- **C5.1 · `$qbWhere` textarea rows=1 sem auto-grow** (`156`): WHERE longas viram scroll interno.
+
+**Sugestão** — nenhuma destacada.
+
+**Verificados limpos:** **C2/XSS** (todo dado dinâmico via `.text()`; único `.html()` é estático 103) ·
+**C5/eventos** (sem timers/listeners globais/patches `$.fn`; `<style id="kd-styles">` idempotente) ·
+**C4 fuso** (datas com offset, parse correto) · **C4 precedência do `||`** no `to`.
+
+### 🎨 UI/UX — achados
+
+**Crítica**
+
+- **D3.1 · Cards de stats são `<div>` clicáveis sem role/teclado** (`112-113`): 7 controles
+  inacessíveis; `cursor:pointer` promete clique. Correção: `<button type="button">` com `aria-pressed`
+  (ou `aria-hidden` display-only, já que as abas duplicam).
+- **D3.2 · Links da tabela sem `href`** (`231`, `243`): `<a>` sem href fora da tab order; abrir nota
+  impossível por teclado; sem `:focus`. Correção: `href="#"` + `preventDefault`, ou `tabindex=0`
+  + keydown Enter; `.kd-link:focus-visible`.
+- **D2.1 · Erro deixa a tabela em branco / resultado stale** (`280`, `344`, `385`): scan falho só
+  loga; query falha mantém o resultado anterior sem aviso. Correção: linha de erro na tabela
+  (`role="alert"`) + "⟳ Tentar de novo".
+
+**Alta**
+
+- **D5.1 · "Escaneando…" inalcançável** (`214` × `280`, `343`): `renderTable` só roda pós-scan; o
+  texto só apareceria digitando no filtro. Correção: `aria-busy` na tabela + `renderTable` durante
+  o scan.
+- **D2.2 · `safe()` engole erro por aba em silêncio** (`286/305-307/324`): aba parece "vazia" com a
+  query quebrada. Correção: warn no fallback + try por aba.
+- **D3.3 · Abas sem padrão tabs** (`122-126`, `263-267`): sem `role=tablist/tab`, `aria-selected`,
+  `aria-controls`; ativo só via classe/cor. Correção: ARIA de tabs.
+- **D3.4 · `:focus-visible` ausente em toda a folha** (`26-27`, `44-47`, `28-31`, `38-40`, `58-59`):
+  inputs com `outline:none` e só borda. Correção: anel de foco 2px padronizado.
+
+**Média**
+
+- **D3.5 · Labels do QB sem `for`/`id`** (`140`, `155`): clique não foca, SR não lê o campo.
+- **D3.6 · Botão "✕" e input de busca sem `aria-label`** (`163`, `104`).
+- **D3.7 · Log sem `role=status`/`aria-live`** (`175-184`); stats sem live region (`335`).
+- **D5.2 · `prompt()`/`confirm()` nativos** (`395`, `410`): bloqueantes, sem a11y, PT hardcoded;
+  repo removeu nativos em todas as rodadas. Correção: nome inline no QB + exclusão em 2 toques.
+- **D7.1 · i18n inexistente + PT/EN misturado** (`92-99`, `103`, `155`): "Knowledge Dashboard" e
+  "WHERE (custom)" em EN com o resto PT. Correção: `KD_I18N` + `tr()` + locale.
+- **D7.2 · Cores fixas reprovam AA no claro** (`63-65`, `92-98`): `#c9984a` 2.6:1, `#68a87c` 2.8:1,
+  `#d97070` 3.2:1, `#9b7ec8` 3.4:1, `#6b95c4` 3.1:1, `#5ca0e0` 2.8:1. Correção: tokens por tema
+  (detectar brilho do `--main-background-color`).
+- **D4.1 · Stats grid fixo 7 colunas** (`32`): em painel estreito (~300px) cada card vira ~40px.
+  Correção: `repeat(auto-fit, minmax(64px, 1fr))`.
+- **D4.2 · Células sem truncamento** (`243-244` vs `236`): só a query trunca; títulos longos
+  estouram. Correção: `max-width:300px + ellipsis` no `.kd-link`.
+- **D8.1 · Alvos de toque pequenos** (`28`, `38`, `33`): botões ~30px, abas ~26px, cards 8×4.
+  Correção: ≥40px.
+- **D1.1 · Duplicação stats × abas** (`109-119`, `122-126`): 7+7 controles fazem a mesma coisa.
+  Correção: stats display-only + "Base saudável" como banner no corpo.
+- **D2.3 · Filtro fantasma na Consulta Livre** (`207`, `270`): input some na aba query mas o filtro
+  continua aplicado. Correção: limpar `state.search` ao entrar na query.
+
+**Baixa**
+
+- **D4.3 · Header sem `flex-wrap` / input sem `min-width`** (`24`, `26`).
+- **D6.1 · Sem `prefers-reduced-motion`** (`26`, `28`, `33`, `38`, `54`): hovers 1px/0.1-0.15s.
+- **D8.2 · Emoji como ícones anunciados** (`92-98`, `104`, `132`, `159-163`, `391`): `aria-hidden`.
+- **D8.3 · Tabela sem `<caption>`/`scope="col"`** (`50`, `210`).
+- **D6.2 · Ações só com feedback no log passivo** (`357`, `373`, `382`, `399`, `413`).
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
+|---|----------|------|-------|:-------:|:-----:|-----------|
+| 1 | Atalho de teclado (Enter no filtro = scan; `/` foca o filtro) | `104`, `417-423` | Fluxo diário | S | Baixo | smoke |
+| 2 | `aria-label` no ✕ + cards de stats navegáveis | `112-113`, `163` | A11y | S | Baixo | smoke |
+| 3 | `role="status"`/`aria-live` no log | `175` | SR anuncia resultados | S | Baixo | smoke |
+| 4 | ~~Debounce no filtro~~ | `418` | **Descartado**: lista local ≤200, renderTable barato | — | — | — |
+| 5 | Ordenação clicável nas colunas | `209-211` | Achar stub maior/mais antiga | M | Baixo | manual |
+| 6 | **PDFs excluir `#archived`/protegidas** (bug) | `324` | Contrato do README | S | Baixo | `bun` + manual |
+| 7 | ~~"Escaneando…" + disabled~~ | `279`, `214`, `345` | **Já existe** | — | — | — |
+| 8 | Log inicial com dicas (filtro + Consulta Livre) | `425` | Descobribilidade | S | Baixo | manual |
+| 9 | Truncar títulos nas abas normais | `243-244`, `58` | Layout | S | Baixo | QA visual |
+| 10 | Contagem nos botões da tab bar | `122-126` | Ver tudo sem olhar stats | S | Baixo | manual |
+
+**Bônus:** código morto `isSystemNote`/`INFRA_IDS` (`190`/`79`) · `$qbWhere` sem auto-grow (`156`) ·
+log lista todas as tabelas a cada scan (`332`, barulhento — considerar verbose).
+
+**Descartes explícitos:** debounce do filtro (local e barato); stats clicáveis (as abas já
+duplicam — virar display-only).
+
+### Claims do README × código
+
+| README | Promessa | Código | Situação |
+|---|---|---|---|
+| 11 | "Orphans" = sem backlinks | `305-307` | **Ok** quando o schema da tabela de links é reconhecido; falha silenciosa se não |
+| 13 | "Empty: null or blank, no children" | `314` | Ok |
+| 19 | "All debt scans exclude protected/archived" | `324` (PDFs) | **Não cumprido**: PDFs sem os filtros |
+| 19 | "…and the dashboard note itself" | `79`/`190` | **Não cumprido**: `INFRA_IDS` vazio; a nota do render pode aparecer em "Abandonadas" |
+| 35 | "Results are clickable" | `231`, `243` | **Parcial**: links sem href = só mouse, sem teclado |
+| 59 | "Auto-detects the internal links table name across versions" | `300-308` | **Parcial**: detecta a tabela mas não as colunas; sem fallback |
+
+### Pontos fortes (não mexer)
+
+- **Sem vetor de XSS** (100% `.text()`, markup estático); **sem listeners globais/timers/patches**
+  (C5 limpo); **datas com offset corretas** (C4 fuso ok).
+- SQL builder com **escapamento correto** (`sq()` dobra aspas simples); custom WHERE é feature
+  documentada; `n.mime` existe (0.106).
+- `runOnBackend` bem isolado (1 função com 8 queries); `api.openTabWithNote`/`activateNote` corretos.
+
+### Veredito da rodada 9
+
+Dashboard útil e **100% frontend, sem XSS nem listeners globais**, mas com **quatro problemas de
+robustez reais**: scan all-or-nothing que descarta parciais com erro genérico, PDFs vazando
+protegidas/arquivadas (contrato do README), boot crash por localStorage corrompido e "base
+saudável" inalcançável com total inflado. **i18n zero** (único render note do repo sem dicionário),
+stats/abas/links inacessíveis por teclado e cores fixas reprovando AA no claro. **Fase 0** achou:
+zip defasado (versão 16/05 sem PDFs/Consulta Livre), manifest com `from` errado no HEAD (corrigido
+no working tree, não commitado) e descrição do registry desatualizada. Nenhuma correção aplicada —
+batches após triagem (candidatos: 1) robustez do scan + PDFs + localStorage + `eval`, 2) UI/a11y/
+estado + i18n + cores, 3) harness + zip + manifest/registry).
+
+**Próximo da lista:** Attribute-GC (rodada 10).
