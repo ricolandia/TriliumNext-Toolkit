@@ -90,8 +90,8 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 ~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · ~~6. Daily-Note-Map~~ ⛔ removido da
 coleção (29/09 — o mapa nativo do Trilium cobre; decisão no `SESSION.md`) ·
 ~~6. Minimalist Pomodoro + Time Tracker~~ ✅ 29/09 · ~~7. Word-Counter~~ ✅ 29/09 ·
-~~8. Daily-Note-Navigator~~ ✅ 29/09 · ~~9. Knowledge-Dashboard~~ ✅ 29/09 (auditado) · ~~10. Attribute-GC~~ ✅ 29/09 (auditado) · **11. UI-Tweaks (próximo)** ·
-12. Kanboard · 13. Mastodon · 14. Canvas-Template-Loader · 15. Canvas-Templates.
+~~8. Daily-Note-Navigator~~ ✅ 29/09 · ~~9. Knowledge-Dashboard~~ ✅ 29/09 (auditado) · ~~10. Attribute-GC~~ ✅ 29/09 (auditado) · ~~11. UI-Tweaks~~ ✅ 29/09 (auditado) · **12. Kanboard (próximo)** ·
+13. Mastodon · 14. Canvas-Template-Loader · 15. Canvas-Templates.
 
 ---
 
@@ -2766,3 +2766,188 @@ backend (O(n²) em bases grandes), contagem nos filtros, ordenação com indicad
 selall tri-state, `selectSuggested` com aviso de impacto, feedback toast pós-exclusão, debounce no
 filtro, truncamento de nome longo, stats grid adaptativo no widget, captura/README screenshots
 regenerar (imagens de 15/05, 2 órfãs), e bump de release.
+
+## Rodada 11 — UI-Tweaks (29/09/2026)
+
+**Escopo:** `UI-Tweaks/CSS-Tweaks.css` (816 linhas, `#appCss` global) + `Pills-effect.js` (72 linhas,
+`#run=frontendStartup`) + README + `UI_Tweaks_.zip` + imagens/.
+**Verificação (Fase 0):** `bun build Pills-effect.js` ✅ (sem mudança semântica; o build remove o
+comentário `#run=frontendStartup`) · **zip EM SINCRONIA** (sha css `524141ed…`, js `f4e0fe56…` =
+repo) · **sem `manifest.json`** (ausência esperada — é tema/appCss, não script/widget) ·
+**registry SEM entrada** para UI-Tweaks (instalação manual via import + labels `#appCss`/
+`#run=frontendStartup`) · sem `test-*.js` · 3 especialistas (read-only) + conferência direta +
+contraste WCAG medido.
+
+**Natureza:** CSS `#appCss` é **GLOBAL** (afeta toda a UI do Trilium, incluindo outros plugins/temas);
+o JS observa o `document.body` com MutationObserver. Nenhuma crítica de segurança (XSS refutado no
+JS: rebuild com `textContent`/`createElement`/`cloneNode` de markup confiável).
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 0 | 2 | 6 | 7 | 4 | 19 |
+| 🎨 UI/UX | 4 | 3 | 10 | 5 | 0 | 22 |
+| ⚡ Quick wins | — | — | — | — | — | 13 |
+
+**Top 5 (triagem sugerida):**
+1. **[Alta · C3/D7]** **Tabela ilegível no tema claro** (`545-572`, `669-679`, `531-535`): 15 cores
+   fixas calibradas só para o escuro — **todas falham AA no claro** (`#e2e8f0` = 1.23:1, `#a3e635`
+   1.51:1, `#fbbf24`/`#fcbf24` 1.67:1, `#94a3b8` 2.56:1); pills `#7ed9a0`/`#a8b8f5` a ~1.6-1.7:1;
+   coluna congelada duplamente apagada. É a feature mais vendida do README ("extreme data clarity").
+   Correção: tokens por tema (detectar brilho do `--main-background-color`).
+2. **[Alta · C3/C7]** **Reset global de fonte** (`22-25`, `32-38`): `body, body * { font-family:
+   var(--font-ui) }` sobrescreve a tipografia de temas/plugins; o `!important` do mono é o
+   contrapatch que prova a agressividade. Correção: escopar por classes reais.
+3. **[Média · C4]** **`OCULTOS` não funciona com valor quotado** (`Pills-effect.js:43`): `#color="#4de64d"`
+   vira token `color="#4de64d"` ≠ `'color'` → o pill **não é escondido** (bug do caso documentado
+   no próprio README). Correção: `nome = prefix.split('=')[0].replace(/^[~#]/,'')`.
+4. **[Média · C4/C5]** **Guard de re-parse vs reutilização de elemento + observer global sem guarda**
+   (`Pills-effect.js:7,65-73`): se o Trilium atualizar `.rendered-note-attributes` in-place, a linha
+   fica com atributos crus para sempre; e re-execução do startup empilha observers. Correção:
+   invalidar guard por conteúdo + flag `window.__uiTwObs` + filtrar `childList`.
+5. **[Média · D3/D7]** **Estados de UI quase invisíveis** (`240-247`, `422`, `438`): toolbar do editor
+   a 50% e os 2 botões de criação do kanban a **30% de opacidade** (~1.9-2.2:1 nos dois temas), sem
+   `prefers-reduced-motion` e sem foco visível próprio. Correção: piso de opacidade + `:focus-visible`
+   + reduced-motion.
+
+**Nota de dedupe:** contraste das cores fixas em Código 3 e UI 1-6; reset de fonte em Código 1-2 e
+UI (observação); reduced-motion em Código 5 e UI 9; pills (`OCULTOS`/DOM) em Código 4-6 e UI 7.
+
+### 👨‍💻 Código — achados
+
+**Alta**
+
+- **C3.1 · 15 cores de tabela + pills fixas só para escuro** (`545-572`, `669-679`, `531-535`):
+  falham AA no claro. Correção: tokens por tema (padrão D7.2 das rodadas 9-10).
+- **C7.1 · Reset global de fonte** (`22-25`): `body, body *` sobrescreve fontes de temas/plugins.
+  Correção: escopar por classes (`.ck-content`, `.fancytree`, `.tabulator`, etc.).
+
+**Média**
+
+- **C7.2 · `code/kbd/pre/samp/.attr-pill` com `!important` global** (`32-38`): derrota fontes mono
+  específicas de outros widgets. Correção: sem `!important` (com o C7.1 corrigido, herda do sistema).
+- **C1.1 · Variáveis de tema sem fallback** (`50/58/124/139/146/148/164/256/262/270/289/296/333/597`):
+  tema custom que omita a var → regra vira no-op em silêncio. Correção: fallback em todos os `var()`.
+- **C4.1 · `OCULTOS` com valor quotado** (`Pills-effect.js:43`): `#color="#4de64d"` não é escondido.
+  Correção: `nome = prefix.split('=')[0]…`.
+- **C4.2 · Guard `data-pillified` + update in-place** (`Pills-effect.js:7,65-73`): reutilização do
+  elemento deixa texto cru. Correção: invalidar guard quando os filhos mudarem.
+- **C5.1 · Observer global sem guarda de dupla instalação** (`Pills-effect.js:65-73`): empilha
+  observers em re-execução. Correção: flag `window.__uiTwObs` + filtrar `m.type === 'childList'`.
+- **C3.2 · `--cell-vert-padding-size: 60px` na tabela** (`480-483`): se virar padding vertical de
+  célula, cada linha fica ~130px. (verificar em runtime)
+
+**Baixa**
+
+- **C5.2 · 6 transições sem `prefers-reduced-motion`** (`171/242/385/427/443/539`).
+- **C4.3 · `.board-column { overflow: hidden }`** (`356`): pode clipar menus/popovers.
+- **C4.4 · Cores de coluna por `nth-child`** (`454-458/469-473`): dependem da ordem DOM exata.
+- **C2.1 · Sem XSS** (`Pills-effect.js:40-55`): rebuild seguro; registrar no teste.
+- **C4.5 · Edge de parsing de relations** (`Pills-effect.js:16-36`): formato canônico funciona.
+- **C1.2 · README defasado em 4 pontos** (`line-height 1.9`×`1.65`; zip `CSS_Tweaks_UI_Polished`×
+  `UI_Tweaks_`; `HIDDEN`×`OCULTOS`; V4×V3).
+- **C7.3 · i18n**: 100% PT (identificadores/comentários), README EN; sem strings de UI → baixo.
+
+**Sugestão**
+
+- **C7.4 · `.attr-name::after { content:"" }` morta** (`602-604`).
+- **C3.3 · `minmax(420px,1fr)` com `!important`** (`310`): derrota o grid responsivo do Trilium.
+- **D8.1 · `.attr-pill` 1.2em/1.7** (`664-665`): pills ~2em podem estourar a list view.
+- **C2.2 · `<a>` órfão vira pill com prefixo `~` solto** (`Pills-effect.js:34`).
+
+### 🎨 UI/UX — achados
+
+**Crítica**
+
+- **D7.1 · Cores fixas da tabela assumem tema escuro** (`545-572`): 15 colunas falham AA no claro,
+  `#e2e8f0` em 1.23:1. Correção: derivar de `var(--main-text-color)` com `color-mix`.
+- **D7.2 · Pills ilegíveis no claro** (`671/677`): `#7ed9a0` 1.59:1, `#a8b8f5` 1.71:1.
+- **D7.3 · Ações "adicionar" do kanban a 30%** (`423/438`): ~1.9-2.2:1 nos dois temas.
+- **D3.1 · Falta paridade de foco** (`163-166/179/388-391/512-516/431-433/448-452`): tudo `:hover`-only,
+  sem `:focus-visible`.
+
+**Alta**
+
+- **D8.1 · Reduced motion ausente** (`171/242/385/427/443/539`): 7 transições sem guarda.
+- **D6.1 · `el.innerHTML=''` nas pills** (`Pills-effect.js:40`): destrói a árvore original (pode
+  quebrar seletores/handlers do Trilium) e o `OCULTOS` remove do DOM (perda estrutural). Correção:
+  `replaceChildren` preservando nós âncora.
+- **D4.1 · Board sem overflow-x no mobile** (`353-354`): 5 colunas × 280-300px cortam sem scroll.
+
+**Média**
+
+- **D7.4 · Header de coluna kanban `opacity:0.5`** (`365`): 3.38:1 claro / 3.93:1 escuro.
+- **D7.5 · Coluna congelada `opacity:0.4` + `#94a3b8`** (`531-535/545`).
+- **D8.2 · `.attr-pill` mono + 1.2em desalinha da lista** (`36/664`): reduzir p/ 1em.
+- **D6.2 · `border-radius:999px` pills vs 4-10px do tema** (`663`).
+- **D6.3 · `#fcbf24` typo de `#fbbf24`** (`572`).
+- **D4.2 · `minmax(420px,1fr)` em 769-900px** (`310`): 1 coluna larga.
+- **D4.3 · `min-width:600px` + nowrap em tabelas** (`627/619-623`): scroll excessivo.
+- **D4.4 · `display:none` de pre/code no mobile** (`764-769`): perda de conteúdo — colapsar com
+  max-height/fade em vez de esconder.
+- **D2.1 · Hovers sem `:focus-visible`** (`163-166/179/388-391/512-516`).
+- **D6.4 · Tints de coluna com color-mix 5-8% + `!important`** (`454-458`): diferença pode sumir no claro.
+
+**Baixa**
+
+- **D8.3 · `h1 { margin-top:1.8em }` agressivo** (`206`): reduzir p/ 1.2em.
+- **D4.5 · `::-webkit-scrollbar` sem Firefox** (`45-48`): adicionar `scrollbar-width: thin`.
+- **D3.2 · `.fancytree-title:hover` com `rgba(255,255,255,.06)` fixo** (`180`): invisível no claro.
+- **D1.1 · `board-note` padding/colunas estreitas** (`383/353-354`): ok; `max-width:340px` ajuda.
+- **D4.6 · Scrollbar 6px** (`45-48`): isento de contraste (não interativo); manter.
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
+|---|----------|------|-------|:-------:|:-----:|-----------|
+| 1 | `prefers-reduced-motion` para as 6 transições | `171/242/385/427/443/539` | A11y | S | Baixo | QA visual |
+| 2 | Escopar o reset `body, body *` (excluir `[class*="bx"]`, svg, `.excalidraw`, `.mermaid`) | `22-25` | Fim do reset global | S | Baixo | QA visual ícones |
+| 3 | `:focus-visible` nos links das pills (`a.reference-link`) | `681-688` | Teclado | S | Baixo | smoke |
+| 4 | Contraste das cores fixas (tokens por tema) | `469-473/545-572/669-679` | Tema claro | M | Médio | QA 2 temas |
+| 5 | Mobile: pre/code dos cards → `max-height`+overflow (não `display:none`) | `764-769` | Preserva conteúdo | S | Baixo | QA mobile |
+| 6 | README: advertência de escopo global do `#appCss` + como reverter | README | Segurança de uso | S | Baixo | revisão |
+| 7 | Consolidar seção "Labels necessários" (`#appCss`, `#run=frontendStartup`) | README | Docs | S | Baixo | revisão |
+| 8 | `.attr-pill` `font-size:1.2em` → `0.85em` (README recomenda 0.8em) | `664` | Densidade | S | Baixo | QA list view |
+| 9 | `scrollbar-width: thin`/`scrollbar-color` p/ Firefox | `45-55` | Cross-browser | S | Baixo | QA Firefox |
+| 10 | `.fancytree-title:hover` com `color-mix` (não rgba branco fixo) | `180` | Tema claro | S | Baixo | QA tree |
+| 11 | `min-width:600px` em tabelas → só no mobile | `626` | Desktop | S | Baixo | QA |
+| 12 | `::selection` 20% → 25-30% no claro | `58` | Contraste | S | Baixo | QA |
+| 13 | Auditar os `*` das células de tabela (`nth-child(n) *`) | `547/550/...` | Sobrescrita | S | Baixo | revisão |
+
+**Descartes:** pills como `role="list"` (o texto real é preservado — SR leem; só não perder o DOM,
+D6.1); `aria-pressed` nos filtros (não há filtros aqui).
+
+### Claims do README × código
+
+| README | Promessa | Código | Situação |
+|---|---|---|---|
+| 23 | "bold and legible card links" | `61-68` | Ok |
+| 34 | "line-height 1.9" | `194` (1.65) | **Defasado** |
+| 36 | "toolbar fades out 50%" | `240-247` | Cumprido (mas D7/D8: contraste/foco) |
+| 45 | "kanban translucent columns + colored headers" | `454-473` | Cumprido (cores dark-only) |
+| 53 | "table auto-coloring first 15 columns" | `545-572` | Cumprido (mas ilegível no claro) |
+| 62 | "hidden code blocks in cards on mobile" | `764-769` | Cumprido (mas perde conteúdo — Q5) |
+| 78 | "HIDDEN set" (exemplo `#color="#4de64d"`) | `OCULTOS` + `Pills:43` | **Bug**: valor quotado não é escondido |
+| 89 | "HIDDEN" | `OCULTOS` | Renome PT/EN inconsistente |
+| 177 | "`.attr-pill` font-size e.g. 0.8em" | `664` (1.2em) | **Default ≠ recomendação** |
+
+### Pontos fortes (não mexer)
+
+- **Sem XSS** (rebuild do JS com `textContent`/`createElement`/`cloneNode` de markup confiável);
+  sem perda de dados no backend (é só CSS/JS de frontend).
+- Zip **em sincronia** com os fontes; build sem mudança semântica.
+- Mobile: toolbar `opacity:1` (`722`) e grid `1fr` (`726`) corretos.
+- Cores do kanban calibradas para o escuro (8.1-13:1) — bom no tema padrão.
+
+### Veredito da rodada 11
+
+Sem críticas de segurança nem perda de dados — os riscos são de **qualidade visual/UX no tema
+claro** (cores fixas calibradas só para escuro, `#e2e8f0` ilegível), **globalidade agressiva do
+`#appCss`** (reset de fonte em `body *`, `!important` no mono, 6 transições sem reduced-motion) e
+**robustez do pillify** (`OCULTOS` não esconde valor quotado, guard de re-parse, observer sem guarda
+de dupla instalação). README defasado em 5 pontos. Nenhuma correção aplicada — batches após triagem
+(candidatos: 1) tema claro/tokens + escopo do reset, 2) pillify (OCULTOS/guard/observer) + foco/
+reduced-motion, 3) harness `test-pills.js` + README/zip/capturas).
+
+**Próximo da lista:** Kanboard (rodada 12).
