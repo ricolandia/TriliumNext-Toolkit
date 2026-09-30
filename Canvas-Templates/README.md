@@ -12,8 +12,11 @@ A collection of Excalidraw templates for productivity, learning, and creativity.
 - AIDA Funnel
 - SCAMPER
 - Design Thinking
+- Project Board (Painel de Projetos)
 
 **Note**: The text is in Portuguese, but you can easily translate them by opening the `.excalidraw` file (JSON) and editing the text fields.
+
+**Update (29/09/2026)**: all templates refreshed (Portuguese text polish, new fields) and a new **Project Board** template added. Source: the "Modelos Trilium" collection review (Trilium VPS `wBlaqjho7HNt`).
 
 ## Installation
 Import `Canvas_Templates.zip` into Trilium. The notes will appear with the `#canvasTemplate` label automatically.
