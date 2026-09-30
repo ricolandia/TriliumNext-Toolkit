@@ -90,8 +90,8 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 ~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · ~~6. Daily-Note-Map~~ ⛔ removido da
 coleção (29/09 — o mapa nativo do Trilium cobre; decisão no `SESSION.md`) ·
 ~~6. Minimalist Pomodoro + Time Tracker~~ ✅ 29/09 · ~~7. Word-Counter~~ ✅ 29/09 ·
-~~8. Daily-Note-Navigator~~ ✅ 29/09 · ~~9. Knowledge-Dashboard~~ ✅ 29/09 (auditado) · **10. Attribute-GC (próximo)** ·
-11. UI-Tweaks · 12. Kanboard · 13. Mastodon · 14. Canvas-Template-Loader · 15. Canvas-Templates.
+~~8. Daily-Note-Navigator~~ ✅ 29/09 · ~~9. Knowledge-Dashboard~~ ✅ 29/09 (auditado) · ~~10. Attribute-GC~~ ✅ 29/09 (auditado) · **11. UI-Tweaks (próximo)** ·
+12. Kanboard · 13. Mastodon · 14. Canvas-Template-Loader · 15. Canvas-Templates.
 
 ---
 
@@ -2527,3 +2527,192 @@ estado + i18n + cores, 3) harness + zip + manifest/registry).
 **Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Knowledge-Dashboard): ordenação clicável
 nas colunas, "+N" expansível (LIMIT 150-200), log de tabelas em modo verbose, `$qbWhere` com
 auto-grow, contagem na tab bar, captura/README screenshots regenerar, e bump de release.
+
+## Rodada 10 — Attribute-GC (29/09/2026)
+
+**Escopo:** `Attribute-Garbage-Collector/attribute-gc.js` (353 linhas), `README.md`, `manifest.json`;
+registry `attribute-garbage-collector`.
+**Verificação (Fase 0):** `bun build` ✅ (24,67 KB, 1 módulo) · **sem zip** (registry usa `sourceUrl`) ·
+**sem harness de teste** · manifest ✅ (relations `renderNote` apontam p/ títulos existentes; labels
+`#widget`+`readOnly`; estrutura hierárquica = padrão AI-Chat) · registry ✅ (0.8.2, `sourceUrl`,
+description idêntica ao README) · `module.exports = new AttributeGCWidget()` no branch widget ✅
+(padrão DNN/Pomodoro/Word-Counter) · 3 especialistas (read-only) + conferência direta.
+
+**Nota de plataforma (A6):** render notes do Trilium rodam em iframe com `sandbox="allow-same-origin
+allow-scripts"` (sem `allow-modals` — confirmar no core) → `confirm()` retorna `false` silenciosamente
+→ o batch "Executar limpeza" **nunca executa no modo render note** (o widget funciona). Contradiz o
+README v2.0 ("deletion both work end-to-end").
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 1 | 2 | 8 | 9 | 2 | 22 |
+| 🎨 UI/UX | 4 | 4 | 8 | 4 | 0 | 20 |
+| ⚡ Quick wins | — | — | — | — | — | 9 + 2 bugs |
+
+**Top 5 (triagem sugerida):**
+1. **[Alta · C6/D5]** **`confirm()` inoperante em render note** (`349`): sandbox sem `allow-modals` →
+   batch de limpeza nunca roda no modo render. Confirmar no core do Trilium; corrigir com modal próprio.
+2. **[Alta · C1]** **Deleção em massa sem confirmação no botão individual** (`308-311`): dry-run OFF +
+   "remover" apaga TODAS as instâncias do nome (possivelmente centenas) em 1 clique, sem diálogo, e
+   ainda limpa o restante das seleções (`_selected.clear()` em `338`).
+3. **[Média · C2]** **Injeção de HTML via `a.name` no `.append()`** (`279`): nome de atributo com `<`
+   vira elemento na DOM (XSS armazenado). Demais células usam `.text()` — só este vetor.
+4. **[Média · C3/C4]** **findDupes O(n²) com matriz completa + normalização que remove a letra "s"**
+   (`46/49`, `33-39`): "status"→"tatu", "case"→"cae" (falsos positivos) e trava o frontend com
+   milhares de nomes. Rodar no backend + NFD + DP de linha única.
+5. **[Média · C1/C4 + D1]** **Quebradas parciais escondidas + highlight de filtro nunca acende + tbody
+   stale**: `classify` só marca `broken` quando `bc>=count` (`27`) — relação com 3 quebradas em 10
+   fica "saudável"; o highlight do filtro compara chave EN com texto PT (`258-262` — "Sistema"/"Raros"
+   etc. nunca acendem); e `renderTable` retorna cedo sem esvaziar o tbody (`267-268`).
+
+**Nota de dedupe:** IDs globais (`#agc-selall`, `#agc-tbody`, `#ags-*`) em Código 1 e UI 1; `confirm()`
+em Código 6 e UI 6; cores fixas em UI 8/9; sort sem toggle em Código 18 e UI 20; i18n ausente em
+Código 10 e UI 10.
+
+### 👨‍💻 Código — achados
+
+**Crítica**
+
+- **C6.1 · `confirm()` em iframe sandboxed retorna false** (`349`): batch "Executar limpeza" nunca
+  executa no modo render note (widget ok). Correção: modal próprio / confirm no documento principal;
+  testar nos 2 modos. (verificar em runtime)
+
+**Alta**
+
+- **C1.1 · `delSingle` sem confirmação + `_selected.clear()`** (`308-311`, `338`): apaga tudo do nome
+  em 1 clique e limpa seleções não relacionadas. Correção: confirm no single (aviso se count>N);
+  limpar só o par removido.
+- **C2.1 · `a.name` cru no `.append()`** (`279`): `<` no nome vira HTML. Correção: `$('<span>').text(a.name)`.
+
+**Média**
+
+- **C3.1/C4.1 · findDupes O(n²) + normalização remove "s"** (`46/49`, `33-39`, `56`): trava em bases
+  grandes e falsos positivos ("status"≈"tatu"). Correção: NFD + remover só `[_\-\s]`; DP de linha
+  única; rodar no backend; `groups>=15` documentado.
+- **C4.2 · `classify` esconde quebradas parciais** (`27`): `bc>=count` → parcial fica "saudável".
+  Correção: `bc>0` → 'broken' (ou status 'partial').
+- **C4.3 · `bMap` chaveado só por `name`** (`207-213`, `279`): label e relation homônimos compartilham
+  bc → label mostra "(N quebradas)" indevido. Correção: chave `name::type`.
+- **C1.2 · `renderTable` retorna cedo sem esvaziar** (`267-268`): filtro/busca para zero deixa linhas
+  antigas no tbody. Correção: `.empty()` antes do return + linha "sem resultados".
+- **C8.1 · Sem harness** (pasta): criar `test-agc.js` (classify, lev, findDupes, sqlList) + smoke.
+- **C5.1 · IDs globais `#agc-*`/`#ags-*`** (`126/144/151/178/223/269`): 2 instâncias do widget no mesmo
+  documento corrompem a DOM (render roda em iframe próprio — sem cruzamento entre modos). Correção:
+  prefixar por instância / seletores relativos ao `$root`.
+
+**Baixa**
+
+- **C4.4 · `_sortDir` nunca alterna** (`145/147/254-256`): clicar Nome/Usos sempre ASC, sem toggle.
+- **C5.2 · `PROT` faltam `cover` e `widget`** (`10-20`): `widget` é usado pelo próprio manifest — um
+  scan pode classificar como 'rare' e oferecer apagar (desativaria o widget). Correção: adicionar.
+- **C1.3 · `doDelete` sem guarda contra duplo clique/scan concorrente** (`313`): falta flag `_deleting`.
+- **C7.1 · i18n ausente** (100% PT; `widgetTitle` em EN): mapa PT/EN no padrão do repo.
+- **C5.3 · `PROT/TEMP_RE/classify/lev/findDupes/buildUI` no top-level** (`10-59`, `108`): vazam para o
+  `window` em modo widget. Correção: IIFE/module.
+- **C3.2 · Sem debounce no filtro** (`137/247-264`): re-render integral a cada keystroke.
+- **C7.2 · `_updateFooter`/`_log` mortos na classe** (`96-100`): `_log` usa `this._widgetLog` inexistente
+  → TypeError se chamado. Correção: remover.
+- **C1.4 · `bLog` pode crescer muito** (`319-333`): truncar retorno ao frontend.
+- **C4.5 · findDupes agrupa só por nome** (`41-59`): label 'x' e relation 'x' viram dupe. Correção:
+  chave `type::name`.
+
+**Sugestão**
+
+- **C4.6 · branch `count===0 → 'unused'` é morto** (`28`): GROUP BY nunca produz 0. Remover/documentar.
+- **C7.3 · `position = 2` no widget** (`80`): sem colisão no toolkit (WC=1, AGC=2, CTL=99, CNT/Pomo=100,
+  DNN=110, SN=200) — documentar o slot.
+
+### 🎨 UI/UX — achados
+
+**Crítica**
+
+- **D1.1 · IDs globais e seleção cruzada** (`126/144/151/178/223/269`): 2 widgets no mesmo documento →
+  check-all pode marcar as linhas do outro e stats mostram instância errada. Correção: prefixo por
+  instância + seletores relativos ao `$root`.
+- **D1.2 · Highlight de filtro nunca acende** (`258-262`): `t.includes(chave EN)` × texto PT → apenas
+  Todos/Saudáveis acendem. Correção: comparar pela chave do array (`data-filter`).
+- **D2.1 · Sem estados loading/erro/vazio** (`201/242/268`): scan e erros vivem só no log; tabela fica
+  muda; sem "sem resultados". Correção: spinner + erro inline + empty state com `role="status"`.
+- **D5.1/D6.1 · Exclusão em lote: `confirm()` nativo + feedback só em log** (`349`, `336-341`): modal
+  customizado com i18n/foco + toast de resumo.
+
+**Alta**
+
+- **D7.1 · Cores fixas falham AA no claro** (`123/271-272/282`): `#d97070` 3,2:1, `#c9984a` 2,6:1,
+  `#9b7ec8` 3,4:1, `#6b95c4` 3,1:1, `#68a87c` 2,8:1, `#4a9` 2,8:1 (fonte 8-11px). Correção: tokens
+  por tema (padrão das rodadas anteriores).
+- **D7.2 · Banner Dry Run `#c9984a` ≈2,6:1** (`119`): token de warning por tema.
+- **D3.1 · Botões sem `type="button"`** (`113/133/156/159/286/289/290`).
+- **D3.2 · Checkboxes sem `aria-label`** (`144/278`); `<th>` sem `scope="col"` (`145-149`); stats sem
+  `role` (`121-128`); filtros sem `aria-pressed` (`133`).
+
+**Média**
+
+- **D3.3 · Input "Buscar…" sem `aria-label` + `outline:none`** (`137`).
+- **D4.1 · Stats grid 5×1fr no widget (~55px/coluna), labels 8px uppercase** (`121-128`).
+- **D4.2 · Nome do atributo sem truncamento** (`279`): nomes longos estouram no widget.
+- **D5.2 · `selectSuggested` seleciona tudo sem aviso prévio** (`302-305`): contagem por categoria +
+  confirmação leve.
+- **D8.1 · Alvos de toque ~14-20px** (`133/289-290`): <24px WCAG 2.5.8; 44px no mobile.
+- **D1.3 · Selall sem tri-state e footer mistura selecionados×visíveis** (`144/178-185/297-300`):
+  `indeterminate` quando parcial; rotular "Selecionar visíveis".
+
+**Baixa**
+
+- **D6.2 · Feedback de exclusão só no log** (`336-341`): toast com resumo + `aria-live` no log.
+- **D8.2 · Sem `prefers-reduced-motion`** (sem animações hoje; registrar p/ spinner futuro).
+- **D1.4 · Sort sem indicador ▲/▼ e sem `aria-sort`** (`145/147`).
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
+|---|----------|------|-------|:-------:|:-----:|-----------|
+| 1 | `type="button"` em todos os `<button>` | `113/133/156/159/286/289/290` | Semântica | S | Baixo | smoke |
+| 2 | `aria-label` nos checkboxes e no "Buscar…" | `115/137/144/278` | A11y | S | Baixo | smoke |
+| 3 | `role="status"` + `aria-live` no log | `164/191` | SR anuncia | S | Baixo | smoke |
+| 4 | Botão "Limpar seleção" | `159` | Fluxo | S | Baixo | smoke |
+| 5 | `confirm()` no remover individual | `308-311` | **Bug/perda de dados** | S | Baixo | smoke + manual |
+| 6 | Contagem nos filtros ("Quebrados (12)") | `131-136` | Decisão informada | S/M | Baixo | manual |
+| 7 | Indicador ↑/↓ + **toggle de ordenação (bug)** | `145/147/254-256` | **Bug real** | S | Baixo | smoke |
+| 8 | `aria-pressed` nos filtros + **fix do highlight (bug)** | `133-134/258-262` | **Bug real** | S | Baixo | smoke |
+| 9 | Atalho `/` foca o filtro | `137` | Fluxo | S | Baixo | smoke |
+| 10 | Fix `renderTable` sem resultados | `267-268` | **Bug real (tbody stale)** | S | Baixo | smoke |
+| 11 | Debounce no filtro | `137/247-264` | Perf | S | Baixo | manual |
+
+**Descartes:** `aria-label` nos th de ordenação (absorvido pelo Q7); "manter" por linha já existe;
+painel de similares sem ação (ok); IDs globais de render×widget (refutado cruzamento entre modos).
+
+### Claims do README × código
+
+| README | Promessa | Código | Situação |
+|---|---|---|---|
+| 5, 43 | "deletion both work end-to-end" (2 modos) | `349` (`confirm` no iframe) | **Em risco no modo render**: `confirm()` pode retornar false em iframe sandboxed (verificar) |
+| 13 | "Dry run mode — preview without changes" | `289/308-311` | **Parcial**: preview só troca o rótulo do botão; sem diff/contagem do que seria apagado por item |
+| 34 | "individual remover button … skips the batch dialog" | `308-311` | Cumprido, mas sem confirmação (perigoso p/ count alto) |
+| 94 | "A interface está em português" | `123-133/236-241/270/349` | Cumprido (100% PT) — mas sem EN |
+| 15 | "50+ protected attributes" | `10-20` (53) | Cumprido; faltam `cover`/`widget` |
+| 12 | "Levenshtein to surface near-identical names" | `33-39/41-59` | **Parcial**: normalização remove a letra "s" (falsos positivos) |
+
+### Pontos fortes (não mexer)
+
+- **Sem XSS na maioria das saídas** (`.text()` em células, log, footer); único vetor é `a.name` em `279`.
+- **Backend bem isolado** (1 `runOnBackend` por scan e 1 por delete), `args` em array, transação
+  parcial documentada via `bLog`.
+- `module.exports` correto no branch widget; `$container` correto no render; sem timers globais.
+- Sem listeners globais/patches; `IS_RENDER` auto-detecta o modo.
+
+### Veredito da rodada 10
+
+Script útil e enxuto (353 linhas, 2 modos), com **harness 100% são** (build ok, manifest/registry
+coerentes, `module.exports` compatível), mas com **quatro problemas sérios**: `confirm()` que pode
+não funcionar no modo render (batch de limpeza morto), deleção individual sem confirmação (perda de
+dados em 1 clique), um vetor de XSS em `a.name` e `findDupes` que trava em bases grandes com falsos
+positivos (letra "s"). Na UI: **highlight de filtro nunca acende** (compara EN×PT), **tbody fica
+stale** com filtro zero, **sem estados loading/erro/vazio** e **cores fixas falhando AA no claro**.
+Dois bugs de ordenação/filtro nas quick wins. Nenhuma correção aplicada — batches após triagem
+(candidatos: 1) robustez do delete + XSS + confirm + findDupes, 2) UI/a11y/estado + i18n + cores,
+3) harness + README/capturas).
+
+**Próximo da lista:** UI-Tweaks (rodada 11).
