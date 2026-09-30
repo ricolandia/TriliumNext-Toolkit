@@ -2716,3 +2716,53 @@ Dois bugs de ordenação/filtro nas quick wins. Nenhuma correção aplicada — 
 3) harness + README/capturas).
 
 **Próximo da lista:** UI-Tweaks (rodada 11).
+
+## ✅ Correções aplicadas — rodada 10, batches 1-3 (29/09/2026)
+
+### Batch 1 — robustez
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C6.1/A6 | **`confirm()` nativo removido → modal próprio `confirmAgc`** (funciona em render note sandboxed; foco/Esc/2 toques) | `test-agc` (sem confirm) + smoke |
+| C1.1/A5 | **`delSingle` agora confirma** (modal) e `doDelete` limpa só o par removido | `test-agc` guarda + smoke |
+| C2.1/A16 | **XSS de `a.name` corrigido** → `$('<span>').text(a.name)` | `test-agc` guarda |
+| C3.1/C4.1/A3 | **`findDupes`: NFD + remove só `[_\-\s]`** (fim dos falsos positivos da letra "s") + **agrupa por tipo** + `lev` com DP de linha única | `test-agc` (pipeline/status/case + tipos) |
+| C4.2/A2 | **`classify`: `bc>0` → broken** (parciais agora visíveis) | `test-agc` |
+| C4.3/A7 | **`bMap` chaveado por `name::type`** | `test-agc` guarda |
+| C5.2/A8 | **`PROT` ganha `cover` e `widget`** | `test-agc` |
+| C4.4/Q7 | **Sort alterna direção** (`_sortDir*=-1`) | `test-agc` guarda |
+| C1.2/Q10 | **`renderTable` limpa tbody + empty state** quando filtro/busca dá zero | `test-agc` guarda |
+| C1.3/A21 | **Flag `_deleting`** no `doDelete` (sem duplo clique) | guarda |
+| C1.4 | **`bLog` truncado em 200** | guarda |
+
+### Batch 2 — UI/a11y/estado + i18n
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D3.1 | **`type="button"` em todos os `<button>`** | `test-agc` (regex) + smoke |
+| D3.2/D3.3 | `aria-label` nos checkboxes (Dry Run/selall/linha) e no "Buscar…"; `<th scope="col">` | smoke |
+| Q3 | Log com `role="status"`/`aria-live="polite"` | smoke |
+| A15/Q8 | **Filtro destaca pela chave (`data-filter`)** + `aria-pressed` (fim do highlight EN×PT morto) | `test-agc` guarda |
+| D7.1 | **i18n PT/EN** (`AG_I18N` + `agTr` + `agTrArr` + `agLang` por locale) | `test-agc` paridade (todas as chaves) |
+| D7.2 | **Cores por token de tema claro/escuro** (`--agc-danger/warn/info/blue/success`) detectado por brilho | smoke + guarda |
+| D2.1 | Estados visíveis: "Escaneando…" na tabela durante scan + **erro `role="alert"`** no scan/delete | smoke |
+| D8.1 | Alvos ≥24px (WCAG 2.5.8) via padding; alvos maiores no botão de linha | revisão |
+| — | `prefers-reduced-motion` no bloco de tema | guarda |
+
+### Batch 3 — harness, README e artefatos
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C8.1/Q15 | **`test-agc.js`** (classify, lev, findDupes, paridade i18n, 19 guardas estruturais) | `bun test-agc.js` ✅ TODOS PASSARAM |
+| C8.1/Q15 | **`test-smoke.js`** (Chrome headless: boot render + modal + guardas) | `bun test-smoke.js` ✅ SMOKE OK |
+| C7.1 | README com nota de atualização (rodada 10) | revisão |
+| C7.1 | Registry `attribute-garbage-collector` **0.8.2 → 0.8.3** | `registry.json` |
+
+**Deploy (29/09):** VPS (nota `MzlzeI9zAYCI` "js atribure gc") e demo EN (`vibuvWRknvOF`) via ETAPI —
+**sha256 `8510b669c09028ee` idêntico repo=VPS=demo**; sem zip (registry usa `sourceUrl`).
+
+**Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Attribute-GC): mover `findDupes` para o
+backend (O(n²) em bases grandes), contagem nos filtros, ordenação com indicador ▲/▼ + `aria-sort`,
+selall tri-state, `selectSuggested` com aviso de impacto, feedback toast pós-exclusão, debounce no
+filtro, truncamento de nome longo, stats grid adaptativo no widget, captura/README screenshots
+regenerar (imagens de 15/05, 2 órfãs), e bump de release.

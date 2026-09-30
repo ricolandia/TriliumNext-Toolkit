@@ -2,6 +2,8 @@
 
 Scans all notes in your TriliumNext database for broken relations, unused labels, rare attributes, and near-duplicate names. Preview and batch-delete them — **deletions persist**.
 
+**Update (29/09/2026):** audited (round 10) and hardened — `confirm()` replaced by a custom modal (works in sandboxed render notes), single-row delete now confirms, XSS via attribute names fixed, `findDupes` normalized (NFD, no more false positives from the letter "s") and typed, partial-broken relations flagged, PT/EN i18n, theme-aware colors and accessible controls.
+
 > **v2.0** — Rewritten as a JS Frontend note with full `api.runOnBackend()` access. Scan and delete both work end-to-end on TriliumNext. The previous HTML Render Note approach (v1.x) could only detect — deletion did not persist. See [Why this works](#why-this-works).
 
 ## Features

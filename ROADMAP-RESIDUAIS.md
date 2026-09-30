@@ -163,6 +163,22 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 | KD-D2.5 | Captura/README screenshots defasados (regenerar após a UI nova) | Doc | S | Baixo | `imagens/pkm-dbt-1-.webp` | QA visual |
 | KD-C7.1 | Bump de versão/registry no release (já 0.8.1 no registry) + README com versão | Release | S | Baixo | registry/README | revisão |
 
+## Attribute-GC (rodada 10)
+
+| ID | Item | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+|----|------|-----------|:-------:|:-----:|------------------------------|-----------|
+| AGC-C3.1 | `findDupes` mover para o backend (O(n²) com Levenshtein trava o frontend em bases grandes) | Perf | M | Médio | `findDupes` | cronometrar com 5k nomes |
+| AGC-Q6 | Contagem nos filtros ("Quebrados (12)") | UX | S | Baixo | `$fbar` | manual |
+| AGC-D1.4 | Ordenação com indicador ▲/▼ + `aria-sort` | UX/a11y | S | Baixo | `<th>` sort | smoke |
+| AGC-D1.3 | Selall com estado `indeterminate` quando parcial | UX/a11y | S | Baixo | `#agc-selall` | smoke |
+| AGC-D5.2 | `selectSuggested` com aviso de impacto (contagem por categoria antes de selecionar) | UX | S | Baixo | `selectSuggested` | manual |
+| AGC-D6.2 | Toast não-bloqueante pós-exclusão (hoje só log) | UX | S | Baixo | `doDelete` | manual |
+| AGC-C3.2 | Debounce no filtro (re-render integral a cada keystroke) | Perf | S | Baixo | `$fsearch` | manual |
+| AGC-D4.2 | Truncamento de nome longo nas células | UX | S | Baixo | `renderTable` | QA visual |
+| AGC-D4.1 | Stats grid adaptativo no widget (5 colunas fixas ~55px) | UX | S/M | Baixo | `$stats` | QA visual widget |
+| AGC-D2.5 | Captura/README screenshots defasados (imagens 15/05, 2 órfãs) — regenerar | Doc | S | Baixo | `imagens/` | QA visual |
+| AGC-C7.1 | Bump de versão/registry no release (já 0.8.3 no registry) | Release | S | Baixo | registry | revisão |
+
 ## Pendências de produto (novas, 29/09/2026)
 
 Fora das rodadas de auditoria. Decisões do Ricardo: **nomenclatura em 2 camadas**
@@ -177,6 +193,7 @@ como está) e **hub mobile registrado para execução pós-rodada 15** junto do 
 
 ## Histórico
 
+- **29/09/2026** — adicionado o § Attribute-GC (rodada 10; correções aplicadas em batches 1-3, deploy sha idêntico).
 - **29/09/2026** — adicionado o § Knowledge-Dashboard (rodada 9; correções aplicadas em batches 1-3, deploy sha idêntico).
 - **29/09/2026** — `PROD-NOME` **concluída** (nomenclatura oficial aplicada em docs/UI; contrato mantido); `PROD-MOBILE` rebaixada para **ideia a avaliar no futuro** (decisão do Ricardo — não executar agora).
 - **29/09/2026** — adicionado `PROD-CT` (bump do Canvas-Templates no registry; zip regenerado com 13 templates revisados + novo Projetos).
