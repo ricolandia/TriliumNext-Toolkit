@@ -47,11 +47,11 @@ Tracking:
 **Requirements**
 
 * **Backend scripting enabled** on both instances (`config.ini`: `[Security] backendScriptingEnabled = true`, or the env var `TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED=true`). The widget shows a clear warning when it is off.
-* A configuration note with `#sharedNotesConfig` (created by the Plugin Manager / manifest import).
+* A configuration note with `#sharedNotesConfig` (created by the Script Manager / manifest import).
 
 **Installation**
 
-1. **Recommended:** install through the **Plugin Manager** (`manifest.json`) — it creates the render note, the widget, the handler and the config note with the right labels and the `~renderNote` relation.
+1. **Recommended:** install through the **Script Manager** (`manifest.json`) — it creates the render note, the widget, the handler and the config note with the right labels and the `~renderNote` relation.
 2. **Zip import:** import `Shared-notes.zip` (right-click a folder → Import into note). The zip is an older export: it does **not** include the `~renderNote` relation nor the final note titles — after importing, rename the notes to match the manifest and add a **relation `renderNote`** from the "Shared Notes" note to `shared-notes-widget` (otherwise the widget does not show).
 3. Alternatively, create the notes manually and paste the contents of `shared-notes-widget.js` and `shared-notes-handler.js`.
 
@@ -176,11 +176,11 @@ Rastreamento:
 **Requisitos**
 
 * **Backend scripting habilitado** nas duas instâncias (`config.ini`: `[Security] backendScriptingEnabled = true`, ou a env `TRILIUM_SECURITY_BACKEND_SCRIPTING_ENABLED=true`). O widget avisa claramente quando está desligado.
-* Uma nota de configuração com `#sharedNotesConfig` (criada pelo Plugin Manager / import do manifest).
+* Uma nota de configuração com `#sharedNotesConfig` (criada pelo Script Manager / import do manifest).
 
 **Instalação**
 
-1. **Recomendado:** instalar pelo **Plugin Manager** (`manifest.json`) — ele cria a render note, o widget, o handler e a nota de config com os labels certos e a relation `~renderNote`.
+1. **Recomendado:** instalar pelo **Script Manager** (`manifest.json`) — ele cria a render note, o widget, o handler e a nota de config com os labels certos e a relation `~renderNote`.
 2. **Import do zip:** importar o `Shared-notes.zip` (botão direito numa pasta → Import into note). O zip é um export antigo: **não** inclui a relation `~renderNote` nem os títulos finais — após importar, renomeie as notas para bater com o manifest e adicione uma **relation `renderNote`** da nota "Shared Notes" para `shared-notes-widget` (senão o widget não aparece).
 3. Alternativa: criar as notas manualmente e colar o conteúdo de `shared-notes-widget.js` e `shared-notes-handler.js`.
 

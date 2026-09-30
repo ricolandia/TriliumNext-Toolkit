@@ -7,8 +7,8 @@ correção; o que ficar de fora é migrado para cá. A execução deste roadmap 
 em 29/09/2026), com uma **triagem única** de prioridade.
 
 - **Estado:** 🔲 a fazer (nada executado ainda — o roadmap começa a ser pago só na volta).
-- **Ordem sugerida na volta:** integridade > UX > manutenção; agrupar por plugin
-  (1 deploy por plugin, com testes + smoke, padrão dos batches das rodadas 1-2).
+- **Ordem sugerida na volta:** integridade > UX > manutenção; agrupar por script/widget
+  (1 deploy por script/widget, com testes + smoke, padrão dos batches das rodadas 1-2).
 - **Refs de linha** são da ocasião do relatório (o código mudou desde então); o ID
   aponta para a seção da rodada no `AUDITORIA-ESPECIALISTAS.md`.
 - **Fora do roadmap:** itens de release (bump de `registry.json`, tags, releases no
@@ -36,7 +36,7 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 
 ## Writers-Tools (rodada 2)
 
-| ID | Item | Plugin | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+| ID | Item | Script/Widget | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
 |----|------|--------|-----------|:-------:|:-----:|------------------------------|-----------|
 | WT-F-QW9 | Filtro de cenas na sidebar | Fountain | UX | S | Baixo | `1465-1472` | manual (filtrar/limpar) |
 | WT-G-QW14 | Botão "abrir compilado" quando o `#compiledDoc` existe | Grid | UX | S | Baixo | `179-180`, `162-167` | manual |
@@ -69,10 +69,10 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 
 1. **Triagem única:** revalidar cada item no código atual (linhas/relevância mudaram),
    descartar o que perdeu sentido e confirmar esforço/risco com o dono.
-2. **Lotes por plugin**, na ordem integridade > UX > manutenção; cada lote com testes
-   (`bun`), `bun build`, smoke de runtime quando for plugin de render, e atualização
+2. **Lotes por script/widget**, na ordem integridade > UX > manutenção; cada lote com testes
+   (`bun`), `bun build`, smoke de runtime quando for script de render, e atualização
    do README.
-3. **Deploy** (ETAPI VPS + demo, sha256 idêntico, zips regerados) só quando o plugin
+3. **Deploy** (ETAPI VPS + demo, sha256 idêntico, zips regerados) só quando o script/widget
    entrar em release; marcar o item como ✅ aqui e registrar no `SESSION.md`.
 
 ## Canvas-Note-Tools (rodada 3)
@@ -159,12 +159,13 @@ como está) e **hub mobile registrado para execução pós-rodada 15** junto do 
 
 | ID | Item | Categoria | Esforço | Risco | Onde | Validação |
 |----|------|-----------|:-------:|:-----:|------|-----------|
-| PROD-MOBILE | **Hub de widgets no mobile** — widgets de painel (DNN, Word Counter, Pomodoro) não aparecem no mobile (não há panes). Padrão já validado: launcher do Canvas Note Tools (nota `launcher` + `#launcherType=script` + `~script` na Mobile Launch Bar; a doc oficial confirma *custom launch bar widgets* no mobile). Proposta: 1 script launcher "Toolkit" → diálogo (`role=dialog`, CSS escopado, alvos 44px, i18n) com 1 botão por widget; cada widget de painel ganha variante diálogo (extrair engine com marcadores `*-BE-*` + build script); render notes (Planner, AI Chat, Kanboard) só navegam | Feature/UX | M/L | Médio | `Daily-Note-Navigator/`, `Word-Counter/`, `Minimalist-Pomodoro/`, `Canvas-Note-Tools/` (padrão) | testes + smoke + deploy sha idêntico |
-| PROD-NOME | **Nomenclatura plugin → scripts/widgets** (doc oficial: não existe "plugin"; termos oficiais são *scripts*, *custom widgets*, *launch bar widgets*, *render notes*, *backend scripts*, *themes*). **2 camadas:** (1) textos novos/docs (README do toolkit "Plugins & Tools Collection" → "Scripts & Widgets Collection", SESSION, AUDITORIA, releases) usam a terminologia oficial com nota "anteriormente chamados de plugins"; (2) contrato mantido: labels `#pluginVersion`/`#pluginRegistry`, chave `plugins[]` do registry, nome do repo do manager | Docs | S | Baixo | `README.md`, `SESSION.md`, `AUDITORIA-ESPECIALISTAS.md`, releases | revisão de texto |
+| PROD-MOBILE | **Hub de widgets no mobile — ⏸️ IDÉIA A AVALIAR NO FUTURO (29/09, decisão do Ricardo: não executar agora)** — widgets de painel (DNN, Word Counter, Pomodoro) não aparecem no mobile (não há panes). Padrão já validado: launcher do Canvas Note Tools (nota `launcher` + `#launcherType=script` + `~script` na Mobile Launch Bar; a doc oficial confirma *custom launch bar widgets* no mobile). Opções: 1 script launcher "Toolkit" → diálogo (`role=dialog`, CSS escopado, alvos 44px, i18n) com 1 botão por widget, ou launchers separados por widget; cada widget de painel ganha variante diálogo (extrair engine com marcadores `*-BE-*` + build script; engine reutilizável: DNN 40-45%, WC 48%, Pomodoro 60-65%); render notes (Planner, AI Chat, Kanboard) só navegam. Custo ~1 dia/widget; reavaliar se usar o mobile com frequência | Feature/UX | M/L | Médio | `Daily-Note-Navigator/`, `Word-Counter/`, `Minimalist-Pomodoro/`, `Canvas-Note-Tools/` (padrão) | testes + smoke + deploy sha idêntico |
+| PROD-NOME | **Nomenclatura plugin → scripts/widgets — ✅ CONCLUÍDA (29/09)** (doc oficial: não existe "plugin"; termos oficiais são *scripts*, *custom widgets*, *launch bar widgets*, *render notes*, *backend scripts*, *themes*). **Aplicado:** docs/textos novos (README do toolkit "Plugins & Tools Collection" → "Scripts & Widgets Collection", SESSION seção "Scripts, Widgets & Render Notes", AUDITORIA colunas, 3 READMEs subprojeto + 2 headers JS → "Render Note", UI do manager → "Gerenciador de Scripts & Widgets", DEV_GUIDE/MANIFEST/CONTEXTO/AGENTS/DISCUSSION) com nota "anteriormente chamados de plugins". **Contrato mantido:** labels `#pluginVersion`/`#pluginRegistry`, chave `plugins[]` do registry, nome do repo do manager, nomes de arquivo | Docs | S | Baixo | `README.md`, `SESSION.md`, `AUDITORIA-ESPECIALISTAS.md`, manager | revisão de texto |
 | PROD-CT | **Bump do Canvas-Templates no registry** — o content pack foi atualizado (13 templates revisados do QA Modelos Trilium, novo "Template - Projetos") mas o `registry.json` do Plugin Manager segue `canvas-templates-for-production 0.8.0`; subir a versão no próximo release (com nota de que o zip foi regenerado) | Release | S | Baixo | `Trilium-plugin-manager/registry.json` | instalar via manager e conferir os 13 templates |
 
 ## Histórico
 
+- **29/09/2026** — `PROD-NOME` **concluída** (nomenclatura oficial aplicada em docs/UI; contrato mantido); `PROD-MOBILE` rebaixada para **ideia a avaliar no futuro** (decisão do Ricardo — não executar agora).
 - **29/09/2026** — adicionado `PROD-CT` (bump do Canvas-Templates no registry; zip regenerado com 13 templates revisados + novo Projetos).
 - **29/09/2026** — adicionada a seção "Pendências de produto" (hub mobile `PROD-MOBILE` + nomenclatura `PROD-NOME`), decisões do Ricardo: nomenclatura em 2 camadas (docs novos sim, contrato não) e hub mobile para execução pós-rodada 15.
 - **29/09/2026** — atualizado com os residuais da rodada 8 (Daily-Note-Navigator).

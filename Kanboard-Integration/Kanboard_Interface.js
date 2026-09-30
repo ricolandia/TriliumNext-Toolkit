@@ -1,5 +1,5 @@
 /**
- * Kanboard Sync — TriliumNext Plugin
+ * Kanboard Sync — TriliumNext Render Note
  *
  * Modo: JS Frontend (renderNote)
  * Crie uma nota JS Frontend, cole este código e aponte ~renderNote para ela.

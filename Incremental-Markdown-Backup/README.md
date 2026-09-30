@@ -4,7 +4,7 @@ A lightweight, incremental backup tool for [TriliumNext](https://github.com/Tril
 
 Instead of exporting your entire vault every time, this script queries the ETAPI to download **only the notes that have been modified** since the last run. Large vaults are backed up in seconds after the initial full export.
 
-No plugins or Node.js required—just a single Python script, the Trilium ETAPI, and a cron job.
+No scripts or Node.js required—just a single Python script, the Trilium ETAPI, and a cron job.
 
 ---
 

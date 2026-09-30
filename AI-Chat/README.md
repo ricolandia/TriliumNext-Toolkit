@@ -20,8 +20,8 @@ An experimental, command-driven AI chat interface built directly into Trilium No
 
 ## Setup Requirements
 
-1. Import the plugin (zip, Plugin Manager, or paste the code as a `JS Frontend` note).
-2. You need a configuration note. The plugin finds it by the label **`#aiChatConfig`** — the Plugin Manager manifest creates it automatically as `AI Chat Config`. As a fallback it also accepts the titles `AI Chat - Config` / `AI Chat - config`.
+1. Import the script (zip, Script Manager, or paste the code as a `JS Frontend` note).
+2. You need a configuration note. The script finds it by the label **`#aiChatConfig`** — the Script Manager manifest creates it automatically as `AI Chat Config`. As a fallback it also accepts the titles `AI Chat - Config` / `AI Chat - config`.
 3. Inside the config note, add your settings as plain text, one per line (`#` lines are ignored):
 
 ```text
@@ -37,7 +37,7 @@ If the config is missing or still has the `your key` placeholder, a banner appea
 
 ### Supported providers (optional `api_base`)
 
-By default the plugin uses OpenRouter. To use another provider, add `api_base:` pointing to any OpenAI-compatible API:
+By default the script uses OpenRouter. To use another provider, add `api_base:` pointing to any OpenAI-compatible API:
 
 ```text
 # DeepSeek
@@ -100,7 +100,7 @@ model: gpt-4o-mini
 - **Smart auto-scroll** — Only scrolls to bottom when the user is near the bottom (<120px)
 - **Regenerate** — `↻` on any AI message re-rolls it (messages after it are discarded)
 - **Edit sent messages** — Click `✎` (or the message bubble) to load the text back into the input
-- **Keyboard shortcuts** — `Ctrl+Enter` send, `Ctrl+Shift+C` clear, `Ctrl+Shift+S` save, `Ctrl+Shift+F` search; scoped to the plugin (no longer steals shortcuts from other notes)
+- **Keyboard shortcuts** — `Ctrl+Enter` send, `Ctrl+Shift+C` clear, `Ctrl+Shift+S` save, `Ctrl+Shift+F` search; scoped to the script (no longer steals shortcuts from other notes)
 - **localStorage persistence** — History (last 100 messages), persona, system prompt, context note and subnotes toggle are saved and restored on reload (versioned state)
 - **Config-driven model & parameters** — Model, temperature, and max_tokens read from the config note
 - **Protected note support** — Config loading tries `getProtectedContent()` then falls back to `getContent()` — secure your API key with Trilium's master password

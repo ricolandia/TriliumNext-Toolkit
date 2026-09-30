@@ -1,6 +1,6 @@
 # Canvas Template Loader Widget
 
-> ⚠️ **INCORPORADO ao Canvas Note Tools (v8, set/2026).** Este plugin foi
+> ⚠️ **INCORPORADO ao Canvas Note Tools (v8, set/2026).** Este script foi
 > fundido no [Canvas Note Tools](../Canvas-Note-Tools/README.md) — botão 🧩 na
 > toolbar, com remapeamento correto de ids/referências na inserção. A nota
 > "Canvas Templater" pode ser removida do Trilium (a pasta fica só como

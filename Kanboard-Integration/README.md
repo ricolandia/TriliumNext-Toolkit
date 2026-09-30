@@ -1,4 +1,4 @@
-# Kanboard Sync — TriliumNext Plugin
+# Kanboard Sync — TriliumNext Render Note
 
 Bidirectional integration between **TriliumNext** and **Kanboard** via the JSON-RPC API. View projects, columns, and tasks — and create new tasks — directly from your notes, without leaving Trilium.
 
@@ -56,7 +56,7 @@ On the **Kanboard Integration** note, add:
 ```
 This makes the dashboard render when you open the note.
 
-### 3. Configure the plugin
+### 3. Configure the script
 
 Edit the `CONFIG` constants at the top of the **KB Sync** note:
 

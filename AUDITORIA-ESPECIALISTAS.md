@@ -73,7 +73,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 
 ## 📋 Rodadas
 
-| # | Plugin | Arquivo(s) | Data | 👨‍💻 Código | 🎨 UI/UX | ⚡ Quick wins | Veredito |
+| # | Script/Widget | Arquivo(s) | Data | 👨‍💻 Código | 🎨 UI/UX | ⚡ Quick wins | Veredito |
 |---|--------|------------|------|-----------|----------|---------------|----------|
 | 1 | Weekly Planner | `Weekly-Planner/js-planejador.js` | 28/09/2026 | 36 achados (0C/3A/17M/13B/3S) | 28 achados (1C/5A/9M/7B/6S) | 15 itens (S/M) | **Batches 1-4 aplicados + fix pós-batch 4** (`t`→`tr` + guard do render + `test-smoke.js`): ~65 correções/refactors; 49 asserções + smoke. Residual no `ROADMAP-RESIDUAIS.md` |
 | 2 | Writers-Tools (Fountain + Longform) | `Writers-Tools/js-Fountain/js - Fountain 3.js`, `Writers-Tools/js-grid/js - grade.js` | 29/09/2026 | 38 achados (0C/5A/16M/13B/4S) | 32 achados (1C/5A/13M/10B/3S) | 18 itens (S/M) | **Batches 1-3 aplicados + deploy** (VPS/demo/zip com sha256 idêntico; smokes dos dois no Chrome headless); residual no `ROADMAP-RESIDUAIS.md` |
@@ -550,7 +550,7 @@ boneyard; marcações conferidas linha a linha).
 
 ### ⚡ Quick wins — backlog
 
-| # | Melhoria | Plugin | Ganho | Esforço | Risco | Onde | Validação |
+| # | Melhoria | Script/Widget | Ganho | Esforço | Risco | Onde | Validação |
 |---|----------|--------|-------|:-------:|:-----:|------|-----------|
 | 1 | Corrigir clique de cena (`marcarAtivo`) | Fountain | Console limpo + destaque imediato | S | Baixo | `1630` × `979` | `bun` (cruzamento) + manual |
 | 2 | F5 prometido, escopado ao visor | Fountain | Cumpre `README:20` | S | Baixo/Médio | `1438`, `1348-1366` | manual (split view) |

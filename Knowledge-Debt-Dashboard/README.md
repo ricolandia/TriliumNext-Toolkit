@@ -1,4 +1,4 @@
-# 📊 Knowledge Dashboard — TriliumNext Plugin
+# 📊 Knowledge Dashboard — TriliumNext Render Note
 
 A **Render Note** dashboard that audits the health of your knowledge base, finds PDFs, and lets you run custom SQL queries.
 
@@ -56,7 +56,7 @@ Examples:
 
 ## Compatibility
 
-Tested on **TriliumNext** (post-Trilium fork). The plugin auto-detects the internal links table name across different versions (`note_links`, `links`, etc.) and falls back gracefully to relation attributes if no links table is found. All available tables are logged after each scan for debugging.
+Tested on **TriliumNext** (post-Trilium fork). The script auto-detects the internal links table name across different versions (`note_links`, `links`, etc.) and falls back gracefully to relation attributes if no links table is found. All available tables are logged after each scan for debugging.
 
 ---
 

@@ -1,7 +1,9 @@
-# TriliumNext Plugins & Tools Collection
+# TriliumNext Scripts & Widgets Collection
 
-A collection of plugins, widgets, and scripts for TriliumNext, focused on writing, productivity, canvas workflows, and note organization.
+A collection of scripts, widgets, and render notes for TriliumNext, focused on writing, productivity, canvas workflows, and note organization.
 This repository serves as a centralized hub for all these projects.
+
+> **Terminology note:** TriliumNext uses the official Trilium terms *scripts*, *custom widgets*, *launch bar widgets*, *render notes*, *backend scripts* and *themes* — there is no official "plugin" concept. Tools in this collection were previously called "plugins"; the docs now use the official terms.
 
 ---
 
@@ -13,14 +15,14 @@ This repository serves as a centralized hub for all these projects.
 
 ## 📦 How to Install
 
-1. Navigate to the folder of the plugin you want.
+1. Navigate to the folder of the script/widget you want.
 2. Download the `.zip` release.
-3. Import it into Trilium. (The imported notes behave like a custom plugin).
+3. Import it into Trilium. (The imported notes behave like a custom script).
 4. To import correctly, right-click a parent note on Windows/Linux (or Control-click on macOS) and choose **Import**.
 
-> **Tip:** For better organization, you may want to import everything inside a dedicated parent note such as “Tools”, “Plugins”, or “Addons”.
+> **Tip:** For better organization, you may want to import everything inside a dedicated parent note such as “Tools”, “Scripts”, or “Addons”.
 >
-> **💡 Bulk install all plugins:** Use the [Trilium Plugin Manager](https://github.com/ricolandia/Trilium-plugin-manager) — it automates the download, import, and update of every plugin in this collection with a single command.
+> **💡 Bulk install all scripts and widgets:** Use the [TriliumNext Script Manager](https://github.com/ricolandia/Trilium-plugin-manager) — it automates the download, import, and update of every script in this collection with a single command.
 
 ---
 

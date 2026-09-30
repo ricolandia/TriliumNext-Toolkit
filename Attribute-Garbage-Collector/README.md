@@ -53,7 +53,7 @@ v2.0 is a **JS Frontend note** — the standard Trilium extension format (same a
 - `api.getNotesWithLabel()` / `api.getNotesWithRelation()` — find notes by attribute
 - `note.removeLabel()` / `note.removeRelation()` — delete through the entity lifecycle
 
-No hacks, no workarounds. The same pattern used by every other Trilium plugin.
+No hacks, no workarounds. The same pattern used by every other Trilium script.
 
 ## How it works
 

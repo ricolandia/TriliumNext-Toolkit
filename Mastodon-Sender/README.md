@@ -1,4 +1,4 @@
-# Mastodon Sender — TriliumNext Plugin
+# Mastodon Sender — TriliumNext Render Note
 
 Post to Mastodon directly from TriliumNext. Compose toots, set visibility and content warnings, and post your current note — all without leaving your knowledge base.
 
@@ -20,7 +20,7 @@ A single JS Frontend render note. No external dependencies, no ZIP imports.
 - **Post current note** — one-click to grab the active note's title and content
 - **Post history** — last 20 posts stored locally, with account and links
 - **Theme-aware** — blends with any Trilium theme via CSS variables
-- **Clean UI** — same design language as the Kanboard Sync plugin
+- **Clean UI** — same design language as the Kanboard Sync render note
 
 ## Prerequisites
 
