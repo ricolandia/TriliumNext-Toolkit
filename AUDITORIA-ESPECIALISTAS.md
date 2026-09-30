@@ -2472,3 +2472,58 @@ batches após triagem (candidatos: 1) robustez do scan + PDFs + localStorage + `
 estado + i18n + cores, 3) harness + zip + manifest/registry).
 
 **Próximo da lista:** Attribute-GC (rodada 10).
+
+## ✅ Correções aplicadas — rodada 9, batches 1-3 (29/09/2026)
+
+### Batch 1 — robustez
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C1.1 | **Scan com try por query** (`safe(label, sql, fb)` em orphans/stubs/empty/todos/abandoned/pdfs/typeCounts): um erro numa query loga `[label]` com contexto e não descarta os parciais; `errors[]` retornado e logado | `test-kd` (guarda: safe por query) + revisão |
+| C2.1 | **PDFs com `NOT_PROTECTED` + `NOT_ARCHIVED`** (contrato do README cumprido) | `test-kd` guarda |
+| C1.2 | **localStorage com guarda no boot** (`Array.isArray` + try/catch no parse) + `saveQueries()` helper com try nos `setItem` | `test-kd` guarda + smoke |
+| C1.3 | **Total sem `typeCounts`/`_tables`/`errors`** (função pura `kdCountTotal`) → "Base saudável" volta a ser alcançável | `test-kd` (3 casos) |
+| C6.1 | **`eval` removido** → `api.runOnBackend(function(sql){…}, [sql])` (args array, padrão do repo) | `test-kd` guarda (sem eval) |
+| C4.1 | **Orphans com fallback explícito**: se a tabela de links existe mas a coluna alvo não é reconhecida, loga warn e usa relations | revisão + guarda |
+| C4.3/KD-12 | **`INFRA_IDS` morto removido + `NOT_SELF` exclui a nota do dashboard** (via `api.getActiveContextNote().noteId`) | `test-kd` guarda |
+| C4.2 | Fallback de coluna no render query: `n[col] !== undefined ? n[col] : ''` (sem `Object.values` errado) | revisão |
+| C1.5/KD-06 | `openNote` com `console.warn` no catch (fim do clique mudo) | revisão |
+| C4.4/KD-09 | `kdDaysSince` com guarda de `NaN` | `test-kd` |
+| KD-16 | `state.data.query = []` no início do scan (fim do stale) | guarda |
+| KD-17 | "Escaneando…" via `renderTable()` durante o scan (antes inalcançável) | smoke |
+
+### Batch 2 — UI/a11y/estado + i18n
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| D3.1 | **Stats cards viram `<button type="button">`** com `aria-pressed` (navegáveis por teclado) | smoke (stats são button) |
+| D3.2 | **Links com `href="#"` + `e.preventDefault()` + `.kd-link:focus-visible`** (abrir nota por teclado) | smoke + guarda |
+| D3.4/D3.6 | **`:focus-visible`** em inputs/textarea/botões/abas/cards/links (anel 2px) | smoke |
+| D3.5 | **Labels do QB com `for`/`id`** (`kd-qb-*`) | guarda |
+| D3.7 | **Log com `role="status"` `aria-live="polite"`** | smoke |
+| D2.1 | **Erro visível na tabela** (`role="alert"` + mensagem) no catch do scan e da query | smoke (sem Uncaught) |
+| D5.2 | **`prompt()`/`confirm()` nativos removidos** → nome inline no QB (Enter/Esc) + exclusão em 2 toques (armada 4s) | `test-kd` guarda (sem prompt/confirm) |
+| D7.1 | **i18n PT/EN** (`KD_I18N` + `tr()` + `kdLang` via `api.getOption('locale')` com palpite `navigator.language`): título, abas, botões, placeholders, mensagens de log, `daysLabel` | `test-kd` paridade (todas as chaves PT+EN) |
+| D7.2 | **Cores por tema claro/escuro** (`.kd-root[data-kd-theme]` detectado por brilho do `--main-background-color`) + contraste no claro | smoke (theme) |
+| D4.1 | **Stats grid `repeat(auto-fit,minmax(72px,1fr))`** (não quebra em painel estreito) | revisão |
+| D4.2 | **Truncamento nos links/títulos** (`max-width:300px + ellipsis`) | revisão |
+| D8.1 | **Alvos ≥40px** (btn/tab min-height 40, cards 48) | revisão |
+| D6.1 | **`prefers-reduced-motion`** desliga transições/transform | guarda |
+| D2.3 | **Filtro fantasma na Consulta Livre limpo** (zera `state.search` ao entrar na query) | `test-kd` guarda |
+
+### Batch 3 — harness, README e artefatos
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C8.1/QW3 | **`test-kd.js`** (funções puras `kdSqlList`/`kdDaysSince`/`kdFmtBytes`/`kdCountTotal` + paridade i18n + 18 guardas estruturais) | `bun test-kd.js` ✅ TODOS PASSARAM |
+| C8.1/QW3 | **`test-smoke.js`** (Chrome headless: boot com título/stats-button/abas/log-role/theme, sem Uncaught, sem eval/prompt/confirm) | `bun test-smoke.js` ✅ SMOKE OK |
+| C7.2 | **`Knowledge debt.zip` regenerado** (JS atual com 7 abas; `!!!meta.json` appVersion 0.106.0; sha do JS = repo) | `unzip` + sha256 |
+| C7.1/registry | **Descrição do registry atualizada** (PDFs + Consulta Livre) e **versão 0.8.0 → 0.8.1** | `registry.json` |
+| C7.1/README | README com nota de atualização (audit round 9: exclusões cumpridas, isolamento de erro, i18n, a11y) | revisão |
+
+**Deploy (29/09):** VPS (nota `s4AZM84jlB27` "js knowledge") e demo EN (`2at4Bcfpi0Tr`) via ETAPI —
+**sha256 `a9409f1715141828` idêntico repo=VPS=demo**; `Knowledge debt.zip` regenerado (JS `a9409f1715141828`).
+
+**Residual:** migrado para o **`ROADMAP-RESIDUAIS.md`** (§ Knowledge-Dashboard): ordenação clicável
+nas colunas, "+N" expansível (LIMIT 150-200), log de tabelas em modo verbose, `$qbWhere` com
+auto-grow, contagem na tab bar, captura/README screenshots regenerar, e bump de release.

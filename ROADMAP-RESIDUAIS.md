@@ -151,6 +151,18 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 | DNN-D4.x | QA visual da barra em painel estreito (240-280px) e nos 4 temas | UX | S | Baixo | CSS | QA visual |
 | DNN-C7.x | Bump de versão/registry + versão no README no release (`sourceUrl` sem pin) | Release | S | Baixo | registry/README | revisão |
 
+## Knowledge-Dashboard (rodada 9)
+
+| ID | Item | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+|----|------|-----------|:-------:|:-----:|------------------------------|-----------|
+| KD-QW5 | Ordenação clicável nas colunas (mapa coluna→chave por aba) | UX | M | Baixo | `renderTable` (`193-211`) | manual |
+| KD-C3.1 | "+N" expansível (LIMIT 150-200 truncado em silêncio; contar total por aba) | UX/perf | M | Médio | queries do scan | manual com base grande |
+| KD-C7.3 | Log de tabelas do DB em modo verbose (hoje sempre) | UX | S | Baixo | `log(tr('tables')…)` | manual |
+| KD-C5.2 | `$qbWhere` textarea com auto-grow | UX | S | Baixo | `$qbWhere` | manual |
+| KD-QW10 | Contagem nos botões da tab bar | UX | S | Baixo | `$tabBar` | manual |
+| KD-D2.5 | Captura/README screenshots defasados (regenerar após a UI nova) | Doc | S | Baixo | `imagens/pkm-dbt-1-.webp` | QA visual |
+| KD-C7.1 | Bump de versão/registry no release (já 0.8.1 no registry) + README com versão | Release | S | Baixo | registry/README | revisão |
+
 ## Pendências de produto (novas, 29/09/2026)
 
 Fora das rodadas de auditoria. Decisões do Ricardo: **nomenclatura em 2 camadas**
@@ -165,6 +177,7 @@ como está) e **hub mobile registrado para execução pós-rodada 15** junto do 
 
 ## Histórico
 
+- **29/09/2026** — adicionado o § Knowledge-Dashboard (rodada 9; correções aplicadas em batches 1-3, deploy sha idêntico).
 - **29/09/2026** — `PROD-NOME` **concluída** (nomenclatura oficial aplicada em docs/UI; contrato mantido); `PROD-MOBILE` rebaixada para **ideia a avaliar no futuro** (decisão do Ricardo — não executar agora).
 - **29/09/2026** — adicionado `PROD-CT` (bump do Canvas-Templates no registry; zip regenerado com 13 templates revisados + novo Projetos).
 - **29/09/2026** — adicionada a seção "Pendências de produto" (hub mobile `PROD-MOBILE` + nomenclatura `PROD-NOME`), decisões do Ricardo: nomenclatura em 2 camadas (docs novos sim, contrato não) e hub mobile para execução pós-rodada 15.

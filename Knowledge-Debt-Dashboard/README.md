@@ -18,6 +18,8 @@ A **Render Note** dashboard that audits the health of your knowledge base, finds
 
 All debt scans exclude: system notes (`_` prefix), protected/encrypted notes, archived notes (`#archived`), and the dashboard note itself.
 
+**Update (29/09/2026):** audited (round 9) and hardened — per-scan error isolation (one failing query no longer kills the whole scan), PDFs now respect protected/archived exclusion, the dashboard note itself is excluded, corrupted saved queries no longer crash the boot, `eval` replaced by `runOnBackend` args, PT/EN i18n, keyboard-accessible stats/links, and visible errors in the table area.
+
 ---
 
 ## Custom Query (Dataview-like)
