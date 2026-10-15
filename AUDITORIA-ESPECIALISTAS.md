@@ -90,8 +90,8 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 ~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · ~~6. Daily-Note-Map~~ ⛔ removido da
 coleção (29/09 — o mapa nativo do Trilium cobre; decisão no `SESSION.md`) ·
 ~~6. Minimalist Pomodoro + Time Tracker~~ ✅ 29/09 · ~~7. Word-Counter~~ ✅ 29/09 ·
-~~8. Daily-Note-Navigator~~ ✅ 29/09 · ~~9. Knowledge-Dashboard~~ ✅ 29/09 (auditado) · ~~10. Attribute-GC~~ ✅ 29/09 (auditado) · ~~11. UI-Tweaks~~ ✅ 29/09 (auditado) · **12. Kanboard (próximo)** ·
-13. Mastodon · 14. Canvas-Template-Loader · 15. Canvas-Templates.
+~~8. Daily-Note-Navigator~~ ✅ 29/09 · ~~9. Knowledge-Dashboard~~ ✅ 29/09 (auditado) · ~~10. Attribute-GC~~ ✅ 29/09 (auditado) · ~~11. UI-Tweaks~~ ✅ 29/09 (auditado) · ~~12. Kanboard~~ ✅ 14/10 (auditado) · **13. Mastodon (próximo)** ·
+14. Canvas-Template-Loader · 15. Canvas-Templates.
 
 ---
 
@@ -2996,3 +2996,264 @@ reduced-motion, 3) harness `test-pills.js` + README/zip/capturas).
 Firefox, `min-width:600px` das tabelas só no mobile, `::selection` 20→25% no claro, `minmax(420px)`
 revisar (769-900px), `overflow:hidden` do board pode clipar menus, `nth-child(1..5)` cores de kanban
 dependem da ordem DOM, e screenshots regenerar (imagens de 17/05, pré-V4).
+
+## Rodada 12 — Kanboard-Integration (14/10/2026)
+
+**Escopo:** `Kanboard-Integration/Kanboard_Interface.js` (1292 linhas, JS Frontend `~renderNote`) +
+`manifest.json` + `README.md` + `kanboard_cache.json` + `imagens/` (4 webp). Versão no registry:
+`0.8.0`.
+**Verificação (Fase 0):** `bun build Kanboard_Interface.js` ✅ (sintaxe ok, 42,2 KB) · **sem `.zip`**
+(a distribuição é via `manifest.json` → `sourceUrl`; não há zip×repo a conferir) · **`manifest.json`
+sem campo `version`** (convenção do repo; o registry carrega `0.8.0`) · **sem `test-*.js`** na pasta ·
+3 especialistas (read-only) + conferência direta do código + contraste WCAG calculado.
+
+**Natureza:** script de **frontend** que fala com um **Kanboard externo** via JSON-RPC
+*server-to-server* (o `fetch` roda no backend, `92-99`). Estado local em `localStorage` (`25-26`) +
+cache "canônico" na nota `kanboard_cache` (`111-120`). Cria/lê/move/deleta tarefas e projetos e mantém
+uma fila offline (hoje só `createProject`). **Sem crítica de XSS** (refutado: `esc()` em todos os
+caminhos de render, `824-851`; `toast` usa `.text()`, `284`). Sem perda de dados no Trilium (o cache é
+reconstruível por sync).
+
+### ➕ Fase 0.5 — referência just-in-time (Obsidian)
+
+**Referências (time-box):** `mgmeyers/obsidian-kanban` (hoje `community-archive/obsidian-kanban`,
+v2.0.51, **MIT**) e `obsidian-tasks-group/obsidian-tasks` (**MIT**). Fontes: READMEs dos repos +
+`docs/How do I/` (7 páginas) + guia publicado do Tasks. Registrado também no novo
+`BENCHMARK-obsidian-widgets.md`.
+
+| O que a referência faz melhor | O que temos | Divergência / lacuna | Muda a decisão da rodada? |
+|---|---|---|---|
+| **Kanban**: arrastar-e-soltar cards entre colunas/raias e reordenar (board markdown-backed) | mover por `<select>` na linha; `moveTaskPosition` com `position:1` (`207-213`) | sem DnD; toda mudança vai ao **topo** | **Não** — DnD é L (produto) → residual/benchmark |
+| **Kanban**: *swimlanes*, **WIP limits** por coluna, arquivo, ordenação de raia | 1 raia fixa (`swimlane_id:0`, `212`), sem WIP/arquivo/ordenação | o Kanboard **já tem** raias/WIP no servidor — não expomos | **Não** — feature nova → benchmark |
+| **Kanban**: datas/horas no card, imagens, "criar nota a partir do card" | só título/descrição/cor (`174-180`) | campos nativos do Kanboard (due date, assignee, priority) não surfacados | **Não** — produto → benchmark |
+| **Tasks**: linguagem de consulta (`not done`, `due before`, `group/sort/limit`), datas, recorrência, prioridade, dependências | filtro por projeto + busca textual livre (`806-810`) | sem query/datas/prioridade | **Não** — produto → benchmark |
+| **Kanban/Tasks**: local-first (o board é o arquivo) | remoto-first; fila offline só p/ `createProject` (`1050`) | README promete "and other operations" (`26`) | **Não**, mas **confirma** C7.3 |
+
+**Limite honesto:** o Obsidian não é o Trilium (arquivos/markdown × árvore de notas + atributos) e o
+Kanboard é um servidor externo — nada de arquitetura é portável; só **feature/UX/semântica**.
+**Conclusão da Fase 0.5:** nenhuma decisão de correção desta rodada (robustez, `confirm`, a11y, i18n,
+harness) muda por causa da referência — todas são **ortogonais** ao produto. A referência apenas
+**confirma** que o diferencial dela (DnD / raias / WIP / query) é trabalho de **produto** (vai ao
+benchmark), não de batch.
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 1 | 4 | 10 | 7 | 3 | 25 |
+| 🎨 UI/UX | 2 | 3 | 8 | 5 | 1 | 19 |
+| ⚡ Quick wins | — | — | — | — | — | 13 |
+
+**Top 5 (triagem sugerida):**
+1. **[Crítica/Alta · C1]** **Handlers async sem `try/catch`** (`892/952/977/1000/1026/1066` com os
+   resets em `887-888/950-971/998`): uma rejeição vinda do backend (rede ou token) **escapa** do
+   handler → `loading` fica `true` (`887`) e o botão fica `disabled` **para sempre**, sem toast.
+   `handleSync` é o pior caso (o `getAllProjects` de `130` está **fora** do try/catch por projeto).
+2. **[Alta · C1]** **`checkConfig()` nunca dispara** (`717-719` vs defaults `17-19`): as sentinelas
+   (`SEU-KANBOARD`/`SEU_TOKEN_AQUI`/`ID_DA_NOTA`) não existem no código; os defaults são
+   `yourdomain`/`yourtoken`/`noteid`. O usuário não configurado só vê um toast genérico
+   ("Sem conexão…", `101`) em vez do aviso amigável (`723-734`); o README usa uma **3ª grafia**
+   (`README:65`).
+3. **[Alta · C1/D3]** **`confirm()` não funciona no render note** (`975/996`): o iframe do render
+   note é sandboxed **sem `allow-modals`** → `confirm()` retorna `false` → **deletar tarefa/projeto
+   nunca acontece** (mesma classe do achado do Attribute-GC, rodada 10). Pior: o toast otimista
+   (`976/999`) aparece **antes** da resposta, então a UI "mente".
+4. **[Alta · C8]** **Sem harness** (nenhum `test-*.js`): é o **maior widget da fila** (1292 linhas) e
+   o único auditado até aqui sem nenhuma cobertura.
+5. **[Média · C7]** **README × código**: fila offline prometida como "project creation **and other
+   operations**" (`26`) mas só `createProject` é enfileirado (`1050`); `CONTEXTO.md` citado
+   (`115`) **não existe** na pasta; `imagens/screenshot.webp` (`117`) ≠ arquivos reais
+   (`kanboard-2-.webp`…, `153-156`).
+
+**Nota de dedupe:** `confirm()` em C1.4 e D3.1; feedback otimista em C1.2 e D5.1; i18n em C7.1 e
+D2.1; correção de `checkConfig` (C1.3) e a11y do delete (D3.2) tocam o mesmo formulário. Reduced-
+motion/foco (D6.1/D3.4) não têm contraparte em Código; contraste (D7.1) só aparece em UI.
+
+### 👨‍💻 Código — achados
+
+**Crítica**
+
+- **C1.1 · `handleSync` sem `try/catch` — sync que falha trava a UI** (`885-905`, causa em `130`):
+  `syncFromKanboard()` (126-163) não protege o `rpc('getAllProjects')`; se ele lançar (rede/token), o
+  `await` em `892` rejeita, `loading` (887) nunca volta a `false` e `#kb-sync-btn` fica `disabled`
+  (888) permanentemente. Sem toast, sem retry. Correção: `try/finally` com reset em `finally`.
+
+**Alta**
+
+- **C1.2 · Handlers de escrita sem `try/catch`** (`944-972`, `974-1016`, `1018-1057`, `1059-1098`):
+  `moveTaskColumn` (952), `removeKanboardTask` (977), `removeKanboardProject` (1000),
+  `createKanboardProject` (1026) e `processPendingOps` (1066) podem rejeitar; a exceção escapa e o
+  controle fica travado (`.kb-saving` + `disabled` em `950`; botões em `998/1022`). Erro cru do
+  Kanboard chega sem tratamento (`Error: <mensagem>`).
+- **C1.3 · `checkConfig()` com sentinelas inexistentes** (`715-738`): compara `SEU-KANBOARD` /
+  `SEU_TOKEN_AQUI` / `ID_DA_NOTA` (`717-719`) e repete as mesmas em `726-730`, mas os defaults são
+  `yourdomain` / `yourtoken` / `noteid` (`17-19`). Logo `checkConfig()` **sempre devolve `true`** e
+  nunca mostra o `#kb-config-warn`. Correção: alinhar as três sentinelas ao default (ou marcar o
+  default).
+- **C1.4 · `confirm()` bloqueado no render note** (`975`, `996`): sandbox sem `allow-modals` →
+  retorna `false` → a ação destrutiva é **inoperante**. Correção: modal próprio (padrão
+  `confirmAgc` do Attribute-GC).
+- **C8.1 · Sem harness** (pasta sem `test-*.js`): falta o `test-smoke.js` no padrão das rodadas 1-11.
+
+**Média**
+
+- **C1.5 · `catch (_) {}` por projeto** (`142`, `151`): se `getColumns`/`getAllTasks` de um projeto
+  falha, o projeto fica **parcialmente** no cache e o status "✓ N tarefas · M projetos" (`896`)
+  mascara a falha. Correção: contar/avisar projetos com erro.
+- **C1.6 · `catch` mudo na persistência** (`43`, `47`, `53`, `56`): `localStorage` corrompido →
+  cache/fila somem em silêncio (`null`/`[]`) sem aviso ao usuário.
+- **C3.1 · `renderTasks` O(tarefas × colunas)** (`832`): `cache.columns.filter(...)` dentro do
+  `.map` por tarefa; pré-indexar colunas por `project_id`.
+- **C4.1 · `Number()` sem validação de `data-*`** (`946-948`, `857`): `NaN` em id ausente/ inválido
+  não é barrado antes de chamar o backend.
+- **C4.2 · `moveTaskColumn` fixa `position:1` e `swimlane_id:0`** (`207-213`): mover sempre joga a
+  tarefa ao **topo** da coluna destino e ignora raias do Kanboard (o README não menciona).
+- **C5.1 · `toastTimers` morto** (`280`, `299`): objeto é escrito e **nunca lido/limpo** → toasts não
+  são canceláveis e podem empilhar.
+- **C6.1 · `runAsyncOnBackendWithManualTransactionHandling` para leitura/HTTP** (`112`, `125`,
+  `169`, `202`, `221`, `232`, `1103`, `1129`): o nome promete tratamento **manual** de transação que
+  não existe; para leitura (`112`) bastaria `runAsyncOnBackend`. (verificar em runtime)
+- **C7.1 · Sem i18n** (grep = 0 chaves `I18N`/`tr()`): 100% das strings de UI em PT fixo
+  (`763`, `817`, `890`, `915-916`, `962`, `1011`, `1051`, `1238`, `1246`, `1252`…). Fora do padrão
+  consolidado nas rodadas 2-11 (pares PT/EN em paridade).
+- **C7.2 · CSS inline no JS** (~380 linhas, `327-709`) + estilos inline em strings (`1248`,
+  `1251-1252`, `1258`): dificulta tema/manutenção e duplica tokens.
+- **C7.3 · README × código divergem** (`26` × `1050`; `115`; `117` × `153-156`) — ver tabela
+  específica abaixo.
+
+**Baixa**
+
+- **C2.1 · `esc()` não escapa `'`** (`244-251`): hoje sem impacto (nenhum atributo com aspas simples
+  recebe dado dinâmico); frágil para o futuro.
+- **C2.2 · Sem XSS (refutado)** (`824-851`): `esc(t.title)`, `esc(t.description…)`, `esc(pMap…)`,
+  `esc(c.title)`, `esc(p.name||p.title)` em todos os pontos; `toast` com `.text()` (`284`). Registrar
+  no teste.
+- **C2.3 · Claim "token off the frontend" enganosa** (`README:16`): o token **vive na nota de
+  frontend** (`17-19`) e é serializado para o backend; o correto é "não é enviado do navegador
+  direto ao Kanboard". O comentário (`7-9`) sugere uma nota `kb_config` que **não** existe no código.
+- **C6.2 · `$container` assumido global** (`1170`): sem guarda; ausência quebra tudo no topo.
+- **C6.3 · `eval(makeRpc.toString())`** (`127/171/204/233/1104/1130`): intencional e funcional; anotar
+  como risco futuro de sandbox.
+- **C7.4 · `--kb-font: 'DM Sans'`** (`329`): fonte não carregada → sempre cai em Segoe UI; remover ou
+  documentar.
+- **C7.5 · `manifest.json` sem `version`** (convenção do repo; registry `0.8.0`) — só conferir na
+  release.
+
+**Sugestão**
+
+- **C3.2 · `#kb-status-text` sem `aria-busy`** (`376`): o estado de sync não é anunciado.
+- **C5.2 · `setTimeout` de status duplicado** (`941`, `1056`): unificar com `setStatus`.
+- **C7.6 · Mover o CSS para bloco estático documentado** (`327-709`) e remover estilos inline.
+
+### 🎨 UI/UX — achados
+
+**Crítica**
+
+- **D3.1 · `confirm()` inacessível/inoperante** (`975`, `996`): além de não funcionar no sandbox,
+  não há alternativa de teclado nem modal — a ação destrutiva simplesmente não ocorre.
+- **D5.1 · Feedback otimista em ação destrutiva** (`976`, `999`): toast "⟳ Deletando…" antes de saber
+  o resultado; em erro, o usuário acredita que deletou.
+
+**Alta**
+
+- **D3.2 · Botão de deletar é `<span>`** (`849`): sem `role="button"`/`tabindex`/`aria-label` e sem
+  operação por teclado; `.kb-del-btn` só aparece no hover (`683-685`).
+- **D4.1 · Responsivo de breakpoint único** (`705-708`): tabela com 4 colunas de largura fixa +
+  texto (`1199-1203`) dentro de `#kb-app { overflow:hidden }` (`349`) → estouro/clip em telas
+  estreitas; sem `overflow-x`.
+- **D7.1 · Contraste de chrome hardcoded**: `#fff` sobre `#f59e0b` no badge de fila (`676`) =
+  **2.15:1**; `#fff` sobre `#ef4444` no botão "Deletar Projeto" (`1258`, 14px) = **3.76:1** (falha AA
+  para texto normal); `#fff` sobre `--accent-color` (`387/640/1248`) depende do tema. (As cores de
+  **tarefa** do Kanboard são semânticas — justificadas.)
+
+**Média**
+
+- **D1.1 · Ordem de colunas** (`1198-1203`): "Projeto" (1ª, 110px, com pill colorida) compete com
+  "Tarefa", que é o que importa; inverter para Tarefa primeiro.
+- **D2.1 · Terminologia/idioma misturados** (`763/817/890/1238/1246/1252`…): "Todos os projetos",
+  "Sincronizar", "Nova Tarefa", "Deletar Projeto", "pendente(s)" — sem i18n (reforça C7.1).
+- **D3.3 · Campos sem `<label>`/`aria-label`** (`1191` busca; `1247` nome do projeto novo).
+- **D3.4 · `:focus-visible` ausente** (grep = 0): só há `:focus` em inputs (`448/466/552/623`);
+  botões, linhas da tabela e o select de coluna não têm foco visível próprio.
+- **D3.5 · `#kb-status-text` sem `aria-live`/`aria-busy`** (`376`, updates em `890/896/899`).
+- **D5.2 · Estado de sync fraco** (`900`): erro de sync só em toast efêmero; sem skeleton nem estado
+  persistente; `loading` sem feedback visual no botão além de `disabled`.
+- **D6.1 · Sem `prefers-reduced-motion`** para ~12 transições
+  (`332/380/389/445/464/513/549/634/644/678/683`).
+- **D4.2 · Alvo de toque pequeno**: `.kb-del-btn` a 13px (`683`) — ruim no toque.
+
+**Baixa**
+
+- **D7.2 · `.kb-color-dot` com `box-shadow` branco 0.25** (`529`): some no tema claro.
+- **D1.2 · Título "Kanboard"** (`1177`): sem o "Sync"/nome do widget, perde contexto entre painéis.
+- **D2.2 · Componentes divergentes** para o mesmo conceito (`.kb-select` `436`, `.kb-col-select`
+  `539`, `.kb-input` `611`).
+- **D5.3 · `lastSync` inválido** (`749`): uma string ruim vira "Invalid Date" (não há clamp p/
+  "nunca").
+- **D3.6 · Tabela sem `<caption>`/`scope`** (`1196-1204`): leitor de tela perde cabeçalhos.
+
+**Sugestão**
+
+- **D8.1 · `--kb-font` não carregada** (`329`): ou embutir a fonte, ou cair no token do tema.
+
+### ⚡ Quick wins — backlog
+
+| # | Melhoria | Onde | Ganho | Esforço | Risco | Validação |
+|---|----------|------|-------|:-------:|:-----:|-----------|
+| 1 | `try/finally` nos handlers async (reset de `loading`/botões) | `885-905/944-1098` | Não trava a UI | S | Baixo | teste com backend que rejeita |
+| 2 | Alinhar sentinelas de `checkConfig` aos defaults | `717-719` | Aviso de config volta | S | Baixo | função pura |
+| 3 | Trocar `confirm()` por modal próprio | `975/996` | **Delete passa a funcionar** | S | Baixo | smoke |
+| 4 | Delete como `<button>` + `aria-label` + `:focus-visible` | `849/683-685` | Teclado/SR | S | Baixo | smoke |
+| 5 | `prefers-reduced-motion` p/ as ~12 transições | `327-709` | A11y | S | Baixo | QA visual |
+| 6 | Toast otimista só **após** a resposta | `976/999` | Fim do "UI mente" | S | Baixo | smoke |
+| 7 | Contraste do badge/botões (token ou cor mais escura) | `676/1258/387` | AA | S | Baixo | medir contraste |
+| 8 | Índice de colunas por projeto em `renderTasks` | `832` | Perf O(N) | S | Baixo | revisão |
+| 9 | Remover/usar `toastTimers` | `280/299` | Menos código morto | S | Baixo | revisão |
+| 10 | `aria-label` na busca e no nome do projeto | `1191/1247` | A11y | S | Baixo | smoke |
+| 11 | i18n PT/EN (`*_I18N` + `tr()`), ~28 chaves | todo o script | Padrão do repo | M | Baixo | paridade de chaves |
+| 12 | README: corrigir fila offline, `CONTEXTO.md`, screenshots | `26/115/117` | Docs fiéis | S | Baixo | revisão |
+| 13 | `test-smoke.js` do widget (cache, maps, `esc`, sentinelas) | novo | Cobertura | M | Baixo | `bun test-smoke.js` |
+
+**Descartes:** DnD real e swimlanes/WIP/arquivo (L; é produto → benchmark, não batch); "query
+language" ao estilo Tasks (não é o problema do widget, que é espelhar o Kanboard).
+
+### Claims do README × código
+
+| README | Promessa | Código | Situação |
+|---|---|---|---|
+| 16 | "keeping your API token off the frontend" | token na nota de frontend (`17-19`) | **Enganoso** (o token não sai do navegador *para o Kanboard*, mas mora no frontend) |
+| 24 | mover por dropdown inline (`moveTaskPosition`) | `207-213` | Cumprido (mas `position:1`, raias ignoradas) |
+| 25 | criar projeto offline com fila | `1050`, `1137` | Cumprido |
+| 26 | fila offline de "project creation **and other operations**" | só `createProject` (`1050`) | **Defasado** |
+| 30 | "adapts to screen width, form stacks below tasks on mobile" | `705-708` | Cumprido (breakpoint único) |
+| 31 | "theme-aware — uses Trilium CSS variables" | `347/359/…` | Cumprido |
+| 61-68 | `CONFIG.apiUrl: 'https://YOUR-KANBOARD.com/jsonrpc.php'` etc. | `17-19` (`yourdomain`/`yourtoken`/`noteid`) | **3ª grafia** — e nenhuma reconhecida por `checkConfig` |
+| 115 | `CONTEXTO.md` na estrutura | inexistente na pasta | **Defasado** |
+| 117 | `imagens/screenshot.webp` | `kanboard-2-.webp`…`5-.webp` | **Defasado** |
+| 142-145 | troubleshooting de sync | `100-105`, `885-905` | Ok |
+
+### Pontos fortes (não mexer)
+
+- **Sem XSS** nos caminhos de render: `esc()` em título/descrição/projeto/coluna (`824-851`) e
+  `toast` com `.text()` (`284`).
+- **Boa resiliência de cache**: localStorage imediato + nota "canônica", com "a mais recente vence"
+  (`1276-1291`); fila offline com ids únicos (`58-63`).
+- **Normalização de IDs p/ `Number`** na entrada (`134/141/145-150`) — evita comparação
+  string × number.
+- **Token usado só no backend**: o `fetch` é montado em `makeRpc` e avaliado no backend (`96-99`),
+  não no navegador direto ao Kanboard.
+- **Tema**: usa tokens do Trilium (`--main-text-color`, `--accent-color`, `--main-border-color`) +
+  `color-mix`; sem cores fixas de conteúdo.
+
+### Veredito da rodada 12
+
+Sem crítica de segurança nem perda de dados. Os riscos concentram-se em **robustez de erro**
+(handlers async sem `try/catch` → UI travada; `checkConfig` inerte; `confirm()` que não funciona no
+render note), na **ausência de harness** no maior widget da fila, em **i18n 0%** e em **README
+defasado em pontos objetivos** (fila offline, `CONTEXTO.md`, screenshots, claim do token). A Fase 0.5
+não alterou nenhuma decisão de correção (as lacunas da referência são de produto). **Nenhuma correção
+aplicada** — batches após triagem (candidatos: 1) robustez/erros [`try/catch` + `loading` +
+`checkConfig` + `confirm`→modal]; 2) UI/a11y/i18n [foco visível, `aria`, reduced-motion, contraste,
+strings PT/EN]; 3) harness `test-smoke.js` + README).
+
+**Próximo da lista:** Mastodon-Sender (rodada 13).

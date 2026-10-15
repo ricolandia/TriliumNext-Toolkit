@@ -192,6 +192,22 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 | UTW-D2.5 | Screenshots defasados (imagens 17/05, pré-V4) — regenerar | Doc | S | Baixo | `imagens/` | QA visual |
 | UTW-C7.1 | Registry: UI-Tweaks fora do manager (instalação manual) — avaliar entrada via `zipUrl` no release | Release | S | Baixo | registry | decisão |
 
+## Kanboard-Integration (rodada 12)
+
+| ID | Item | Categoria | Esforço | Risco | Onde (ocasião do relatório) | Validação |
+|----|------|-----------|:-------:|:-----:|------------------------------|-----------|
+| KB-Q1 | **Drag & drop** de cards entre colunas (hoje `moveTaskPosition` via `<select>`, `position:1`) | Feature/UX | L | Médio | `834`, `944-972` | manual (trackpad/toque) |
+| KB-Q2 | **Swimlanes + WIP limits + arquivo/ordenação de raia** (Kanboard já suporta; não expomos) | Feature/UX | M | Médio | `212` | manual |
+| KB-Q3 | Surfacar metadados do Kanboard: **due date, assignee, priority, tags** no form e na tabela | Feature/UX | M | Médio | `174-180`, `824-851` | manual |
+| KB-Q4 | Preservar **posição** na coluna ao mover (hoje sempre ao topo) | Robustez/UX | S | Médio | `211` | manual |
+| KB-Q5 | **Fila offline** para mover/deletar/criar tarefa (hoje só `createProject`) | Feature/UX | M | Médio | `1050`, `1137` | manual (offline→online) |
+| KB-C6.1 | Reavaliar `runAsyncOnBackendWithManualTransactionHandling` em operações só-leitura (`getNoteContent`) | Manutenção/API | S | Médio | `112`, `125` | verificar em runtime |
+| KB-C2.1 | Endurecer `esc()` para aspas simples (defensivo) | Robustez | S | Baixo | `244-251` | `bun` (fixture) |
+| KB-C7.4 | `--kb-font: 'DM Sans'` não carregada (sempre Segoe UI) — embutir ou remover | Manutenção | S | Baixo | `329` | revisão visual |
+| KB-C7.5 | `manifest.json` sem `version` × registry `0.8.0` — reconciliar no próximo release | Manutenção | S | Baixo | `manifest.json`; registry | release |
+| KB-Doc | Claim "token off the frontend" (`README:16`) — reescrever (o token mora na nota de frontend) | Doc | S | Baixo | `README.md:16` | revisão |
+| KB-Q13 | Benchmark: lacunas de produto (query language, DnD, raias/WIP) — ver `BENCHMARK-obsidian-widgets.md` | Produto | — | — | benchmark | triagem pós-15 |
+
 ## Pendências de produto (novas, 29/09/2026)
 
 Fora das rodadas de auditoria. Decisões do Ricardo: **nomenclatura em 2 camadas**
@@ -206,6 +222,7 @@ como está) e **hub mobile registrado para execução pós-rodada 15** junto do 
 
 ## Histórico
 
+- **14/10/2026** — adicionado o § Kanboard-Integration (rodada 12; **só auditoria** — sem batches ainda) + criado o `BENCHMARK-obsidian-widgets.md` (Trilha B) com a Fase 0.5 do Kanboard.
 - **29/09/2026** — adicionado o § UI-Tweaks (rodada 11; correções aplicadas em batches 1-3, deploy na VPS).
 - **29/09/2026** — adicionado o § Attribute-GC (rodada 10; correções aplicadas em batches 1-3, deploy sha idêntico).
 - **29/09/2026** — adicionado o § Knowledge-Dashboard (rodada 9; correções aplicadas em batches 1-3, deploy sha idêntico).
