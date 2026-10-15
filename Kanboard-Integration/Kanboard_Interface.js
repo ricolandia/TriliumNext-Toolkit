@@ -25,6 +25,119 @@ const ACTIVE_STATUS = 1;
 const LS_KEY   = 'kb_cache_v2';
 const QUEUE_KEY = 'kb_pending_ops';
 
+/* ── i18n (PT/EN) — mesmo padrão do toolkit ─────────────── */
+const KB_I18N = {
+  'title':            { pt: 'Kanboard', en: 'Kanboard' },
+  'btn_sync':         { pt: '↻ Sincronizar', en: '↻ Sync' },
+  'sync_busy':        { pt: '⟳ Sincronizando…', en: '⟳ Syncing…' },
+  'sync_ok':          { pt: ' tarefas · ', en: ' tasks · ' },
+  'sync_ok2':         { pt: ' projetos', en: ' projects' },
+  'sync_err':         { pt: '✗ Erro na sincronização', en: '✗ Sync error' },
+  'sync_fail':        { pt: 'Falha na sincronização', en: 'Sync failed' },
+  'sync_partial':     { pt: ' projeto(s) com erro', en: ' project(s) with errors' },
+  'f_all':            { pt: 'Todos os projetos', en: 'All projects' },
+  'search_ph':        { pt: 'Buscar tarefas…', en: 'Search tasks…' },
+  'search_ar':        { pt: 'Buscar tarefas', en: 'Search tasks' },
+  'th_project':       { pt: 'Projeto', en: 'Project' },
+  'th_task':          { pt: 'Tarefa', en: 'Task' },
+  'th_column':        { pt: 'Coluna', en: 'Column' },
+  'th_color':         { pt: 'Cor', en: 'Color' },
+  'th_actions':       { pt: 'Ações', en: 'Actions' },
+  'stat_projects':    { pt: 'Projetos', en: 'Projects' },
+  'stat_tasks':       { pt: 'Tarefas', en: 'Tasks' },
+  'stat_columns':     { pt: 'Colunas', en: 'Columns' },
+  'stat_sync':        { pt: 'Sync', en: 'Sync' },
+  'never':            { pt: 'nunca', en: 'never' },
+  'empty_none':       { pt: 'Nenhuma tarefa encontrada', en: 'No tasks found' },
+  'empty_a':          { pt: 'Clique em ', en: 'Click ' },
+  'empty_b':          { pt: ' para buscar dados', en: ' to fetch data' },
+  'form_new':         { pt: '✏ Nova Tarefa', en: '✏ New Task' },
+  'lbl_project':      { pt: 'Projeto', en: 'Project' },
+  'lbl_column':       { pt: 'Coluna', en: 'Column' },
+  'lbl_color':        { pt: 'Cor', en: 'Color' },
+  'lbl_title':        { pt: 'Título', en: 'Title' },
+  'lbl_desc':         { pt: 'Descrição', en: 'Description' },
+  'ph_title':         { pt: 'Título da tarefa', en: 'Task title' },
+  'ph_desc':          { pt: 'Descrição (opcional)', en: 'Description (optional)' },
+  'btn_create_task':  { pt: '+ Criar Tarefa', en: '+ Create Task' },
+  'creating':         { pt: 'Criando…', en: 'Creating…' },
+  'created':          { pt: '✓ Criada (ID ', en: '✓ Created (ID ' },
+  'sel_ph':           { pt: 'Selecione…', en: 'Select…' },
+  'no_projects':      { pt: 'Nenhum projeto disponível', en: 'No projects available' },
+  'sec_new_proj':     { pt: '📁 Novo Projeto', en: '📁 New Project' },
+  'ph_proj_name':     { pt: 'Nome do projeto', en: 'Project name' },
+  'btn_create_proj':  { pt: '+ Criar Projeto', en: '+ Create Project' },
+  'sec_del_proj':     { pt: '🗑️ Deletar Projeto', en: '🗑️ Delete Project' },
+  'btn_del_proj':     { pt: '🗑️ Deletar Projeto', en: '🗑️ Delete Project' },
+  'ar_del_proj':      { pt: 'Deletar projeto selecionado', en: 'Delete selected project' },
+  'ar_del_task':      { pt: 'Deletar tarefa', en: 'Delete task' },
+  'queue_n':          { pt: ' pendente', en: ' pending' },
+  'queue_s':          { pt: 's', en: 's' },
+  'err_sel_proj':     { pt: 'Selecione um projeto.', en: 'Select a project.' },
+  'err_title':        { pt: 'Digite um título.', en: 'Enter a title.' },
+  'err_proj_name':    { pt: 'Digite um nome para o projeto.', en: 'Enter a project name.' },
+  'col_updated':      { pt: 'Coluna atualizada', en: 'Column updated' },
+  'err_move':         { pt: 'Erro ao mover tarefa: ', en: 'Error moving task: ' },
+  'err_del':          { pt: 'Erro ao deletar: ', en: 'Error deleting: ' },
+  'err_generic':      { pt: 'Erro: ', en: 'Error: ' },
+  'task_created_a':   { pt: 'Tarefa "', en: 'Task "' },
+  'task_created_b':   { pt: '" criada!', en: '" created!' },
+  'task_deleted':     { pt: '🗑️ Tarefa deletada', en: '🗑️ Task deleted' },
+  'proj_deleted_a':   { pt: '🗑️ Projeto "', en: '🗑️ Project "' },
+  'proj_deleted_b':   { pt: '" deletado', en: '" deleted' },
+  'proj_exists_a':    { pt: 'Projeto "', en: 'Project "' },
+  'proj_exists_b':    { pt: '" já existia', en: '" already existed' },
+  'proj_created_a':   { pt: 'Projeto "', en: 'Project "' },
+  'proj_created_b':   { pt: '" criado!', en: '" created!' },
+  'offline_queued':   { pt: '⏳ Sem conexão — adicionado à fila', en: '⏳ Offline — added to queue' },
+  'offline_toast':    { pt: 'Sem conexão. Projeto será criado quando sincronizar.', en: 'Offline. The project will be created on the next sync.' },
+  'no_pending':       { pt: 'Nenhuma operação pendente.', en: 'No pending operations.' },
+  'queue_result':     { pt: 'Fila: ', en: 'Queue: ' },
+  'queue_ok':         { pt: ' ok', en: ' ok' },
+  'queue_erros':      { pt: ' erro(s)', en: ' error(s)' },
+  'err_queue':        { pt: 'Erro ao processar fila: ', en: 'Error processing queue: ' },
+  'confirm_title':    { pt: 'Confirmar', en: 'Confirm' },
+  'confirm_del_task': { pt: 'Deletar esta tarefa permanentemente?', en: 'Permanently delete this task?' },
+  'confirm_del_proj_a': { pt: 'Deletar o projeto "', en: 'Permanently delete the project "' },
+  'confirm_del_proj_b': { pt: '" permanentemente?\nTodas as tarefas serão removidas.', en: '"?\nAll of its tasks will be removed.' },
+  'confirm_ok':       { pt: 'Deletar', en: 'Delete' },
+  'confirm_no':       { pt: 'Cancelar', en: 'Cancel' },
+  'cfg_title':        { pt: '⚠️ Configuração necessária', en: '⚠️ Configuration required' },
+  'cfg_intro':        { pt: 'Edite as constantes no início do código:', en: 'Edit the constants at the top of the script:' },
+  'cfg_url':          { pt: 'CONFIG.apiUrl — URL do seu Kanboard', en: 'CONFIG.apiUrl — your Kanboard URL' },
+  'cfg_token':        { pt: 'CONFIG.apiToken — Token da API', en: 'CONFIG.apiToken — API token' },
+  'cfg_noteid':       { pt: 'CONFIG.cacheNoteId — ID da nota kanboard_cache', en: 'CONFIG.cacheNoteId — ID of the kanboard_cache note' },
+  'cfg_hint':         { pt: 'Para copiar o ID: clique com o direito na nota → Copiar ID da nota', en: 'To copy the ID: right-click the note → Copy note ID' },
+  'c_default':        { pt: 'Padrão', en: 'Default' },
+  'c_yellow':         { pt: 'Amarelo', en: 'Yellow' },
+  'c_red':            { pt: 'Vermelho', en: 'Red' },
+  'c_green':          { pt: 'Verde', en: 'Green' },
+  'c_blue':           { pt: 'Azul', en: 'Blue' },
+  'c_orange':         { pt: 'Laranja', en: 'Orange' },
+  'c_purple':         { pt: 'Roxo', en: 'Purple' },
+  'c_brown':          { pt: 'Marrom', en: 'Brown' },
+  'c_grey':           { pt: 'Cinza', en: 'Grey' },
+  'c_pink':           { pt: 'Rosa', en: 'Pink' },
+};
+function kbLang() {
+  try {
+    const loc = api.getOption ? api.getOption('locale') : '';
+    if (loc && String(loc).toLowerCase().indexOf('en') === 0) return 'en';
+  } catch (_) {}
+  const nav = (navigator.language || '').toLowerCase();
+  return nav.indexOf('en') === 0 ? 'en' : 'pt';
+}
+const KB_LANG = kbLang();
+function kbTr(key, i) {
+  const e = KB_I18N[key];
+  if (!e) return key;
+  if (Array.isArray(e[KB_LANG])) return e[KB_LANG][i] !== undefined ? e[KB_LANG][i] : e.pt[i];
+  return e[KB_LANG] !== undefined ? e[KB_LANG] : e.pt;
+}
+
+// o backend recebe CONFIG como cfg (funções serializadas)
+CONFIG.lang = KB_LANG;
+
 /* ════════════════════════════════════════════════════════
    ESTADO
 ════════════════════════════════════════════════════════ */
@@ -71,7 +184,8 @@ function refreshQueueBadge() {
   const q = loadQueue();
   const $badge = $container.find('#kb-queue-badge');
   if (q.length) {
-    $badge.text(q.length + ' pendente' + (q.length > 1 ? 's' : '')).show();
+    const txt = q.length + kbTr('queue_n') + (q.length > 1 ? kbTr('queue_s') : '');
+    $badge.text(txt).attr('aria-label', txt).show();
   } else {
     $badge.hide();
   }
@@ -85,7 +199,7 @@ function refreshQueueBadge() {
 ════════════════════════════════════════════════════════ */
 
 /** Cria um executor JSON-RPC. Deve ser chamado dentro de runAsyncOnBackend. */
-function makeRpc(apiUrl, apiToken) {
+function makeRpc(apiUrl, apiToken, lang) {
   return async function rpc(method, params) {
     let response;
     try {
@@ -98,7 +212,7 @@ function makeRpc(apiUrl, apiToken) {
         body: JSON.stringify({ jsonrpc: '2.0', method, id: Date.now(), params: params || {} }),
       });
     } catch (e) {
-      throw new Error('Sem conexão com o Kanboard: ' + e.message);
+      throw new Error((lang === 'en' ? 'No connection to Kanboard: ' : 'Sem conexão com o Kanboard: ') + e.message);
     }
     const data = await response.json();
     if (data.error) throw new Error(data.error.message);
@@ -106,10 +220,21 @@ function makeRpc(apiUrl, apiToken) {
   };
 }
 
+/**
+ * Executa uma chamada ao backend garantindo que erros (rede/sandbox)
+ * virem { success:false, error } em vez de rejeitar a promise — os
+ * handlers tratam pelo ramo else e a UI nunca fica travada.
+ */
+function runBackend(fn, args) {
+  return Promise.resolve()
+    .then(function () { return api.runAsyncOnBackendWithManualTransactionHandling(fn, args); })
+    .catch(function (e) { return { success: false, error: (e && e.message) || String(e) }; });
+}
+
 /* ── Leitura do cache salvo na nota ──────────────────────── */
 
 async function loadCacheFromNote() {
-  return api.runAsyncOnBackendWithManualTransactionHandling(async (noteId) => {
+  return runBackend(async (noteId) => {
     try {
       const raw = await api.getNoteContent(noteId);
       return { success: true, data: JSON.parse(raw) };
@@ -122,10 +247,10 @@ async function loadCacheFromNote() {
 /* ── Sincronização completa ──────────────────────────────── */
 
 async function syncFromKanboard() {
-  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, activeStatus, mkRpcSrc) => {
+  return runBackend(async (cfg, activeStatus, mkRpcSrc) => {
     // eslint-disable-next-line no-eval
     const makeRpcFn = eval('(' + mkRpcSrc + ')');
-    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken, cfg.lang);
 
     const allProjects = await rpc('getAllProjects');
     // Filtra apenas projetos ativos (não finalizados)
@@ -134,12 +259,14 @@ async function syncFromKanboard() {
     for (const p of projects) p.id = Number(p.id);
 
     let columns = [], tasks = [];
+    const failed = [];
 
     for (const p of projects) {
+      let pErr = null;
       try {
         const pc = await rpc('getColumns', { project_id: p.id });
         columns = columns.concat(pc.map(c => ({ ...c, id: Number(c.id), project_id: Number(c.project_id) })));
-      } catch (_) {}
+      } catch (e) { pErr = e; }
       try {
         const pt = await rpc('getAllTasks', { project_id: p.id, status_id: activeStatus });
         tasks = tasks.concat(pt.map(t => ({
@@ -148,7 +275,8 @@ async function syncFromKanboard() {
           project_id: Number(t.project_id),
           column_id:  Number(t.column_id),
         })));
-      } catch (_) {}
+      } catch (e) { pErr = e; }
+      if (pErr) failed.push(p.name || p.title || String(p.id));
     }
 
     // Limpa cache de projetos fechados
@@ -159,6 +287,7 @@ async function syncFromKanboard() {
     return {
       success: true,
       data: { projects, columns, tasks, lastSync: new Date().toISOString() },
+      failed,
     };
   }, [CONFIG, ACTIVE_STATUS, makeRpc.toString()]);
 }
@@ -166,10 +295,10 @@ async function syncFromKanboard() {
 /* ── Criar tarefa ───────────────────────────────────────── */
 
 async function createKanboardTask(data) {
-  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, d, mkRpcSrc) => {
+  return runBackend(async (cfg, d, mkRpcSrc) => {
     // eslint-disable-next-line no-eval
     const makeRpcFn = eval('(' + mkRpcSrc + ')');
-    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken, cfg.lang);
 
     const params = {
       title:      d.title,
@@ -199,10 +328,10 @@ async function createKanboardTask(data) {
 // swimlane_id: 0 = swimlane padrão; position: 1 = topo da coluna destino.
 
 async function moveTaskColumn(taskId, projectId, columnId) {
-  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, tId, pId, cId, mkRpcSrc) => {
+  return runBackend(async (cfg, tId, pId, cId, mkRpcSrc) => {
     // eslint-disable-next-line no-eval
     const makeRpcFn = eval('(' + mkRpcSrc + ')');
-    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken, cfg.lang);
 
     const ok = await rpc('moveTaskPosition', {
       project_id:  pId,
@@ -218,9 +347,9 @@ async function moveTaskColumn(taskId, projectId, columnId) {
 /* ── Deletar tarefa ─────────────────────────────────────── */
 
 async function removeKanboardTask(taskId) {
-  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, tId, mkRpcSrc) => {
+  return runBackend(async (cfg, tId, mkRpcSrc) => {
     const makeRpcFn = eval('(' + mkRpcSrc + ')');
-    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken, cfg.lang);
     await rpc('removeTask', { task_id: tId });
     return { success: true };
   }, [CONFIG, taskId, makeRpc.toString()]);
@@ -229,9 +358,9 @@ async function removeKanboardTask(taskId) {
 /* ── Deletar projeto ────────────────────────────────────── */
 
 async function removeKanboardProject(projectId) {
-  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, pId, mkRpcSrc) => {
+  return runBackend(async (cfg, pId, mkRpcSrc) => {
     const makeRpcFn = eval('(' + mkRpcSrc + ')');
-    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken, cfg.lang);
     await rpc('removeProject', { project_id: pId });
     return { success: true };
   }, [CONFIG, projectId, makeRpc.toString()]);
@@ -247,7 +376,8 @@ function esc(s) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 const COLORS = {
@@ -264,22 +394,21 @@ const COLORS = {
 };
 
 const COLORS_LIST = [
-  { value: '',       label: 'Padrão'    },
-  { value: 'yellow', label: 'Amarelo'   },
-  { value: 'red',    label: 'Vermelho'  },
-  { value: 'green',  label: 'Verde'     },
-  { value: 'blue',   label: 'Azul'      },
-  { value: 'orange', label: 'Laranja'   },
-  { value: 'purple', label: 'Roxo'      },
-  { value: 'brown',  label: 'Marrom'    },
-  { value: 'grey',   label: 'Cinza'     },
-  { value: 'pink',   label: 'Rosa'      },
+  { value: '',       key: 'c_default' },
+  { value: 'yellow', key: 'c_yellow'  },
+  { value: 'red',    key: 'c_red'     },
+  { value: 'green',  key: 'c_green'   },
+  { value: 'blue',   key: 'c_blue'    },
+  { value: 'orange', key: 'c_orange'  },
+  { value: 'purple', key: 'c_purple'  },
+  { value: 'brown',  key: 'c_brown'   },
+  { value: 'grey',   key: 'c_grey'    },
+  { value: 'pink',   key: 'c_pink'    },
 ];
 
 /* Toast com controle de timeout */
-const toastTimers = {};
 function toast(msg, type = 'info') {
-  const bg = type === 'error' ? '#ef4444' : type === 'success' ? '#22c55e' : '#3b82f6';
+  const bg = type === 'error' ? '#b91c1c' : type === 'success' ? '#15803d' : '#1d4ed8';
   const id = 'toast_' + Date.now();
   const $t = $('<div>').attr('id', id).text(msg).css({
     position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
@@ -292,11 +421,45 @@ function toast(msg, type = 'info') {
   });
   $('body').append($t);
   setTimeout(() => $t.css({ opacity: 1, transform: 'translateY(0)' }), 10);
-  const timer = setTimeout(() => {
+  setTimeout(() => {
     $t.css({ opacity: 0, transform: 'translateY(8px)' });
     setTimeout(() => $t.remove(), 300);
   }, 3500);
-  toastTimers[id] = timer;
+}
+
+/* ── Confirmação (modal próprio — confirm() não funciona em iframe sandboxed) ── */
+
+function confirmKb(msg) {
+  return new Promise(function (resolve) {
+    const $ov = $('<div class="kb-overlay">');
+    const $box = $('<div class="kb-dialog" role="dialog" aria-modal="true">').attr('aria-labelledby', 'kb-confirm-title');
+    const $ok = $('<button type="button" class="kb-dialog-ok">').text(kbTr('confirm_ok'));
+    const $no = $('<button type="button" class="kb-dialog-no">').text(kbTr('confirm_no'));
+    $box.append(
+      $('<div class="kb-dialog-title">').attr('id', 'kb-confirm-title').text(kbTr('confirm_title')),
+      $('<div class="kb-dialog-msg">').text(msg),
+      $('<div class="kb-dialog-actions">').append($ok, $no)
+    );
+    $ov.append($box);
+    $('body').append($ov);
+
+    let done = false;
+    const fechar = function (v) {
+      if (done) return;
+      done = true;
+      $ov.remove();
+      $(document).off('keydown.kbconfirm');
+      resolve(v);
+    };
+    $ok.on('click', function () { fechar(true); });
+    $no.on('click', function () { fechar(false); });
+    $ov.on('click', function (e) { if (e.target === $ov[0]) fechar(false); });
+    $(document).on('keydown.kbconfirm', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); fechar(false); }
+      else if (e.key === 'Enter') { e.preventDefault(); fechar(true); }
+    });
+    $no.focus();
+  });
 }
 
 let statusTimer = null;
@@ -332,6 +495,8 @@ $('<style id="kb-styles">').text(`
     --kb-transition: 0.18s ease;
     --kb-shadow: 0 2px 12px rgba(0,0,0,0.07);
     --kb-shadow-md: 0 4px 24px rgba(0,0,0,0.11);
+    --kb-danger: #dc2626;
+    --kb-warn: #b45309;
   }
 
   #kb-app {
@@ -673,16 +838,20 @@ $('<style id="kb-styles">').text(`
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 12px; font-weight: 600;
-    background: #f59e0b; color: #fff;
+    background: var(--kb-warn); color: #fff;
     cursor: pointer;
     transition: opacity var(--kb-transition);
   }
   #kb-queue-badge:hover { opacity: 0.85; }
 
   /* ── Hover delete ── */
-  .kb-del-btn { cursor:pointer; opacity:0.15; transition:opacity 0.15s; font-size:13px; }
-  tr:hover .kb-del-btn { opacity:0.5; }
-  .kb-del-btn:hover { opacity:1 !important; }
+  .kb-del-btn {
+    cursor:pointer; opacity:0.15; transition:opacity 0.15s; font-size:13px;
+    background:none; border:none; padding:4px 6px; line-height:1;
+    color:inherit; font-family:inherit; border-radius:4px;
+  }
+  tr:hover .kb-del-btn, .kb-del-btn:focus-visible { opacity:1; }
+  .kb-del-btn:hover { opacity:1; }
   .kb-del-proj-btn:hover { opacity:0.88; }
   .kb-del-proj-btn:active { transform:translateY(1px); }
 
@@ -690,15 +859,63 @@ $('<style id="kb-styles">').text(`
   #kb-config-warn {
     margin: 24px;
     padding: 18px 20px;
-    border: 1.5px solid #f59e0b;
+    border: 1.5px solid var(--kb-warn);
     border-radius: var(--kb-radius);
     background: color-mix(in srgb, #f59e0b 8%, transparent);
     font-size: 12.5px; line-height: 1.7;
   }
-  #kb-config-warn strong { color: #d97706; }
+  #kb-config-warn strong { color: var(--main-text-color); }
   #kb-config-warn code {
     background: color-mix(in srgb, #f59e0b 15%, transparent);
     padding: 1px 5px; border-radius: 3px; font-size: 11.5px;
+  }
+
+  /* ── Botões do painel ── */
+  .kb-btn-primary, .kb-btn-danger {
+    padding: 8px 14px; border: none; border-radius: var(--kb-radius-sm);
+    color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%;
+    font-family: var(--kb-font);
+  }
+  .kb-btn-primary { background: var(--accent-color); }
+  .kb-btn-danger  { background: var(--kb-danger); }
+  .kb-btn-primary:hover, .kb-btn-danger:hover { opacity: 0.88; }
+  .kb-btn-primary:active, .kb-btn-danger:active { transform: translateY(1px); }
+  .kb-sep { border:none; border-top:1px solid color-mix(in srgb, var(--main-border-color) 40%, transparent); margin:8px 0; }
+
+  /* ── Foco visível (teclado) ── */
+  button:focus-visible,
+  .kb-select:focus-visible,
+  .kb-input:focus-visible,
+  .kb-col-select:focus-visible,
+  #kb-queue-badge:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 1px;
+  }
+
+  /* ── Modal de confirmação ── */
+  .kb-overlay {
+    position: fixed; inset: 0; z-index: 10000; display: flex;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,.45); padding: 16px;
+  }
+  .kb-dialog {
+    background: var(--main-background-color); color: var(--main-text-color);
+    border: 1px solid var(--main-border-color); border-radius: var(--kb-radius);
+    padding: 16px; max-width: 420px; width: 100%; box-shadow: var(--kb-shadow-md);
+  }
+  .kb-dialog-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+  .kb-dialog-msg { font-size: 14px; line-height: 1.5; white-space: pre-line; margin-bottom: 14px; }
+  .kb-dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .kb-dialog-ok, .kb-dialog-no {
+    padding: 8px 16px; border-radius: var(--kb-radius-sm); cursor: pointer;
+    font-family: var(--kb-font); font-size: 14px; font-weight: 600;
+    border: 1px solid var(--main-border-color);
+  }
+  .kb-dialog-ok { background: var(--kb-danger); color: #fff; border-color: var(--kb-danger); }
+  .kb-dialog-no { background: var(--main-background-color); color: var(--main-text-color); }
+
+  @media (prefers-reduced-motion: reduce) {
+    #kb-app, #kb-app * { transition: none !important; animation: none !important; }
   }
 
   /* ── Responsive ── */
@@ -713,25 +930,25 @@ $('<style id="kb-styles">').text(`
 ════════════════════════════════════════════════════════ */
 
 function checkConfig() {
-  const bad =
-    CONFIG.apiUrl.includes('SEU-KANBOARD') ||
-    CONFIG.apiToken === 'SEU_TOKEN_AQUI' ||
-    CONFIG.cacheNoteId.startsWith('ID_DA_NOTA');
+  const url = String(CONFIG.apiUrl || '');
+  const tok = String(CONFIG.apiToken || '');
+  const nid = String(CONFIG.cacheNoteId || '');
+  const badUrl = url.includes('yourdomain') || url.includes('YOUR-KANBOARD');
+  const badTok = tok === 'yourtoken' || tok === 'YOUR_API_TOKEN';
+  const badNid = nid === 'noteid' || nid.startsWith('ID_DA_NOTA');
 
-  if (bad) {
-    $container.empty().css({ padding: 0 }).append(
-      $('<div id="kb-config-warn">').html(
-        '<strong>⚠️ Configuração necessária</strong><br><br>' +
-        'Edite as constantes no início do código:<br>' +
-        (CONFIG.apiUrl.includes('SEU-KANBOARD')
-          ? '• <code>CONFIG.apiUrl</code> — URL do seu Kanboard<br>' : '') +
-        (CONFIG.apiToken === 'SEU_TOKEN_AQUI'
-          ? '• <code>CONFIG.apiToken</code> — Token da API<br>' : '') +
-        (CONFIG.cacheNoteId.startsWith('ID_DA_NOTA')
-          ? '• <code>CONFIG.cacheNoteId</code> — ID da nota kanboard_cache<br>' : '') +
-        '<br><em style="font-size:11.5px">Para copiar o ID: clique com direito na nota → Copiar ID da nota</em>'
-      )
+  if (badUrl || badTok || badNid) {
+    const $warn = $('<div id="kb-config-warn">').append(
+      $('<strong>').text(kbTr('cfg_title')),
+      $('<br>'), $('<br>'),
+      document.createTextNode(kbTr('cfg_intro')),
+      $('<br>')
     );
+    if (badUrl) $warn.append($('<div>').text('• ' + kbTr('cfg_url')));
+    if (badTok) $warn.append($('<div>').text('• ' + kbTr('cfg_token')));
+    if (badNid) $warn.append($('<div>').text('• ' + kbTr('cfg_noteid')));
+    $warn.append($('<br>'), $('<em style="font-size:11.5px">').text(kbTr('cfg_hint')));
+    $container.empty().css({ padding: 0 }).append($warn);
     return false;
   }
   return true;
@@ -746,21 +963,22 @@ function refreshStats() {
   const t = (cache?.tasks    || []).length;
   const c = (cache?.columns  || []).length;
   const ts = cache?.lastSync
-    ? new Date(cache.lastSync).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
-    : 'nunca';
+    ? new Date(cache.lastSync).toLocaleString(KB_LANG === 'en' ? 'en-US' : 'pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+    : kbTr('never');
+  const tsSafe = (ts === 'Invalid Date') ? kbTr('never') : ts;
 
   $container.find('#kb-stats').html(
-    `<span class="kb-stat"><span class="kb-stat-icon">📦</span>Projetos <strong>${p}</strong></span>` +
-    `<span class="kb-stat"><span class="kb-stat-icon">📋</span>Tarefas <strong>${t}</strong></span>` +
-    `<span class="kb-stat"><span class="kb-stat-icon">📌</span>Colunas <strong>${c}</strong></span>` +
-    `<span class="kb-stat"><span class="kb-stat-icon">🕐</span>Sync <strong>${ts}</strong></span>`
+    `<span class="kb-stat"><span class="kb-stat-icon">📦</span>${kbTr('stat_projects')} <strong>${p}</strong></span>` +
+    `<span class="kb-stat"><span class="kb-stat-icon">📋</span>${kbTr('stat_tasks')} <strong>${t}</strong></span>` +
+    `<span class="kb-stat"><span class="kb-stat-icon">📌</span>${kbTr('stat_columns')} <strong>${c}</strong></span>` +
+    `<span class="kb-stat"><span class="kb-stat-icon">🕐</span>${kbTr('stat_sync')} <strong>${tsSafe}</strong></span>`
   );
 }
 
 function refreshProjFilter() {
   const $sel = $container.find('#kb-proj-filter');
   const cur  = $sel.val();
-  let h = '<option value="">Todos os projetos</option>';
+  let h = '<option value="">' + esc(kbTr('f_all')) + '</option>';
   if (cache?.projects) for (const p of cache.projects)
     h += `<option value="${p.id}">${esc(p.name || p.title)}</option>`;
   $sel.html(h).val(cur || '');
@@ -768,7 +986,7 @@ function refreshProjFilter() {
 
 function refreshFormProjs() {
   const $sel = $container.find('#kb-f-proj');
-  let h = '<option value="">Selecione…</option>';
+  let h = '<option value="">' + esc(kbTr('sel_ph')) + '</option>';
   if (cache?.projects) for (const p of cache.projects)
     h += `<option value="${p.id}">${esc(p.name || p.title)}</option>`;
   $sel.html(h);
@@ -790,7 +1008,7 @@ function refreshFormCols(keepVal) {
 function refreshFormColors() {
   $container.find('#kb-f-color').html(
     COLORS_LIST.map(c =>
-      `<option value="${c.value}">${c.label}</option>`
+      `<option value="${c.value}">${esc(kbTr(c.key))}</option>`
     ).join('')
   );
 }
@@ -810,11 +1028,14 @@ function renderTasks() {
   );
 
   if (!tasks.length) {
+    const msg = cache
+      ? esc(kbTr('empty_none'))
+      : esc(kbTr('empty_a')) + '<strong>' + esc(kbTr('btn_sync')) + '</strong>' + esc(kbTr('empty_b'));
     $tb.html(
       `<tr><td colspan="5">
         <div class="kb-empty">
           <span class="kb-empty-icon">🗂️</span>
-          ${cache ? 'Nenhuma tarefa encontrada' : 'Clique em <strong>Sincronizar</strong> para buscar dados'}
+          ${msg}
         </div>
       </td></tr>`
     );
@@ -831,7 +1052,7 @@ function renderTasks() {
     // Coluna: dropdown inline com todas as colunas do projeto
     const projCols = cache.columns.filter(c => c.project_id === t.project_id);
     const colSelect = projCols.length
-      ? `<select class="kb-col-select" data-task-id="${t.id}" data-project-id="${t.project_id}">${projCols.map(c =>
+      ? `<select class="kb-col-select" data-task-id="${t.id}" data-project-id="${t.project_id}" aria-label="${esc(kbTr('lbl_column'))}">${projCols.map(c =>
           `<option value="${c.id}" ${c.id === t.column_id ? 'selected' : ''}>${esc(c.title)}</option>`
         ).join('')}</select>`
       : (cMap[t.column_id] ? esc(cMap[t.column_id].title) : '—');
@@ -846,7 +1067,7 @@ function renderTasks() {
           ${esc(t.color_id || '—')}
         </span>
       </td>
-      <td><span class="kb-del-btn" data-task-id="${t.id}">🗑️</span></td>
+      <td><button type="button" class="kb-del-btn" data-task-id="${t.id}" aria-label="${esc(kbTr('ar_del_task'))}" title="${esc(kbTr('ar_del_task'))}">🗑️</button></td>
     </tr>`;
   }).join(''));
 
@@ -871,10 +1092,10 @@ function refreshDelProj() {
   const $sel = $container.find('#kb-del-proj');
   if (!$sel.length) return;
   if (!cache?.projects?.length) {
-    $sel.html('<option value="">Nenhum projeto disponível</option>');
+    $sel.html('<option value="">' + esc(kbTr('no_projects')) + '</option>');
     return;
   }
-  $sel.html('<option value="">Selecione…</option>' +
+  $sel.html('<option value="">' + esc(kbTr('sel_ph')) + '</option>' +
     cache.projects.map(p => `<option value="${p.id}">${esc(p.name||p.title)}</option>`).join(''));
 }
 
@@ -885,60 +1106,64 @@ function refreshDelProj() {
 async function handleSync() {
   if (loading) return;
   loading = true;
-  const $btn = $container.find('#kb-sync-btn').prop('disabled', true);
+  const $btn = $container.find('#kb-sync-btn').prop('disabled', true).attr('aria-busy', 'true');
   const $st  = $container.find('#kb-status-text');
-  setStatus($st, '⟳ Sincronizando…');
+  setStatus($st, kbTr('sync_busy'));
 
-  const r = await syncFromKanboard();
-  if (r.success) {
-    cache = r.data;
-    saveToStorage(cache);
-    setStatus($st, `✓ ${r.data.tasks.length} tarefas · ${r.data.projects.length} projetos`);
-    refreshAll();
-  } else {
-    setStatus($st, '✗ Erro na sync');
-    toast(r.error || 'Falha na sincronização', 'error');
+  try {
+    const r = await syncFromKanboard();
+    if (r.success) {
+      cache = r.data;
+      saveToStorage(cache);
+      setStatus($st, '✓ ' + r.data.tasks.length + kbTr('sync_ok') + r.data.projects.length + kbTr('sync_ok2'));
+      if (r.failed && r.failed.length) toast(r.failed.length + kbTr('sync_partial'), 'error');
+      refreshAll();
+    } else {
+      setStatus($st, kbTr('sync_err'));
+      toast(r.error || kbTr('sync_fail'), 'error');
+    }
+  } finally {
+    $btn.prop('disabled', false).removeAttr('aria-busy');
+    loading = false;
   }
-
-  $btn.prop('disabled', false);
-  loading = false;
 }
 
 async function handleCreateTask(e) {
   e.preventDefault();
   const pid    = Number($container.find('#kb-f-proj').val());
   const cid    = Number($container.find('#kb-f-col').val()) || null;
-  const title  = $container.find('#kb-f-title').val().trim();
-  const desc   = $container.find('#kb-f-desc').val().trim();
+  const title  = String($container.find('#kb-f-title').val() || '').trim();
+  const desc   = String($container.find('#kb-f-desc').val() || '').trim();
   const colorId = $container.find('#kb-f-color').val();
 
-  if (!pid)   { toast('Selecione um projeto.', 'error');  return; }
-  if (!title) { toast('Digite um título.',     'error');  return; }
+  if (!pid)   { toast(kbTr('err_sel_proj'), 'error');  return; }
+  if (!title) { toast(kbTr('err_title'),     'error');  return; }
 
-  const $btn = $container.find('#kb-submit-btn').prop('disabled', true);
+  const $btn = $container.find('#kb-submit-btn').prop('disabled', true).attr('aria-busy', 'true');
   const $st  = $container.find('#kb-create-status');
-  $st.text('Criando…');
+  $st.text(kbTr('creating'));
 
-  const r = await createKanboardTask({ projectId: pid, columnId: cid, title, description: desc, colorId });
-
-  if (r.success) {
-    toast(`Tarefa "${title}" criada!`, 'success');
-    $container.find('#kb-f-title').val('');
-    $container.find('#kb-f-desc').val('');
-    $st.text(`✓ Criada (ID ${r.task.id})`);
-    if (cache) {
-      cache.tasks.push(r.task);
-      cache.lastSync = new Date().toISOString();
-      saveToStorage(cache);
-      refreshAll();
+  try {
+    const r = await createKanboardTask({ projectId: pid, columnId: cid, title, description: desc, colorId });
+    if (r.success) {
+      toast(kbTr('task_created_a') + title + kbTr('task_created_b'), 'success');
+      $container.find('#kb-f-title').val('');
+      $container.find('#kb-f-desc').val('');
+      $st.text(kbTr('created') + r.task.id + ')');
+      if (cache) {
+        cache.tasks.push(r.task);
+        cache.lastSync = new Date().toISOString();
+        saveToStorage(cache);
+        refreshAll();
+      }
+    } else {
+      toast(kbTr('err_generic') + (r.error || ''), 'error');
+      $st.text('✗ ' + (r.error || kbTr('err_generic')));
     }
-  } else {
-    toast('Erro: ' + (r.error || 'desconhecido'), 'error');
-    $st.text('✗ ' + (r.error || 'Erro'));
+  } finally {
+    $btn.prop('disabled', false).removeAttr('aria-busy');
+    setTimeout(() => $st.text(''), 4000);
   }
-
-  $btn.prop('disabled', false);
-  setTimeout(() => $st.text(''), 4000);
 }
 
 async function handleMoveTask(e) {
@@ -949,31 +1174,32 @@ async function handleMoveTask(e) {
 
   $sel.addClass('kb-saving').prop('disabled', true);
 
-  const r = await moveTaskColumn(taskId, projId, colId);
-
-  if (r.success) {
-    // Atualiza cache local
-    const task = cache.tasks.find(t => t.id === taskId);
-    if (task) {
-      task.column_id = colId;
-      cache.lastSync = new Date().toISOString();
-      saveToStorage(cache);
+  try {
+    const r = await moveTaskColumn(taskId, projId, colId);
+    if (r.success) {
+      // Atualiza cache local
+      const task = cache && cache.tasks.find(t => t.id === taskId);
+      if (task) {
+        task.column_id = colId;
+        cache.lastSync = new Date().toISOString();
+        saveToStorage(cache);
+      }
+      toast(kbTr('col_updated'), 'success');
+      refreshStats();
+    } else {
+      toast(kbTr('err_move') + (r.error || ''), 'error');
+      // Reverte o select visualmente
+      const task = cache && cache.tasks.find(t => t.id === taskId);
+      if (task) $sel.val(task.column_id);
     }
-    toast('Coluna atualizada', 'success');
-    refreshStats();
-  } else {
-    toast('Erro ao mover tarefa: ' + (r.error || ''), 'error');
-    // Reverte o select visualmente
-    const task = cache.tasks.find(t => t.id === taskId);
-    if (task) $sel.val(task.column_id);
+  } finally {
+    $sel.removeClass('kb-saving').prop('disabled', false);
   }
-
-  $sel.removeClass('kb-saving').prop('disabled', false);
 }
 
 async function handleDeleteTask(taskId) {
-  if (!confirm('Deletar esta tarefa permanentemente?')) return;
-  toast('⟳ Deletando…', 'info');
+  const okDel = await confirmKb(kbTr('confirm_del_task'));
+  if (!okDel) return;
   const r = await removeKanboardTask(taskId);
   if (r.success) {
     if (cache) {
@@ -983,116 +1209,126 @@ async function handleDeleteTask(taskId) {
       renderTasks();
       refreshStats();
     }
-    toast('🗑️ Tarefa deletada', 'success');
+    toast(kbTr('task_deleted'), 'success');
   } else {
-    toast('Erro ao deletar: ' + (r.error || ''), 'error');
+    toast(kbTr('err_del') + (r.error || ''), 'error');
   }
 }
 
 async function handleDeleteProject() {
   const pid = Number($container.find('#kb-del-proj').val());
-  if (!pid) { toast('Selecione um projeto.', 'error'); return; }
+  if (!pid) { toast(kbTr('err_sel_proj'), 'error'); return; }
   const projName = $container.find('#kb-del-proj option:selected').text();
-  if (!confirm('Deletar o projeto "' + projName + '" permanentemente?\nTodas as tarefas serão removidas.')) return;
+  const okDel = await confirmKb(kbTr('confirm_del_proj_a') + projName + kbTr('confirm_del_proj_b'));
+  if (!okDel) return;
 
-  const $btn = $container.find('#kb-del-proj-btn').prop('disabled', true);
-  toast('⟳ Deletando projeto…', 'info');
-  const r = await removeKanboardProject(pid);
-  if (r.success) {
-    if (cache) {
-      cache.projects = cache.projects.filter(p => p.id !== pid);
-      cache.tasks = cache.tasks.filter(t => t.project_id !== pid);
-      cache.columns = cache.columns.filter(c => c.project_id !== pid);
-      cache.lastSync = new Date().toISOString();
-      saveToStorage(cache);
-      refreshAll();
-      refreshFormCols();
+  const $btn = $container.find('#kb-del-proj-btn').prop('disabled', true).attr('aria-busy', 'true');
+  try {
+    const r = await removeKanboardProject(pid);
+    if (r.success) {
+      if (cache) {
+        cache.projects = cache.projects.filter(p => p.id !== pid);
+        cache.tasks = cache.tasks.filter(t => t.project_id !== pid);
+        cache.columns = cache.columns.filter(c => c.project_id !== pid);
+        cache.lastSync = new Date().toISOString();
+        saveToStorage(cache);
+        refreshAll();
+        refreshFormCols();
+      }
+      toast(kbTr('proj_deleted_a') + projName + kbTr('proj_deleted_b'), 'success');
+    } else {
+      toast(kbTr('err_del') + (r.error || ''), 'error');
     }
-    toast('🗑️ Projeto "' + projName + '" deletado', 'success');
-  } else {
-    toast('Erro ao deletar: ' + (r.error || ''), 'error');
+  } finally {
+    $btn.prop('disabled', false).removeAttr('aria-busy');
   }
-  $btn.prop('disabled', false);
 }
 
 async function handleCreateProject() {
-  const name = $container.find('#kb-new-proj-name').val().trim();
-  if (!name) { toast('Digite um nome para o projeto.', 'error'); return; }
+  const name = String($container.find('#kb-new-proj-name').val() || '').trim();
+  if (!name) { toast(kbTr('err_proj_name'), 'error'); return; }
 
-  const $btn = $container.find('#kb-proj-btn').prop('disabled', true);
+  const $btn = $container.find('#kb-proj-btn').prop('disabled', true).attr('aria-busy', 'true');
   const $st  = $container.find('#kb-proj-status');
-  $st.text('⟳ Criando…');
+  $st.text(kbTr('creating'));
 
-  const r = await createKanboardProject(name);
-  if (r.success) {
-    $container.find('#kb-new-proj-name').val('');
-    $st.text(r.existed ? '✓ Projeto "' + name + '" já existia' : '✓ Projeto "' + name + '" criado!');
-    toast('Projeto "' + name + '" ' + (r.existed ? 'já existe' : 'criado!'), r.existed ? 'info' : 'success');
-    // Atualiza cache com o projeto e suas colunas
-    if (cache) {
-      if (r.project) {
-        const exists = cache.projects.find(p => p.id === r.project.id);
-        if (!exists) cache.projects.push(r.project);
-      }
-      if (r.columns && r.columns.length) {
-        for (const c of r.columns) {
-          const cExists = cache.columns.find(x => x.id === c.id);
-          if (!cExists) cache.columns.push({ ...c, project_id: c.project_id || r.project.id });
+  try {
+    const r = await createKanboardProject(name);
+    if (r.success) {
+      $container.find('#kb-new-proj-name').val('');
+      const msg = r.existed ? (kbTr('proj_exists_a') + name + kbTr('proj_exists_b')) : (kbTr('proj_created_a') + name + kbTr('proj_created_b'));
+      $st.text('✓ ' + msg);
+      toast(msg, r.existed ? 'info' : 'success');
+      // Atualiza cache com o projeto e suas colunas
+      if (cache) {
+        if (r.project) {
+          const exists = cache.projects.find(p => p.id === r.project.id);
+          if (!exists) cache.projects.push(r.project);
         }
+        if (r.columns && r.columns.length) {
+          for (const c of r.columns) {
+            const cExists = cache.columns.find(x => x.id === c.id);
+            if (!cExists) cache.columns.push({ ...c, project_id: c.project_id || r.project.id });
+          }
+        }
+        cache.lastSync = new Date().toISOString();
+        saveToStorage(cache);
+        refreshAll();
+        refreshFormCols();
       }
-      cache.lastSync = new Date().toISOString();
-      saveToStorage(cache);
-      refreshAll();
-      refreshFormCols();
+    } else {
+      // Offline — adiciona à fila
+      addToQueue({ op: 'createProject', name });
+      $st.text(kbTr('offline_queued'));
+      toast(kbTr('offline_toast'), 'info');
     }
-  } else {
-    // Offline — adiciona à fila
-    addToQueue({ op: 'createProject', name });
-    $st.text('⏳ Sem conexão — adicionado à fila');
-    toast('Sem conexão. Projeto será criado quando sincronizar.', 'info');
+  } finally {
+    $btn.prop('disabled', false).removeAttr('aria-busy');
+    setTimeout(() => $st.text(''), 4000);
   }
-
-  $btn.prop('disabled', false);
-  setTimeout(() => $st.text(''), 4000);
 }
 
 async function handleProcessQueue() {
   const q = loadQueue();
-  if (!q.length) { toast('Nenhuma operação pendente.', 'info'); return; }
+  if (!q.length) { toast(kbTr('no_pending'), 'info'); return; }
 
   const $badge = $container.find('#kb-queue-badge');
-  $badge.text('⟳ Sincronizando…');
+  $badge.text(kbTr('sync_busy'));
 
-  const r = await processPendingOps();
-  if (r.success) {
-    let ok = 0, fail = 0;
-    for (const res of r.results) {
-      if (res.success) {
-        ok++;
-        removeFromQueue(res.id);
-        if (cache) {
-          if (res.project) {
-            const exists = cache.projects.find(p => p.id === res.project.id);
-            if (!exists) cache.projects.push(res.project);
-          }
-          if (res.columns && res.columns.length) {
-            for (const c of res.columns) {
-              const cExists = cache.columns.find(x => x.id === c.id);
-              if (!cExists) cache.columns.push({ ...c, project_id: c.project_id || res.project.id });
+  try {
+    const r = await processPendingOps();
+    if (r.success) {
+      let ok = 0, fail = 0;
+      for (const res of (r.results || [])) {
+        if (res.success) {
+          ok++;
+          removeFromQueue(res.id);
+          if (cache) {
+            if (res.project) {
+              const exists = cache.projects.find(p => p.id === res.project.id);
+              if (!exists) cache.projects.push(res.project);
+            }
+            if (res.columns && res.columns.length) {
+              for (const c of res.columns) {
+                const cExists = cache.columns.find(x => x.id === c.id);
+                if (!cExists) cache.columns.push({ ...c, project_id: c.project_id || res.project.id });
+              }
             }
           }
+        } else {
+          fail++;
         }
-      } else {
-        fail++;
       }
+      if (cache) { cache.lastSync = new Date().toISOString(); saveToStorage(cache); }
+      refreshAll();
+      refreshFormCols();
+      refreshQueueBadge();
+      toast(kbTr('queue_result') + ok + kbTr('queue_ok') + (fail ? ', ' + fail + kbTr('queue_erros') : ''), fail ? 'error' : 'success');
+    } else {
+      toast(kbTr('err_queue') + (r.error || ''), 'error');
+      refreshQueueBadge();
     }
-    if (cache) { cache.lastSync = new Date().toISOString(); saveToStorage(cache); }
-    refreshAll();
-    refreshFormCols();
-    refreshQueueBadge();
-    toast('Fila: ' + ok + ' ok' + (fail ? ', ' + fail + ' erros' : ''), fail ? 'error' : 'success');
-  } else {
-    toast('Erro ao processar fila: ' + (r.error || ''), 'error');
+  } finally {
     refreshQueueBadge();
   }
 }
@@ -1100,9 +1336,9 @@ async function handleProcessQueue() {
 /* ── Criar projeto ──────────────────────────────────────── */
 
 async function createKanboardProject(name) {
-  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, projName, mkRpcSrc) => {
+  return runBackend(async (cfg, projName, mkRpcSrc) => {
     const makeRpcFn = eval('(' + mkRpcSrc + ')');
-    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken, cfg.lang);
     const existing = await rpc('getProjectByName', { name: projName });
     if (existing) {
       const cols = await rpc('getColumns', { project_id: existing.id });
@@ -1126,9 +1362,9 @@ async function processPendingOps() {
   const q = loadQueue();
   if (!q.length) return { success: true, processed: 0 };
 
-  return api.runAsyncOnBackendWithManualTransactionHandling(async (cfg, ops, mkRpcSrc) => {
+  return runBackend(async (cfg, ops, mkRpcSrc) => {
     const makeRpcFn = eval('(' + mkRpcSrc + ')');
-    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken);
+    const rpc = makeRpcFn(cfg.apiUrl, cfg.apiToken, cfg.lang);
     const results = [];
 
     for (const op of ops) {
@@ -1174,10 +1410,12 @@ async function processPendingOps() {
 
   /* ── Header ── */
   const $hdr = $('<div id="kb-header">').append(
-    $('<span id="kb-title">').html('<span class="kb-dot"></span> Kanboard'),
-    $('<span id="kb-status-text">'),
-    $('<span id="kb-queue-badge">').on('click', handleProcessQueue),
-    $('<button id="kb-sync-btn">').html('↻ Sincronizar').on('click', handleSync)
+    $('<span id="kb-title">').html('<span class="kb-dot"></span> ' + esc(kbTr('title'))),
+    $('<span id="kb-status-text" role="status" aria-live="polite">'),
+    $('<span id="kb-queue-badge" role="button" tabindex="0">')
+      .on('click', handleProcessQueue)
+      .on('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleProcessQueue(); } }),
+    $('<button id="kb-sync-btn" type="button">').text(kbTr('btn_sync')).on('click', handleSync)
   );
 
   /* ── Stats ── */
@@ -1185,10 +1423,10 @@ async function processPendingOps() {
 
   /* ── Toolbar ── */
   const $toolbar = $('<div id="kb-toolbar">').append(
-    $('<select id="kb-proj-filter" class="kb-select">').on('change', renderTasks),
+    $('<select id="kb-proj-filter" class="kb-select" aria-label="' + esc(kbTr('f_all')) + '">').on('change', renderTasks),
     $('<div class="kb-search-wrap">').append(
-      $('<span class="kb-search-icon">').text('🔍'),
-      $('<input id="kb-search" type="text" placeholder="Buscar tarefas…">').on('input', renderTasks)
+      $('<span class="kb-search-icon" aria-hidden="true">').text('🔍'),
+      $('<input id="kb-search" type="text" placeholder="' + esc(kbTr('search_ph')) + '" aria-label="' + esc(kbTr('search_ar')) + '">').on('input', renderTasks)
     )
   );
 
@@ -1196,11 +1434,11 @@ async function processPendingOps() {
   const $table = $('<table class="kb-table">').append(
     $('<thead>').append(
       $('<tr>').append(
-        $('<th>').text('Projeto').css('width','110px'),
-        $('<th>').text('Tarefa'),
-        $('<th>').text('Coluna').css('width','155px'),
-        $('<th>').text('Cor').css('width','85px'),
-        $('<th>').css('width','36px')
+        $('<th scope="col">').text(kbTr('th_project')).css('width','110px'),
+        $('<th scope="col">').text(kbTr('th_task')),
+        $('<th scope="col">').text(kbTr('th_column')).css('width','155px'),
+        $('<th scope="col">').text(kbTr('th_color')).css('width','85px'),
+        $('<th scope="col">').attr('aria-label', kbTr('th_actions')).css('width','36px')
       )
     ),
     $('<tbody id="kb-tbody">')
@@ -1211,17 +1449,21 @@ async function processPendingOps() {
   const $left = $('<div id="kb-left">').append($toolbar, $tableWrap);
 
   /* ── Form ── */
-  const mkField = (label, el) =>
-    $('<div class="kb-field">').append($('<label class="kb-label">').text(label), el);
+  const mkField = (label, el) => {
+    const id = el.attr('id');
+    const $lbl = $('<label class="kb-label">').text(label);
+    if (id) $lbl.attr('for', id);
+    return $('<div class="kb-field">').append($lbl, el);
+  };
 
-  const $fProj  = $('<select id="kb-f-proj" class="kb-input">').on('change', () => refreshFormCols());
-  const $fCol   = $('<select id="kb-f-col" class="kb-input">').prop('disabled', true);
-  const $fColor = $('<select id="kb-f-color" class="kb-input">').on('change', function () {
+  const $fProj  = $('<select id="kb-f-proj" class="kb-input" aria-label="' + esc(kbTr('lbl_project')) + '">').on('change', () => refreshFormCols());
+  const $fCol   = $('<select id="kb-f-col" class="kb-input" aria-label="' + esc(kbTr('lbl_column')) + '">').prop('disabled', true);
+  const $fColor = $('<select id="kb-f-color" class="kb-input" aria-label="' + esc(kbTr('lbl_color')) + '">').on('change', function () {
     $container.find('.kb-color-preview-dot')
       .css('background', COLORS[$(this).val()] || COLORS['']);
   });
-  const $fTitle = $('<input id="kb-f-title" type="text" class="kb-input" placeholder="Título da tarefa" required>');
-  const $fDesc  = $('<textarea id="kb-f-desc" class="kb-input" placeholder="Descrição (opcional)" rows="3">');
+  const $fTitle = $('<input id="kb-f-title" type="text" class="kb-input" placeholder="' + esc(kbTr('ph_title')) + '" required>');
+  const $fDesc  = $('<textarea id="kb-f-desc" class="kb-input" placeholder="' + esc(kbTr('ph_desc')) + '" rows="3">');
 
   const $colorWrap = $('<div class="kb-color-preview">').append(
     $('<span class="kb-color-preview-dot">'),
@@ -1230,33 +1472,31 @@ async function processPendingOps() {
 
   const $form = $('<div>').css({ display:'flex', flexDirection:'column', gap:11 })
     .append(
-      mkField('Projeto', $fProj),
-      mkField('Coluna',  $fCol),
-      mkField('Cor',     $colorWrap),
-      mkField('Título',  $fTitle),
-      mkField('Descrição', $fDesc),
-      $('<button id="kb-submit-btn">').text('+ Criar Tarefa').on('click', handleCreateTask),
-      $('<div id="kb-create-status">')
+      mkField(kbTr('lbl_project'), $fProj),
+      mkField(kbTr('lbl_column'),  $fCol),
+      mkField(kbTr('lbl_color'),   $colorWrap),
+      mkField(kbTr('lbl_title'),   $fTitle),
+      mkField(kbTr('lbl_desc'),    $fDesc),
+      $('<button id="kb-submit-btn" type="button">').text(kbTr('btn_create_task')).on('click', handleCreateTask),
+      $('<div id="kb-create-status" role="status" aria-live="polite">')
     );
 
   const $right = $('<div id="kb-right">').append(
-    $('<div id="kb-form-header">').html('✏ Nova Tarefa'),
+    $('<div id="kb-form-header">').text(kbTr('form_new')),
     $('<div id="kb-form-body">').append($form),
     $('<div id="kb-proj-section">').append(
-      $('<div class="kb-label">').html('📁 <strong>Novo Projeto</strong>'),
-      $('<input id="kb-new-proj-name" class="kb-input" placeholder="Nome do projeto">'),
-      $('<button id="kb-proj-btn" style="padding:8px 14px;border:none;border-radius:var(--kb-radius-sm);background:var(--accent-color);color:#fff;font-size:14px;font-weight:600;cursor:pointer;width:100%">+ Criar Projeto</button>')
-        .on('click', handleCreateProject),
-      $('<div id="kb-proj-status">'),
-      $('<hr style="border:none;border-top:1px solid color-mix(in srgb, var(--main-border-color) 40%, transparent);margin:8px 0">'),
-      $('<div class="kb-label" style="margin-bottom:4px">').html('🗑️ <strong>Deletar Projeto</strong>'),
-      $('<select id="kb-del-proj" class="kb-input">').append(
+      $('<div class="kb-label">').text(kbTr('sec_new_proj')),
+      $('<input id="kb-new-proj-name" class="kb-input" type="text" placeholder="' + esc(kbTr('ph_proj_name')) + '" aria-label="' + esc(kbTr('ph_proj_name')) + '">'),
+      $('<button id="kb-proj-btn" type="button" class="kb-btn-primary">').text(kbTr('btn_create_proj')).on('click', handleCreateProject),
+      $('<div id="kb-proj-status" role="status" aria-live="polite">'),
+      $('<hr class="kb-sep">'),
+      $('<div class="kb-label" style="margin-bottom:4px">').text(kbTr('sec_del_proj')),
+      $('<select id="kb-del-proj" class="kb-input" aria-label="' + esc(kbTr('ar_del_proj')) + '">').append(
         cache?.projects?.length
-          ? '<option value="">Selecione…</option>' + cache.projects.map(p => `<option value="${p.id}">${esc(p.name||p.title)}</option>`).join('')
-          : '<option value="">Nenhum projeto disponível</option>'
+          ? '<option value="">' + esc(kbTr('sel_ph')) + '</option>' + cache.projects.map(p => `<option value="${p.id}">${esc(p.name||p.title)}</option>`).join('')
+          : '<option value="">' + esc(kbTr('no_projects')) + '</option>'
       ),
-      $('<button id="kb-del-proj-btn" style="padding:8px 14px;border:none;border-radius:var(--kb-radius-sm);background:#ef4444;color:#fff;font-size:14px;font-weight:600;cursor:pointer;width:100%">🗑️ Deletar Projeto</button>')
-        .on('click', handleDeleteProject)
+      $('<button id="kb-del-proj-btn" type="button" class="kb-btn-danger">').text(kbTr('btn_del_proj')).on('click', handleDeleteProject)
     )
   );
 

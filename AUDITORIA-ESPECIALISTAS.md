@@ -3257,3 +3257,51 @@ aplicada** — batches após triagem (candidatos: 1) robustez/erros [`try/catch`
 strings PT/EN]; 3) harness `test-smoke.js` + README).
 
 **Próximo da lista:** Mastodon-Sender (rodada 13).
+
+### Correções aplicadas (batches 1-3) — 15/10/2026
+
+Triagem do Ricardo aprovada ("Pode executar"). Nenhum achado de segurança/perda de dados; trabalho
+concentrado em robustez, a11y/i18n e harness.
+
+#### Batch 1 — robustez/erros
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| A1/C1 | **`runBackend()`** totaliza as 8 chamadas ao backend: erro de rede/sandbox vira `{success:false,error}` em vez de rejeitar a promise → os ramos `else` (antes **mortos**) passam a funcionar, inclusive a fila offline do `createProject` | `test-kb.js` (só 1 chamada direta; guardas) |
+| A1 | **`try/finally`** em `handleSync`/`handleCreateTask`/`handleMoveTask`/`handleDeleteProject`/`handleCreateProject`/`handleProcessQueue` — `loading`/botões/`aria-busy` sempre restaurados (fim da UI travada com botão `disabled` para sempre) | `test-kb.js` (finally nos 6) |
+| A2 | **`checkConfig()` agora dispara**: sentinelas alinhadas aos *defaults* (`yourdomain`/`yourtoken`/`noteid`) + aceita as grafias do README (`YOUR-KANBOARD`/`YOUR_API_TOKEN`/`ID_DA_NOTA`); aviso montado com `.text()` | `test-kb.js` (6 asserções) + smoke (painel de config) |
+| A3 | **`confirm()` → modal próprio `confirmKb`** (Promise; `role=dialog`/`aria-modal`; Esc cancela, Enter confirma, clique no overlay cancela) em deletar tarefa/projeto; **removido o toast otimista** "⟳ Deletando…" (a UI não mente mais) | `test-kb.js` (sem `confirm(`; modal; sem toast otimista) |
+| M | **Sync conta e avisa projetos com erro** (`failed[]` por projeto + toast "N projeto(s) com erro") em vez de engolir falhas parciais | `test-kb.js` |
+
+#### Batch 2 — UI/a11y/i18n
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C3 | **i18n PT/EN**: `KB_I18N` (91 chaves em paridade) + `kbLang`/`KB_LANG`/`kbTr`; rótulos de cor por `key`; idioma do Trilium (`api.getOption('locale')`); mensagem de conexão do backend por `lang` (via `CONFIG.lang`) | `test-kb.js` (paridade + 40+ usos) |
+| D3 | **a11y**: `role=status`/`aria-live=polite` (3 status), `aria-busy` nos botões durante operações, `scope=col` + `aria-label` na coluna de ações, `aria-label` em busca/filtros/selects, `label[for]` (`mkField`), badge da fila `role=button tabindex=0` com Enter/Espaço, botão de deletar agora é `<button type="button">` com `aria-label` | `test-kb.js` + smoke |
+| D3.5 | **`:focus-visible`** em botões/selects/inputs/colunas/badge | `test-kb.js` |
+| D8.1 | **`prefers-reduced-motion`** (transições/animações desligadas) | `test-kb.js` |
+| D7.1 | **Contraste AA**: `--kb-danger: #dc2626`, `--kb-warn: #b45309` (badge da fila), toasts escurecidos (`#b91c1c`/`#15803d`/`#1d4ed8`), `#kb-config-warn` por token; botões do painel por classe (fim dos estilos inline) | `test-kb.js` + revisão |
+| D6.1 | Diálogo de confirmação com CSS próprio (`.kb-overlay`/`.kb-dialog`) | smoke |
+
+#### Batch 3 — harness + README
+
+| ID | Correção aplicada | Como foi validado |
+|----|-------------------|-------------------|
+| C8.1 | **`test-kb.js`** — 43 asserções (esc/aspas, paridade i18n 91 chaves, sentinelas do `checkConfig`, totalização do backend, `try/finally`, modal, a11y) | `bun test-kb.js` ✅ TODOS PASSARAM |
+| C8.1 | **`test-smoke.js`** — Chrome headless: boot com **backend offline não trava** (o `runBackend` salvou), *placeholders* → painel de configuração, guardas de fonte | `bun test-smoke.js` ✅ SMOKE OK |
+| C1.2 | **README corrigido**: fila offline (só `createProject`), `CONTEXTO.md`/`screenshot.webp` removidos da árvore, botão `↻ Sync`, novas seções **Security** (token na nota) e **Testing**; troubleshooting ampliado | revisão |
+| C7.2 | **`toastTimers` morto removido**; `esc()` escapa aspas simples | `test-kb.js` |
+
+**Deploy (15/10):** VPS (nota `KB Sync` `MVLyrKWhKQkp`) via ETAPI — sha256 **`2b97eb24…`**
+(= repo + bloco `CONFIG` real + 1 palavra do comentário, tweak manual preservado). Demo EN
+(nota `KB Sync` `ia3iRTCkCByu`) — sha256 **`a8841de5…`**, **byte a byte igual ao repo**. Registry
+**`kanboard-integration 0.8.0 → 0.8.1`** (`Trilium-plugin-manager/registry.json`, smoke verde).
+O demo fica com os *placeholders* → passa a exibir o **painel "Configuração necessária"** (comportamento
+correto após o fix do `checkConfig`; o demo nunca teve credenciais de Kanboard).
+
+**Residual:** `ROADMAP-RESIDUAIS.md` § Kanboard-Integration — **resolvidos** KB-C2.1, KB-C7.5, KB-Doc;
+**novos** KB-D4.1 (`overflow:hidden` do `#kb-app`), KB-D4.2 (alvo de toque do deletar), KB-D7.3 (tinta do
+`#kb-config-warn`). Produto (KB-Q1…Q5, KB-Q13) segue no benchmark/roadmap.
+
+**Próximo da lista:** Mastodon-Sender (rodada 13).

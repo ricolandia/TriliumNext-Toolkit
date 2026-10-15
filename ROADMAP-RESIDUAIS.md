@@ -202,10 +202,13 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 | KB-Q4 | Preservar **posição** na coluna ao mover (hoje sempre ao topo) | Robustez/UX | S | Médio | `211` | manual |
 | KB-Q5 | **Fila offline** para mover/deletar/criar tarefa (hoje só `createProject`) | Feature/UX | M | Médio | `1050`, `1137` | manual (offline→online) |
 | KB-C6.1 | Reavaliar `runAsyncOnBackendWithManualTransactionHandling` em operações só-leitura (`getNoteContent`) | Manutenção/API | S | Médio | `112`, `125` | verificar em runtime |
-| KB-C2.1 | Endurecer `esc()` para aspas simples (defensivo) | Robustez | S | Baixo | `244-251` | `bun` (fixture) |
+| KB-C2.1 | ✅ **RESOLVIDO** (15/10) — `esc()` agora escapa aspas simples (`&#39;`) | Robustez | S | Baixo | `244-251` | `test-kb.js` |
 | KB-C7.4 | `--kb-font: 'DM Sans'` não carregada (sempre Segoe UI) — embutir ou remover | Manutenção | S | Baixo | `329` | revisão visual |
-| KB-C7.5 | `manifest.json` sem `version` × registry `0.8.0` — reconciliar no próximo release | Manutenção | S | Baixo | `manifest.json`; registry | release |
-| KB-Doc | Claim "token off the frontend" (`README:16`) — reescrever (o token mora na nota de frontend) | Doc | S | Baixo | `README.md:16` | revisão |
+| KB-C7.5 | ✅ **RESOLVIDO** (15/10) — registry bumpado `kanboard-integration 0.8.0 → 0.8.1`; `manifest.json` segue sem `version` (convenção do repo) | Manutenção | S | Baixo | `manifest.json`; registry | release |
+| KB-Doc | ✅ **RESOLVIDO** (15/10) — claim do token reescrita (o token mora no `CONFIG` da nota de frontend) + § Security no README | Doc | S | Baixo | `README.md:16` | revisão |
+| KB-D4.1 | `#kb-app { overflow: hidden }` pode cortar conteúdo/toasts no mobile | UI | S | Baixo | `#kb-app` | revisão visual (390px) |
+| KB-D4.2 | Alvo de toque do botão de deletar pequeno no mobile (~28px) | a11y | S | Baixo | `.kb-del-btn` | revisão em 390px |
+| KB-D7.3 | `#kb-config-warn` usa tinta `#f59e0b` no fundo (borda/strong já por token) | UI/tema | S | Baixo | `#kb-config-warn` | revisão no tema claro |
 | KB-Q13 | Benchmark: lacunas de produto (query language, DnD, raias/WIP) — ver `BENCHMARK-obsidian-widgets.md` | Produto | — | — | benchmark | triagem pós-15 |
 
 ## Pendências de produto (novas, 29/09/2026)
