@@ -6,6 +6,8 @@ compartilhado acima das trilhas**, para permitir transmídia.
 
 - Nota mãe: **"Author template master"** (`#template`), no VPS sob
   `wBlaqjho7HNt` ("Modelos Trilium").
+- Duas notas de leitura no topo: **"📖 Como usar este template"** (referência) e
+  **"🚀 Tutorial de uso (primeiro projeto)"** (o roteiro do primeiro dia, passo a passo).
 - Pasta-destino **dedicada**: **"Projetos de Escrita"** (`N2ipIF2YDJRL` no VPS,
   sob `10-Projetos`) — é ela que leva `~child:template` → mãe. O `+` nessa pasta
   cria o projeto inteiro, com os sub-templates privados da própria instância.

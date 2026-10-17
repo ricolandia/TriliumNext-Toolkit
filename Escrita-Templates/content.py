@@ -82,7 +82,9 @@ prosa, roteiro e HQ — e um canon compartilhado acima das trilhas, para permiti
 <p>Comece por <b>00 Briefing</b> e <b>01 Canon</b>; depois abra a trilha que vai
 usar e apague as outras. O passo a passo está em <i>📖 Como usar este template</i>.</p>"""
 
-COMO_USAR = """<h3>Passo a passo</h3>
+COMO_USAR = """<p><b>Pressa?</b> O <b>🚀 Tutorial de uso (primeiro projeto)</b> é o
+roteiro do primeiro dia, passo a passo. Esta nota é a referência.</p>
+<h3>Passo a passo</h3>
 <ol>
 <li>Crie o projeto pelo botão <b>+</b> na pasta <i>Projetos de Escrita</i> — a
 estrutura inteira vem junto.</li>
@@ -134,6 +136,54 @@ cena pode apontar para mais de uma linha.</p>
 <h3>Regra de ouro da transmídia</h3>
 <p>Nada que seja comum às mídias pode morar <i>dentro</i> de uma trilha. Se a
 informação vale para a prosa <b>e</b> para a HQ, ela é <b>canon</b>.</p>"""
+
+TUTORIAL = """<p>Roteiro do <b>primeiro dia</b>, na ordem. Cada passo é curto.
+Dúvida em algum ponto? O <b>📖 Como usar este template</b> tem os detalhes.</p>
+<h3>1 · Criar (2 min)</h3>
+<ol>
+<li><b>+</b> na pasta <i>Projetos de Escrita</i> → nasce o projeto inteiro.</li>
+<li>Renomeie a nota do projeto com o nome da obra.</li>
+<li>Veja a árvore: <b>00 Briefing</b>, <b>01 Canon</b> e as três trilhas. As que
+você não vai usar, apague no passo 3.</li>
+</ol>
+<h3>2 · Canon (o que vale para tudo)</h3>
+<ol>
+<li><b>Personagens</b>: abra o exemplo "◇ Personagem 1", veja o formato e
+<b>renomeie</b> para o seu protagonista — ou apague e crie com <b>+</b>. Os
+outros: <b>+</b>, um por nota.</li>
+<li><b>Mapa de relações</b>: <b>+</b> cria o mapa com exemplo — troque os nomes
+e as setas (aliado · rival · mentor · família).</li>
+<li>Do <b>Mundo</b>, <b>Temas</b>, <b>Linha do tempo</b> e <b>Referências</b>,
+preencha o que já sabe. Canon cresce com o projeto.</li>
+</ol>
+<h3>3 · Escolher a trilha</h3>
+<p>Uma para começar. <b>Apague as outras</b> (a nota e o <code>_tpl-*</code>
+dela).</p>
+<ul>
+<li><b>Prosa</b> → <b>Manuscrito</b>: <b>+</b> cria uma cena no formato certo (há
+"◇ Cena 1" de exemplo). Arraste na grade para ordenar e compile o documento
+único.</li>
+<li><b>Roteiro</b> → escreva no <b>Rascunho</b>; a tela formata, conta páginas e
+exporta <code>.fountain</code>/PDF.</li>
+<li><b>HQ</b> → <b>Páginas</b> (<b>+</b> cria a página com o Quadro 1 desenhado) e
+<b>Storyboard</b> (<b>+</b> cria o canvas da página, com exemplo).</li>
+</ul>
+<h3>4 · Tramas e esqueleto (Prosa)</h3>
+<ol>
+<li><b>Estrutura → Linhas (plotlines)</b>: uma nota por trama.</li>
+<li>Na nota da cena, ligue a trama pela <b>relação</b> <code>plotline</code>.</li>
+<li><b>Mapa de arcos &amp; plotlines</b> (<b>+</b>): nomes das tramas nas faixas,
+marcadores nas paradas (inciting · virada 1 · meio · virada 2 · clímax).</li>
+</ol>
+<h3>5 · Conforme o projeto anda</h3>
+<ul>
+<li><code>#status</code> no nó que quiser (<code>ideia · esboço · rascunho ·
+revisão · final · arquivada</code>) — vale para tudo abaixo até alguém trocar.</li>
+<li>Para ver o que está em revisão: busque <code>#status=revisão</code>.</li>
+<li>Quer outro canvas (OKR, GTD, storyboard "de filmagem")? Instale o pack
+<i>Canvas Templates for Production</i> e use o 🧩. Plugins e telas:
+<b>99 Ferramentas</b>.</li>
+</ul>"""
 
 BRIEFING = """<h3>Logline</h3><p><i>Uma frase. Protagonista + conflito + o que está em jogo.</i></p>
 <h3>Premissa</h3><p>O que acontece, para quem, e por que agora.</p>
@@ -322,6 +372,12 @@ TREE = N(
         ),
         N("briefing", "00 Briefing", BRIEFING, icon="bx bx-target-lock"),
         N("preflight", "⚙ Preflight", FERRAMENTAS, icon="bx bx-check-shield"),
+        N(
+            "tutorial",
+            "🚀 Tutorial de uso (primeiro projeto)",
+            TUTORIAL,
+            icon="bx bx-play-circle",
+        ),
         N(
             "canon",
             "01 Canon",

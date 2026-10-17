@@ -92,6 +92,7 @@ Author template master            #template · #iconClass · #label:projeto=prom
 │                                 · #relation:plotline=promoted
 ├── 📖 Como usar este template
 ├── 00 Briefing                   (logline, premissa, tom, público, promessa)
+├── 🚀 Tutorial de uso (primeiro projeto)   roteiro do primeiro dia (5 blocos)
 ├── 01 Canon                      ← compartilhado pelas TRÊS trilhas
 │   ├── Personagens               ~child:template → _tpl-Personagem
 │   │   ├── ◇ Personagem 1 — exemplo   (formato pronto: renomeie ou apague)
@@ -201,6 +202,7 @@ Checar por `#pluginId`/`#installedPlugins` (ver
 | Canvases (rodada 16) | `_tpl-Mapa` `CR5EqN2o4fWO` · `_tpl-Arcos` `7oXupvJcRtBM` · `_tpl-Storyboard` `YDzGtzzManbG` |
 | Notas-guia novas (rodada 16) | `Mapa de relações` `3xkWdeCMK4Jc` · `Mapa de arcos & plotlines` `uSK87wnqXAic` |
 | Exemplos `◇` (rodada 16) | `cAz7mYO41JTB` · `vqqzjwDPvMBW` · `C2uE80GFbf6k` |
+| `🚀 Tutorial de uso (primeiro projeto)` | `soxgrUbLyNUD` (demo `39AVeQuCboe8`) |
 
 **Demo** espelhado (ids de script próprios, resolvidos por capacidade):
 mãe `NZSjCETPrwH3`.
