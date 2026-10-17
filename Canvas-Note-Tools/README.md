@@ -121,7 +121,10 @@ Flows with cycles work: back edges are detected and only used for ordering.
    template name.
 3. In any canvas, click **🧩** → pick the template. It is inserted to the
    right of the current content with all references remapped
-   (arrow bindings, bound texts, frames), ready to edit.
+   (arrow bindings, bound texts, frames, groups), ready to edit. New elements
+   always land **on top** (their z-order starts after the existing content), and
+   in an **empty** canvas the template's own background/grid/zoom are applied —
+   so a fresh canvas opens looking like the template.
 4. Flows saved with **Template** in the Flow Generator appear here too.
 
 ### Help (?)

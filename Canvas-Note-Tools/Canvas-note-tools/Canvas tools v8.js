@@ -2807,6 +2807,17 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                     dx = maxX + margin; dy = minY;
                 }
 
+                // appState do template vale quando o canvas está VAZIO: aí o fundo,
+                // o grid e o zoom pretendidos pelo template aparecem como desenhados.
+                // Com conteúdo já na tela, mexer na vista atrapalharia quem está lá.
+                if (!active.length && templateData.appState) {
+                    if (!canvasData.appState) canvasData.appState = {};
+                    for (const k of ['viewBackgroundColor', 'gridSize', 'gridStep', 'zoom', 'scrollX', 'scrollY']) {
+                        const v = templateData.appState[k];
+                        if (v !== undefined && v !== null) canvasData.appState[k] = v;
+                    }
+                }
+
                 // clona com ids novos e remapeia referências (boundElements, bindings, container, frame)
                 const idMap = new Map();
                 for (const el of src) if (el.id) idMap.set(el.id, 'tpl_' + Math.random().toString(36).slice(2, 14));
@@ -2821,7 +2832,17 @@ class CanvasLinkerWidget extends api.NoteContextAwareWidget {
                 const now = Date.now();
                 const clones = [];
                 const A = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+                // z-order: os novos índices começam DEPOIS do maior já existente no canvas
+                // (começar em a00 empatava com o conteúdo já posto e o template podia
+                //  aparecer atrás dele). O esquema é o mesmo: 'a' + 2 dígitos em base 62.
                 let seq = 0;
+                for (const e of canvasData.elements) {
+                    const m = /^a([0-9A-Za-z]{2})$/.exec(e.index || '');
+                    if (!m) continue;
+                    const v = A.indexOf(m[1][0]) * A.length + A.indexOf(m[1][1]) + 1;
+                    if (v > seq) seq = v;
+                }
+                if (seq > A.length * A.length - src.length - 1) seq = 0;  // limite do esquema de 2 dígitos
                 for (const el of src) {
                     const c = JSON.parse(JSON.stringify(el));
                     c.id = mapRef(c.id);

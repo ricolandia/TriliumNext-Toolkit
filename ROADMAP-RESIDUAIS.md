@@ -235,6 +235,16 @@ com 7 exceções a 11px e a faixa em 9px), 59 `roundness` normalizados, 2 caixas
 na célula; **0 vazamentos / 0 colisões novas**, harness **4 ok · 1 warn · 0 fail**; 13 SVGs + 13 capturas
 regerados, zip `77075049…` (89,2 KB), **VPS republicada** (13/13 byte a byte), registry **0.8.2**.
 
+**✅ Q14 — v8, não o pack (17/10, mesma noite):** `_insertTemplate` (Canvas Note Tools) agora
+(a) calcula o **z-order a partir do maior `index` já existente** no canvas (começar em `a00` empatava com o
+conteúdo já posto — duas inserções davam índices repetidos e o template podia aparecer atrás) e (b) **adota o
+`appState` do template quando o canvas está vazio** (fundo, grid, zoom, scroll; não copia `currentItemStrokeColor`,
+que é cor de desenho do usuário). Coberto por **`Canvas-Note-Tools/Canvas-note-tools/test-insert-template.js`**
+(**27 asserções**, `node` + stubs de `api`, sem Trilium): rodado contra o arquivo **antigo** ele acusa as duas
+falhas (appState não adotado; `a00,a01,a02,a00,a01,a02` repetidos) — é o teste que prova o conserto. Plugin
+**0.9.1** no registry (changelog) + `Canvas-note-tools.zip` regenerado com o v8 em sincronia. Falta só o olho
+no Trilium (o teste cobre o backend puro, não a UI).
+
 **Permanece:**
 
 | ID | Item | Categoria | Esforço | Risco | Onde | Validação |
@@ -242,7 +252,6 @@ regerados, zip `77075049…` (89,2 KB), **VPS republicada** (13/13 byte a byte),
 | CT15-Q5 | **Parcial**: 7 rótulos ficaram em **11px** (5 cabeçalhos de passo do Cornell na grade de 300px + par RESUMO/SÍNTESE) e a **faixa-índice do storyboard** em **9px** (a 12px ficaria 1533px numa faixa de 1260) — chegar a 12px exige **re-layout** (grade/faixa), não escala | A11y | M | Médio | 3 JSON | render + olho humano |
 | CT15-Q6 | **Falso positivo em parte**: as 3 famílias são **por template** (Cascadia/Nunito/Helvetica — trocar move o layout). Aplicado o que era real: `roundness` do miolo → dominante por template (59) e `⬜`→`☐` (2) | Consistência | M | Médio | 13 JSON | diff de estilo |
 | CT15-Q13 | *Descarte*: i18n EN do pack | — | L | — | — | **não fazer** (PT-only) |
-| CT15-Q14 | *Do v8, não do pack*: `_insertTemplate` reinicia `index` em `a00` e ignora `appState` do template | Robustez | M | Médio | `Canvas tools v8.js:2839` | manual |
 
 ## Canvas-Template-Loader (rodada 14 — arquivado)
 
@@ -267,11 +276,11 @@ como está) e **hub mobile registrado para execução pós-rodada 15** junto do 
 |----|------|-----------|:-------:|:-----:|------|-----------|
 | PROD-MOBILE | **Hub de widgets no mobile — ⏸️ IDÉIA A AVALIAR NO FUTURO (29/09, decisão do Ricardo: não executar agora)** — widgets de painel (DNN, Word Counter, Pomodoro) não aparecem no mobile (não há panes). Padrão já validado: launcher do Canvas Note Tools (nota `launcher` + `#launcherType=script` + `~script` na Mobile Launch Bar; a doc oficial confirma *custom launch bar widgets* no mobile). Opções: 1 script launcher "Toolkit" → diálogo (`role=dialog`, CSS escopado, alvos 44px, i18n) com 1 botão por widget, ou launchers separados por widget; cada widget de painel ganha variante diálogo (extrair engine com marcadores `*-BE-*` + build script; engine reutilizável: DNN 40-45%, WC 48%, Pomodoro 60-65%); render notes (Planner, AI Chat, Kanboard) só navegam. Custo ~1 dia/widget; reavaliar se usar o mobile com frequência | Feature/UX | M/L | Médio | `Daily-Note-Navigator/`, `Word-Counter/`, `Minimalist-Pomodoro/`, `Canvas-Note-Tools/` (padrão) | testes + smoke + deploy sha idêntico |
 | PROD-NOME | **Nomenclatura plugin → scripts/widgets — ✅ CONCLUÍDA (29/09)** (doc oficial: não existe "plugin"; termos oficiais são *scripts*, *custom widgets*, *launch bar widgets*, *render notes*, *backend scripts*, *themes*). **Aplicado:** docs/textos novos (README do toolkit "Plugins & Tools Collection" → "Scripts & Widgets Collection", SESSION seção "Scripts, Widgets & Render Notes", AUDITORIA colunas, 3 READMEs subprojeto + 2 headers JS → "Render Note", UI do manager → "Gerenciador de Scripts & Widgets", DEV_GUIDE/MANIFEST/CONTEXTO/AGENTS/DISCUSSION) com nota "anteriormente chamados de plugins". **Contrato mantido:** labels `#pluginVersion`/`#pluginRegistry`, chave `plugins[]` do registry, nome do repo do manager, nomes de arquivo | Docs | S | Baixo | `README.md`, `SESSION.md`, `AUDITORIA-ESPECIALISTAS.md`, manager | revisão de texto |
-| PROD-CT | **Bump do Canvas-Templates no registry** — o content pack foi atualizado (13 templates revisados do QA Modelos Trilium, novo "Template - Projetos") mas o `registry.json` do Plugin Manager segue `canvas-templates-for-production 0.8.0`; subir a versão no próximo release (com nota de que o zip foi regenerado) | Release | S | Baixo | `Trilium-plugin-manager/registry.json` | instalar via manager e conferir os 13 templates |
+| PROD-CT | ✅ **FEITO (17/10)** — `canvas-templates-for-production` **0.8.2** (o pack das rodadas 15 + Q5/Q6) — histórico: **Bump do Canvas-Templates no registry** — o content pack foi atualizado (13 templates revisados do QA Modelos Trilium, novo "Template - Projetos") mas o `registry.json` do Plugin Manager segue `canvas-templates-for-production 0.8.0`; subir a versão no próximo release (com nota de que o zip foi regenerado) | Release | S | Baixo | `Trilium-plugin-manager/registry.json` | instalar via manager e conferir os 13 templates |
 
 ## Histórico
 
-- **17/10/2026** — § Canvas-Templates (rodada 15): **batches 1–3 aplicados** (conteúdo via `fix-canvas-templates.py`, doc/artefato/capturas/zip/registry 0.8.1, harness `test-canvas-templates.py` verde: 4 ok · 1 warn · 0 fail); deploy no **demo** e na **VPS** feito por `deploy-canvas-templates.py` (13/13 verificados byte a byte) + commit/push; **2ª passada no mesmo dia (Q5/Q6)**: 143 textos → 12px com 7 exceções medidas a 11px e a faixa do storyboard em 9px, 59 `roundness` + 2 caixas normalizadas, 6 rótulos recentrados, harness 4 ok · 1 warn · 0 fail, zip `77075049…`, VPS republicada e registry 0.8.2; permanecem CT15-Q5 (re-layout) e CT15-Q14.
+- **17/10/2026** — § Canvas-Templates (rodada 15): **batches 1–3 aplicados** (conteúdo via `fix-canvas-templates.py`, doc/artefato/capturas/zip/registry 0.8.1, harness `test-canvas-templates.py` verde: 4 ok · 1 warn · 0 fail); deploy no **demo** e na **VPS** feito por `deploy-canvas-templates.py` (13/13 verificados byte a byte) + commit/push; **2ª passada no mesmo dia (Q5/Q6)**: 143 textos → 12px com 7 exceções medidas a 11px e a faixa do storyboard em 9px, 59 `roundness` + 2 caixas normalizadas, 6 rótulos recentrados, harness 4 ok · 1 warn · 0 fail, zip `77075049…`, VPS republicada e registry 0.8.2; permanece CT15-Q5 (re-layout, 8 rótulos ≤11px); **CT15-Q14 fechado** no mesmo dia (`_insertTemplate`: z-order depois do maior `index` + `appState` do template em canvas vazio, `test-insert-template.js` com 27 asserções — o teste acusa as 2 falhas no arquivo antigo — plugin **0.9.1** + zip regenerado).
 - **17/10/2026** — adicionado o § Canvas-Template-Loader (rodada 14; **arquivado** — incorporado ao Canvas-Note-Tools v8, sem batches de código).
 - **14/10/2026** — adicionado o § Kanboard-Integration (rodada 12; **só auditoria** — sem batches ainda) + criado o `BENCHMARK-obsidian-widgets.md` (Trilha B) com a Fase 0.5 do Kanboard.
 - **29/09/2026** — adicionado o § UI-Tweaks (rodada 11; correções aplicadas em batches 1-3, deploy na VPS).

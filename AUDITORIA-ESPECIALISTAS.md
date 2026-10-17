@@ -3667,7 +3667,17 @@ e colisão texto×texto, antes × depois):
 - **O que sobra do Q5:** 7 textos em **11 px** + 1 em **9 px** (a faixa) — para chegar a 12 px seria preciso
   **refazer a grade do Cornell e a faixa do storyboard** (é re-layout, não escala) com conferência visual.
 
-**Residual:** itens M (8 rótulos de grade ≤ 11px, paleta-token, i18n descartado) + **CT15-Q14** (v8) →
+**CT15-Q14 (v8, não o pack) — fechado na mesma noite:** o `_insertTemplate` do Canvas Note Tools
+**recomeçava o `index` em `a00`** (empatando com o conteúdo já posto: duas inserções geravam
+`a00,a01,a02,a00,a01,a02`) e **ignorava o `appState` do template**. Agora o z-order parte do **maior `index`
+existente** (com trava para o limite de 2 dígitos em base 62) e, **com o canvas vazio**, fundo/grid/zoom/scroll
+do template são adotados (`currentItemStrokeColor` — cor de desenho do usuário — fica de fora de propósito).
+Prova: `Canvas-Note-Tools/Canvas-note-tools/test-insert-template.js`, **27 asserções** em node com stubs de
+`api` (extrai o bloco `CLW-BE-TPL` do arquivo por marcador) — rodado contra o arquivo **anterior** acusa
+**4 falhas** (appState não adotado, índices reiniciando em `a00`, repetição em 2 inserções, ordem global);
+com o conserto, verde. Plugin **0.9.1** no registry + `Canvas-note-tools.zip` regenerado (v8 em sincronia).
+
+**Residual:** itens M (8 rótulos de grade ≤ 11px, paleta-token, i18n descartado) →
 `ROADMAP-RESIDUAIS.md` § Canvas-Templates.
 
 **Próximo da lista:** **fila vazia** (13 Mastodon parkado · 14 arquivado · 15 auditado/triado) → segue o
