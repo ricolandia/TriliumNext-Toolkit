@@ -3645,7 +3645,30 @@ título, conteúdo e anexo — verificação final **13/13** com conteúdo e SVG
   0.106 com corpo binário — a importação do zip fica como validação de UI; no VPS o caminho **é PATCH**, já
   que reimportar duplicaria as 13 notas.
 
-**Residual:** itens M (≥12px, paleta-token, i18n descartado) → `ROADMAP-RESIDUAIS.md` § Canvas-Templates.
+**Pós-deploy, no mesmo dia — CT15-Q5/Q6 (tipografia e cantos):** com o pack já publicado, atacamos os dois
+residuais "de médio risco" — sempre **medindo antes de aplicar** (vazamento de cada texto contra a sua célula
+e colisão texto×texto, antes × depois):
+- **Q6 — aplicado.** `roundness` do *miolo* colapsado no valor **dominante de cada template** (Manual 10,
+  Projetos 7, Cornell 0, OKR 7, GTD-W 4, SCAMPER 8; pílulas ≥ 30 preservadas) → **59 elementos**; `⬜` → **`☐`**
+  (caixa de marcar como **texto**; o emoji saía grande) em Cornell/Feynman.
+  **Falso positivo:** as "3 famílias tipográficas" são **por template** (Manual/Cornell = Cascadia, storyboard =
+  Nunito, os outros 10 = Helvetica) — trocar família mexeria em todo layout; nada foi feito.
+- **Q5 — aplicado onde é seguro.** `fontSize` 9/10/11 → **12**, escalando a caixa e **preservando o alinhamento**
+  (centro/direita recuam em x): **Manual 42**, **Cornell 47**, **storyboard 60** (**143** no total).
+  Exceções medidas com teto de **11 px** (a 12 px a linha encosta no vizinho): os **5 cabeçalhos de passo** do
+  Cornell (grade de 300 px) e o par **"RESUMO / SÍNTESE"** (vai de 90 a 760). A **faixa-índice do storyboard**
+  (2 linhas) fica em **9 px**: a 12 px daria **1533 px de largura numa faixa de 1260** — e ela já vazava 15 px a
+  9 px (é o warn aceito do harness).
+- **6 rótulos do storyboard** ("AÇÃO / MOVIMENTO") foram **recentralizados na célula** (a 12 px vazavam 13 px da
+  célula de 40 px) — regra nova `encaixe` (só age quando a célula é do tamanho do texto).
+- Verificação: **0 vazamentos** e **0 colisões novas** nos 13; harness **4 ok · 1 warn · 0 fail** (o mesmo warn de
+  antes); 13 SVGs e 13 capturas regerados; zip novo **`77075049…`** (30 arquivos, 89,2 KB); **VPS republicada**
+  (7 conteúdos + 7 anexos; verificação **13/13 byte a byte** de novo). Registry → **0.8.2**.
+- **O que sobra do Q5:** 7 textos em **11 px** + 1 em **9 px** (a faixa) — para chegar a 12 px seria preciso
+  **refazer a grade do Cornell e a faixa do storyboard** (é re-layout, não escala) com conferência visual.
+
+**Residual:** itens M (8 rótulos de grade ≤ 11px, paleta-token, i18n descartado) + **CT15-Q14** (v8) →
+`ROADMAP-RESIDUAIS.md` § Canvas-Templates.
 
 **Próximo da lista:** **fila vazia** (13 Mastodon parkado · 14 arquivado · 15 auditado/triado) → segue o
 `ROADMAP-RESIDUAIS.md` + o super-template `Escrita-Templates`.

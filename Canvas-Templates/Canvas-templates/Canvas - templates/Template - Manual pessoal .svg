@@ -3,9 +3,9 @@
 <marker id="seta-c4b5fd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c4b5fd"/></marker>
 </defs>
 <rect x="44.00" y="34.00" width="1372.00" height="2030.00" fill="#ffffff"/>
-<rect x="68.00" y="68.00" width="1320.00" height="1980.00" rx="12.00" fill="#d4c8f0" stroke="#d4c8f0" stroke-width="2"/>
-<rect x="60.00" y="60.00" width="1340.00" height="1980.00" rx="12.00" fill="#fdfcff" stroke="#7c3aed" stroke-width="2"/>
-<rect x="60.00" y="60.00" width="1340.00" height="180.00" rx="0.00" fill="#2d1b69" stroke="#2d1b69" stroke-width="2"/>
+<rect x="68.00" y="68.00" width="1320.00" height="1980.00" rx="10.00" fill="#d4c8f0" stroke="#d4c8f0" stroke-width="2"/>
+<rect x="60.00" y="60.00" width="1340.00" height="1980.00" rx="10.00" fill="#fdfcff" stroke="#7c3aed" stroke-width="2"/>
+<rect x="60.00" y="60.00" width="1340.00" height="180.00" rx="10.00" fill="#2d1b69" stroke="#2d1b69" stroke-width="2"/>
 <ellipse cx="1170.00" cy="230.00" rx="90.00" ry="90.00" fill="#a78bfa" stroke="transparent" stroke-width="2" opacity="0.10"/>
 <ellipse cx="140.00" cy="240.00" rx="60.00" ry="60.00" fill="#a78bfa" stroke="transparent" stroke-width="2" opacity="0.08"/>
 <ellipse cx="260.00" cy="90.00" rx="40.00" ry="40.00" fill="#a78bfa" stroke="transparent" stroke-width="2" opacity="0.12"/>
@@ -13,7 +13,7 @@
 <g fill="#b29afb">
 <text x="120.00" y="151.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">FOTO</text>
 </g>
-<rect x="240.00" y="100.00" width="200.00" height="24.00" rx="4.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
+<rect x="240.00" y="100.00" width="200.00" height="24.00" rx="10.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#ffffff">
 <text x="260.00" y="111.25" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.50" text-anchor="start" xml:space="preserve">MANUAL PESSOAL</text>
 </g>
@@ -24,216 +24,216 @@
 <text x="240.00" y="192.60" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="start" xml:space="preserve">Papel / função · time / empresa</text>
 </g>
 <g fill="#c4b5fd">
-<text x="240.00" y="209.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">&quot;Uma frase curta que te define — seu mantra, missão pessoal ou jeito de ver o mundo.&quot;</text>
+<text x="240.00" y="210.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">&quot;Uma frase curta que te define — seu mantra, missão pessoal ou jeito de ver o mundo.&quot;</text>
 </g>
 <g fill="#a78bfa">
-<text x="1186.00" y="109.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="end" xml:space="preserve">versão  ___.___ </text>
+<text x="1186.00" y="110.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="end" xml:space="preserve">versão  ___.___ </text>
 </g>
 <g fill="#958ad8">
-<text x="1239.00" y="129.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="end" xml:space="preserve">atualizado em: ____________</text>
+<text x="1239.00" y="130.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="end" xml:space="preserve">atualizado em: ____________</text>
 </g>
 <g fill="#2d1b69">
-<text x="1240.00" y="149.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="end" xml:space="preserve">Este documento é um guia de</text>
-<text x="1240.00" y="169.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="end" xml:space="preserve">como trabalhar e se relacionar</text>
-<text x="1240.00" y="189.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="end" xml:space="preserve">comigo da melhor forma.</text>
+<text x="1240.00" y="150.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="end" xml:space="preserve">Este documento é um guia de</text>
+<text x="1240.00" y="174.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="end" xml:space="preserve">como trabalhar e se relacionar</text>
+<text x="1240.00" y="198.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="end" xml:space="preserve">comigo da melhor forma.</text>
 </g>
 <g fill="#7c3aed">
-<text x="80.00" y="269.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">ℹ️ Preencha em ~20 min. Compartilhe com time, gestor e colaboradores próximos. Revise a cada 6–12 meses.</text>
+<text x="80.00" y="270.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">ℹ️ Preencha em ~20 min. Compartilhe com time, gestor e colaboradores próximos. Revise a cada 6–12 meses.</text>
 </g>
 <rect x="86.00" y="306.00" width="420.00" height="256.69" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="80.00" y="300.00" width="420.00" height="260.00" rx="10.00" fill="#fdfcff" stroke="#7c3aed" stroke-width="2"/>
-<rect x="80.00" y="280.00" width="420.00" height="58.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
-<rect x="100.00" y="300.00" width="24.00" height="24.00" rx="6.00" fill="#7c3aed" stroke="#ffffff" stroke-width="1"/>
+<rect x="80.00" y="280.00" width="420.00" height="58.00" rx="10.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
+<rect x="100.00" y="300.00" width="24.00" height="24.00" rx="10.00" fill="#7c3aed" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="110.50" y="311.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">👤</text>
 </g>
 <g fill="#ffffff">
-<text x="140.00" y="309.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">QUEM SOU EU</text>
+<text x="140.00" y="310.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">QUEM SOU EU</text>
 </g>
 <g fill="#6b7280">
-<text x="100.00" y="368.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Contexto pessoal, trajetória e o que te trouxe até aqui:</text>
+<text x="100.00" y="370.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Contexto pessoal, trajetória e o que te trouxe até aqui:</text>
 </g>
 <rect x="526.00" y="306.00" width="420.00" height="256.69" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="520.00" y="300.00" width="420.00" height="260.00" rx="10.00" fill="#fdfcff" stroke="#0d9488" stroke-width="2"/>
-<rect x="520.00" y="280.00" width="420.00" height="58.00" rx="0.00" fill="#0b8177" stroke="#0d9488" stroke-width="2"/>
-<rect x="540.00" y="300.00" width="24.00" height="24.00" rx="6.00" fill="#0b8177" stroke="#ffffff" stroke-width="1"/>
+<rect x="520.00" y="280.00" width="420.00" height="58.00" rx="10.00" fill="#0b8177" stroke="#0d9488" stroke-width="2"/>
+<rect x="540.00" y="300.00" width="24.00" height="24.00" rx="10.00" fill="#0b8177" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="550.50" y="311.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">💬</text>
 </g>
 <g fill="#ffffff">
-<text x="580.00" y="309.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">COMO ME COMUNICO</text>
+<text x="580.00" y="310.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">COMO ME COMUNICO</text>
 </g>
 <g fill="#6b7280">
-<text x="540.00" y="368.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Canal preferido:</text>
+<text x="540.00" y="370.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Canal preferido:</text>
 </g>
 <g fill="#6b7280">
-<text x="540.00" y="388.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Tempo de resposta típico:</text>
+<text x="540.00" y="390.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Tempo de resposta típico:</text>
 </g>
 <g fill="#6b7280">
-<text x="540.00" y="408.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Reuniões: prefiro que sejam:</text>
+<text x="540.00" y="410.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Reuniões: prefiro que sejam:</text>
 </g>
 <rect x="966.00" y="306.00" width="420.00" height="256.69" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="960.00" y="300.00" width="420.00" height="260.00" rx="10.00" fill="#fdfcff" stroke="#2563eb" stroke-width="2"/>
-<rect x="960.00" y="280.00" width="420.00" height="58.00" rx="0.00" fill="#2563eb" stroke="#2563eb" stroke-width="2"/>
-<rect x="978.00" y="301.00" width="24.00" height="24.00" rx="6.00" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>
+<rect x="960.00" y="280.00" width="420.00" height="58.00" rx="10.00" fill="#2563eb" stroke="#2563eb" stroke-width="2"/>
+<rect x="978.00" y="301.00" width="24.00" height="24.00" rx="10.00" fill="#2563eb" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="990.50" y="311.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">⏰</text>
 </g>
 <g fill="#ffffff">
-<text x="1020.00" y="309.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">MEU RITMO DE TRABALHO</text>
+<text x="1020.00" y="310.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">MEU RITMO DE TRABALHO</text>
 </g>
 <g fill="#6b7280">
-<text x="980.00" y="368.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Horário de pico de foco:</text>
+<text x="980.00" y="370.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Horário de pico de foco:</text>
 </g>
 <g fill="#6b7280">
-<text x="980.00" y="388.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Quando NÃO me interromper:</text>
+<text x="980.00" y="390.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Quando NÃO me interromper:</text>
 </g>
 <g fill="#6b7280">
-<text x="980.00" y="408.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Frequência de check-ins ideal:</text>
+<text x="980.00" y="410.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Frequência de check-ins ideal:</text>
 </g>
 <rect x="86.00" y="606.00" width="420.00" height="250.00" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="80.00" y="600.00" width="420.00" height="250.00" rx="10.00" fill="#fdfcff" stroke="#059669" stroke-width="2"/>
-<rect x="80.00" y="580.00" width="420.00" height="58.00" rx="0.00" fill="#04825b" stroke="#059669" stroke-width="2"/>
-<rect x="100.00" y="600.00" width="24.00" height="24.00" rx="6.00" fill="#04825b" stroke="#ffffff" stroke-width="1"/>
+<rect x="80.00" y="580.00" width="420.00" height="58.00" rx="10.00" fill="#04825b" stroke="#059669" stroke-width="2"/>
+<rect x="100.00" y="600.00" width="24.00" height="24.00" rx="10.00" fill="#04825b" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="110.50" y="611.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">⚡</text>
 </g>
 <g fill="#ffffff">
-<text x="140.00" y="609.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">O QUE ME ENERGIZA</text>
+<text x="140.00" y="610.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">O QUE ME ENERGIZA</text>
 </g>
 <g fill="#6b7280">
-<text x="100.00" y="668.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Tipos de trabalho que me motivam:</text>
+<text x="100.00" y="670.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Tipos de trabalho que me motivam:</text>
 </g>
 <g fill="#6b7280">
-<text x="100.00" y="688.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Ambientes em que prospero:</text>
+<text x="100.00" y="690.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Ambientes em que prospero:</text>
 </g>
 <rect x="526.00" y="606.00" width="420.00" height="250.00" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="520.00" y="600.00" width="420.00" height="250.00" rx="10.00" fill="#fdfcff" stroke="#db2777" stroke-width="2"/>
-<rect x="520.00" y="580.00" width="420.00" height="58.00" rx="0.00" fill="#db2777" stroke="#db2777" stroke-width="2"/>
-<rect x="540.00" y="600.00" width="24.00" height="24.00" rx="6.00" fill="#db2777" stroke="#ffffff" stroke-width="1"/>
+<rect x="520.00" y="580.00" width="420.00" height="58.00" rx="10.00" fill="#db2777" stroke="#db2777" stroke-width="2"/>
+<rect x="540.00" y="600.00" width="24.00" height="24.00" rx="10.00" fill="#db2777" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="550.50" y="611.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">🔋</text>
 </g>
 <g fill="#ffffff">
-<text x="580.00" y="609.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">O QUE ME DRENA</text>
+<text x="580.00" y="610.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">O QUE ME DRENA</text>
 </g>
 <g fill="#6b7280">
-<text x="540.00" y="668.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Situações que me esgotam:</text>
+<text x="540.00" y="670.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Situações que me esgotam:</text>
 </g>
 <g fill="#6b7280">
-<text x="540.00" y="688.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">O que evito sempre que posso:</text>
+<text x="540.00" y="690.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">O que evito sempre que posso:</text>
 </g>
 <rect x="966.00" y="606.00" width="420.00" height="250.00" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="960.00" y="600.00" width="420.00" height="250.00" rx="10.00" fill="#fdfcff" stroke="#d97706" stroke-width="2"/>
-<rect x="960.00" y="580.00" width="420.00" height="58.00" rx="0.00" fill="#ac5f05" stroke="#d97706" stroke-width="2"/>
-<rect x="980.00" y="600.00" width="24.00" height="24.00" rx="6.00" fill="#ac5f05" stroke="#ffffff" stroke-width="1"/>
+<rect x="960.00" y="580.00" width="420.00" height="58.00" rx="10.00" fill="#ac5f05" stroke="#d97706" stroke-width="2"/>
+<rect x="980.00" y="600.00" width="24.00" height="24.00" rx="10.00" fill="#ac5f05" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="990.50" y="611.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">🏆</text>
 </g>
 <g fill="#ffffff">
-<text x="1020.00" y="609.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">MEUS PONTOS FORTES</text>
+<text x="1020.00" y="610.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">MEUS PONTOS FORTES</text>
 </g>
 <g fill="#6b7280">
-<text x="980.00" y="668.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">No que genuinamente me destaco:</text>
+<text x="980.00" y="670.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">No que genuinamente me destaco:</text>
 </g>
 <rect x="86.00" y="906.00" width="420.00" height="250.00" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="80.00" y="900.00" width="420.00" height="250.00" rx="10.00" fill="#fdfcff" stroke="#7c3aed" stroke-width="2"/>
-<rect x="80.00" y="880.00" width="420.00" height="58.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
-<rect x="92.00" y="897.00" width="24.00" height="24.00" rx="6.00" fill="#7c3aed" stroke="#ffffff" stroke-width="1"/>
+<rect x="80.00" y="880.00" width="420.00" height="58.00" rx="10.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
+<rect x="92.00" y="897.00" width="24.00" height="24.00" rx="10.00" fill="#7c3aed" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="102.50" y="910.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">🔍</text>
 </g>
 <g fill="#ffffff">
-<text x="140.00" y="909.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">PONTOS CEGOS &amp; LIMITAÇÕES</text>
+<text x="140.00" y="910.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">PONTOS CEGOS &amp; LIMITAÇÕES</text>
 </g>
 <g fill="#6b7280">
-<text x="100.00" y="968.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">O que estou ativamente trabalhando:</text>
+<text x="100.00" y="970.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">O que estou ativamente trabalhando:</text>
 </g>
 <g fill="#6b7280">
-<text x="100.00" y="988.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Onde posso precisar de ajuda:</text>
+<text x="100.00" y="990.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Onde posso precisar de ajuda:</text>
 </g>
 <rect x="526.00" y="906.00" width="420.00" height="250.00" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="520.00" y="900.00" width="420.00" height="250.00" rx="10.00" fill="#fdfcff" stroke="#0284c7" stroke-width="2"/>
-<rect x="521.00" y="880.00" width="420.00" height="58.00" rx="0.00" fill="#027ab8" stroke="#0284c7" stroke-width="2"/>
-<rect x="530.00" y="900.00" width="24.00" height="24.00" rx="6.00" fill="#027ab8" stroke="#ffffff" stroke-width="1"/>
+<rect x="521.00" y="880.00" width="420.00" height="58.00" rx="10.00" fill="#027ab8" stroke="#0284c7" stroke-width="2"/>
+<rect x="530.00" y="900.00" width="24.00" height="24.00" rx="10.00" fill="#027ab8" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="540.50" y="910.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">📣</text>
 </g>
 <g fill="#ffffff">
-<text x="580.00" y="909.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">COMO ME DAR FEEDBACK</text>
+<text x="580.00" y="910.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">COMO ME DAR FEEDBACK</text>
 </g>
 <g fill="#6b7280">
-<text x="540.00" y="968.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Formato que funciona melhor para mim:</text>
+<text x="540.00" y="970.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Formato que funciona melhor para mim:</text>
 </g>
 <g fill="#6b7280">
-<text x="540.00" y="988.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Timing ideal:</text>
+<text x="540.00" y="990.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Timing ideal:</text>
 </g>
 <g fill="#6b7280">
-<text x="540.00" y="1008.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">O que NÃO funciona:</text>
+<text x="540.00" y="1010.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">O que NÃO funciona:</text>
 </g>
 <rect x="966.00" y="906.00" width="420.00" height="250.00" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="960.00" y="900.00" width="420.00" height="250.00" rx="10.00" fill="#fdfcff" stroke="#d97706" stroke-width="2"/>
-<rect x="960.00" y="880.00" width="420.00" height="58.00" rx="0.00" fill="#ac5f05" stroke="#d97706" stroke-width="2"/>
-<rect x="968.00" y="897.00" width="24.00" height="24.00" rx="6.00" fill="#ac5f05" stroke="#ffffff" stroke-width="1"/>
+<rect x="960.00" y="880.00" width="420.00" height="58.00" rx="10.00" fill="#ac5f05" stroke="#d97706" stroke-width="2"/>
+<rect x="968.00" y="897.00" width="24.00" height="24.00" rx="10.00" fill="#ac5f05" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="978.50" y="910.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">❤️</text>
 </g>
 <g fill="#ffffff">
-<text x="1000.00" y="909.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">MEUS VALORES CENTRAIS</text>
+<text x="1000.00" y="910.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">MEUS VALORES CENTRAIS</text>
 </g>
 <g fill="#6b7280">
-<text x="980.00" y="968.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Princípios inegociáveis que guiam minhas decisões:</text>
+<text x="980.00" y="970.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Princípios inegociáveis que guiam minhas decisões:</text>
 </g>
 <rect x="89.00" y="1206.00" width="420.00" height="210.00" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="83.00" y="1200.00" width="420.00" height="210.00" rx="10.00" fill="#fdfcff" stroke="#dc2626" stroke-width="2"/>
-<rect x="85.00" y="1180.00" width="420.00" height="58.00" rx="0.00" fill="#dc2626" stroke="#dc2626" stroke-width="2"/>
-<rect x="100.00" y="1200.00" width="24.00" height="24.00" rx="6.00" fill="#dc2626" stroke="#ffffff" stroke-width="1"/>
+<rect x="85.00" y="1180.00" width="420.00" height="58.00" rx="10.00" fill="#dc2626" stroke="#dc2626" stroke-width="2"/>
+<rect x="100.00" y="1200.00" width="24.00" height="24.00" rx="10.00" fill="#dc2626" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="110.50" y="1211.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">🚫</text>
 </g>
 <g fill="#ffffff">
-<text x="140.00" y="1209.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">NÃO FAÇA COMIGO</text>
+<text x="140.00" y="1210.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">NÃO FAÇA COMIGO</text>
 </g>
 <g fill="#6b7280">
-<text x="100.00" y="1268.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Comportamentos que criam atrito:</text>
+<text x="100.00" y="1270.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Comportamentos que criam atrito:</text>
 </g>
 <g fill="#6b7280">
-<text x="100.00" y="1288.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Meus maiores pet peeves:</text>
+<text x="100.00" y="1290.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Meus maiores pet peeves:</text>
 </g>
 <rect x="527.00" y="1206.00" width="420.00" height="210.00" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="521.00" y="1200.00" width="420.00" height="210.00" rx="10.00" fill="#fdfcff" stroke="#0d9488" stroke-width="2"/>
-<rect x="520.00" y="1180.00" width="420.00" height="58.00" rx="0.00" fill="#0b8177" stroke="#0d9488" stroke-width="2"/>
-<rect x="540.00" y="1200.00" width="24.00" height="24.00" rx="6.00" fill="#0b8177" stroke="#ffffff" stroke-width="1"/>
+<rect x="520.00" y="1180.00" width="420.00" height="58.00" rx="10.00" fill="#0b8177" stroke="#0d9488" stroke-width="2"/>
+<rect x="540.00" y="1200.00" width="24.00" height="24.00" rx="10.00" fill="#0b8177" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="550.50" y="1211.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">🤝</text>
 </g>
 <g fill="#ffffff">
-<text x="580.00" y="1209.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">COMO TRABALHAR COMIGO</text>
+<text x="580.00" y="1210.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">COMO TRABALHAR COMIGO</text>
 </g>
 <g fill="#6b7280">
-<text x="540.00" y="1268.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">3 dicas práticas para quem colabora comigo:</text>
+<text x="540.00" y="1270.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">3 dicas práticas para quem colabora comigo:</text>
 </g>
 <rect x="965.00" y="1206.00" width="420.00" height="210.00" rx="10.00" fill="#e5e0f5" stroke="#e5e0f5" stroke-width="2"/>
 <rect x="959.00" y="1200.00" width="420.00" height="210.00" rx="10.00" fill="#fdfcff" stroke="#7c3aed" stroke-width="2"/>
-<rect x="959.00" y="1180.00" width="420.00" height="58.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
-<rect x="980.00" y="1200.00" width="24.00" height="24.00" rx="6.00" fill="#7c3aed" stroke="#ffffff" stroke-width="1"/>
+<rect x="959.00" y="1180.00" width="420.00" height="58.00" rx="10.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
+<rect x="980.00" y="1200.00" width="24.00" height="24.00" rx="10.00" fill="#7c3aed" stroke="#ffffff" stroke-width="1"/>
 <g fill="#ffffff">
 <text x="990.50" y="1211.70" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="middle" xml:space="preserve">🎲</text>
 </g>
 <g fill="#ffffff">
-<text x="1020.00" y="1209.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">CURIOSIDADES &amp; EXTRAS</text>
+<text x="1020.00" y="1210.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">CURIOSIDADES &amp; EXTRAS</text>
 </g>
 <g fill="#6b7280">
-<text x="980.00" y="1268.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">O que poucos sabem sobre mim:</text>
+<text x="980.00" y="1270.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">O que poucos sabem sobre mim:</text>
 </g>
 <g fill="#6b7280">
-<text x="980.00" y="1288.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Interesses fora do trabalho:</text>
+<text x="980.00" y="1290.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Interesses fora do trabalho:</text>
 </g>
 <polyline points="80.00,1503.00 1376.00,1503.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round"/>
 <g fill="#6b7280">
-<text x="80.00" y="1528.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Baseado no conceito de Personal User Manual popularizado por Abby Falik, Adam Bryant e adotado em GitLab, Netflix e Stripe.</text>
+<text x="80.00" y="1530.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Baseado no conceito de Personal User Manual popularizado por Abby Falik, Adam Bryant e adotado em GitLab, Netflix e Stripe.</text>
 </g>
 <g fill="#7c3aed">
-<text x="1339.00" y="1533.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="end" xml:space="preserve">🔁 Compromisso: preencher em 20 min · revisar a cada 6–12 meses</text>
+<text x="1339.00" y="1535.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="end" xml:space="preserve">🔁 Compromisso: preencher em 20 min · revisar a cada 6–12 meses</text>
 </g>
 </svg>

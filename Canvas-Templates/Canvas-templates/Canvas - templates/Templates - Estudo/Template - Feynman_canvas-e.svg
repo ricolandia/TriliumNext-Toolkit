@@ -38,6 +38,6 @@
 <polyline points="859.49,323.77 859.49,386.05 236.67,386.05 236.67,448.33" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" marker-end="url(#seta-64748b)"/>
 <polyline points="473.34,560.44 622.82,560.44" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" marker-end="url(#seta-64748b)"/>
 <g fill="#1e293b">
-<text x="576.66" y="801.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="20.00" text-anchor="middle" xml:space="preserve">🔁 Revisões: 24h ⬜ · 7d ⬜ · 21d ⬜</text>
+<text x="576.66" y="801.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="20.00" text-anchor="middle" xml:space="preserve">🔁 Revisões: 24h ☐ · 7d ☐ · 21d ☐</text>
 </g>
 </svg>

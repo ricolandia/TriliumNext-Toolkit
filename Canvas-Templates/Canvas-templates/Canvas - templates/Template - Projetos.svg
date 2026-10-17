@@ -19,11 +19,11 @@
 <g fill="#2563eb">
 <text x="1660.00" y="93.50" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="15.00" text-anchor="start" xml:space="preserve">📦 Concluídos no mês</text>
 </g>
-<rect x="60.00" y="140.00" width="660.00" height="310.00" rx="14.00" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+<rect x="60.00" y="140.00" width="660.00" height="310.00" rx="7.00" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
 <g fill="#1e40af">
 <text x="80.00" y="179.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="22.00" text-anchor="start" xml:space="preserve">📱 Apps</text>
 </g>
-<rect x="580.00" y="160.00" width="120.00" height="32.00" rx="8.00" fill="#2563eb" stroke="#2563eb" stroke-width="2"/>
+<rect x="580.00" y="160.00" width="120.00" height="32.00" rx="7.00" fill="#2563eb" stroke="#2563eb" stroke-width="2"/>
 <g fill="#ffffff">
 <text x="596.50" y="174.40" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="16.00" text-anchor="middle" xml:space="preserve">App</text>
 </g>
@@ -48,11 +48,11 @@
 <g fill="#59687c">
 <text x="80.00" y="391.70" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="start" xml:space="preserve">Próxima ação: ________________________________</text>
 </g>
-<rect x="760.00" y="140.00" width="660.00" height="310.00" rx="14.00" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+<rect x="760.00" y="140.00" width="660.00" height="310.00" rx="7.00" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#5b21b6">
 <text x="780.00" y="179.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="22.00" text-anchor="start" xml:space="preserve">🎬 Curta-metragem</text>
 </g>
-<rect x="1280.00" y="160.00" width="120.00" height="32.00" rx="8.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1280.00" y="160.00" width="120.00" height="32.00" rx="7.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#ffffff">
 <text x="1299.50" y="172.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="middle" xml:space="preserve">Filme</text>
 </g>
@@ -71,11 +71,11 @@
 <g fill="#5b6a7f">
 <text x="780.00" y="391.70" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="start" xml:space="preserve">Próxima ação: ________________________________</text>
 </g>
-<rect x="1460.00" y="140.00" width="660.00" height="310.00" rx="14.00" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+<rect x="1460.00" y="140.00" width="660.00" height="310.00" rx="7.00" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
 <g fill="#166534">
 <text x="1480.00" y="179.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="22.00" text-anchor="start" xml:space="preserve">📚 Livros</text>
 </g>
-<rect x="1980.00" y="160.00" width="120.00" height="32.00" rx="8.00" fill="#12843c" stroke="#16a34a" stroke-width="2"/>
+<rect x="1980.00" y="160.00" width="120.00" height="32.00" rx="7.00" fill="#12843c" stroke="#16a34a" stroke-width="2"/>
 <g fill="#ffffff">
 <text x="2037.50" y="172.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="middle" xml:space="preserve">Livro</text>
 </g>
@@ -100,11 +100,11 @@
 <g fill="#606f85">
 <text x="1480.00" y="391.70" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="start" xml:space="preserve">Próxima ação: ________________________________</text>
 </g>
-<rect x="60.00" y="500.00" width="660.00" height="310.00" rx="14.00" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+<rect x="60.00" y="500.00" width="660.00" height="310.00" rx="7.00" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
 <g fill="#9a3412">
 <text x="80.00" y="539.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="22.00" text-anchor="start" xml:space="preserve">🎓 Cursos</text>
 </g>
-<rect x="580.00" y="520.00" width="120.00" height="32.00" rx="8.00" fill="#c84b0a" stroke="#ea580c" stroke-width="2"/>
+<rect x="580.00" y="520.00" width="120.00" height="32.00" rx="7.00" fill="#c84b0a" stroke="#ea580c" stroke-width="2"/>
 <g fill="#ffffff">
 <text x="641.00" y="532.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="middle" xml:space="preserve">Curso</text>
 </g>
@@ -129,11 +129,11 @@
 <g fill="#5e6d82">
 <text x="72.00" y="743.70" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="start" xml:space="preserve">Próxima ação: ________________________________</text>
 </g>
-<rect x="760.00" y="500.00" width="660.00" height="310.00" rx="14.00" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
+<rect x="760.00" y="500.00" width="660.00" height="310.00" rx="7.00" fill="#fce7f3" stroke="#db2777" stroke-width="2"/>
 <g fill="#9d174d">
 <text x="780.00" y="539.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="22.00" text-anchor="start" xml:space="preserve">🎨 Pintura</text>
 </g>
-<rect x="1280.00" y="520.00" width="120.00" height="32.00" rx="8.00" fill="#db2777" stroke="#db2777" stroke-width="2"/>
+<rect x="1280.00" y="520.00" width="120.00" height="32.00" rx="7.00" fill="#db2777" stroke="#db2777" stroke-width="2"/>
 <g fill="#ffffff">
 <text x="1335.00" y="532.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="middle" xml:space="preserve">Arte</text>
 </g>
@@ -152,11 +152,11 @@
 <g fill="#5b6a7f">
 <text x="780.00" y="751.70" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="start" xml:space="preserve">Próxima ação: ________________________________</text>
 </g>
-<rect x="1460.00" y="500.00" width="660.00" height="310.00" rx="14.00" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+<rect x="1460.00" y="500.00" width="660.00" height="310.00" rx="7.00" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
 <g fill="#854d0e">
 <text x="1480.00" y="539.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="22.00" text-anchor="start" xml:space="preserve">💼 Negócio</text>
 </g>
-<rect x="1980.00" y="520.00" width="120.00" height="32.00" rx="8.00" fill="#9d6b03" stroke="#ca8a04" stroke-width="2"/>
+<rect x="1980.00" y="520.00" width="120.00" height="32.00" rx="7.00" fill="#9d6b03" stroke="#ca8a04" stroke-width="2"/>
 <g fill="#ffffff">
 <text x="2048.00" y="532.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="middle" xml:space="preserve">Negócio</text>
 </g>
@@ -175,7 +175,7 @@
 <g fill="#606f85">
 <text x="1480.00" y="751.70" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="start" xml:space="preserve">Próxima ação: ________________________________</text>
 </g>
-<rect x="60.00" y="860.00" width="1370.00" height="210.00" rx="14.00" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+<rect x="60.00" y="860.00" width="1370.00" height="210.00" rx="7.00" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#5b21b6">
 <text x="80.00" y="898.00" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="20.00" text-anchor="start" xml:space="preserve">🎯 Top 3 (vem da revisão)</text>
 </g>
@@ -188,7 +188,7 @@
 <g fill="#334155">
 <text x="80.00" y="1034.40" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="16.00" text-anchor="start" xml:space="preserve">3. ______________________________________________</text>
 </g>
-<rect x="1460.00" y="860.00" width="660.00" height="210.00" rx="14.00" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+<rect x="1460.00" y="860.00" width="660.00" height="210.00" rx="7.00" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
 <g fill="#334155">
 <text x="1480.00" y="896.20" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="18.00" text-anchor="start" xml:space="preserve">📌 Como atualizar</text>
 </g>

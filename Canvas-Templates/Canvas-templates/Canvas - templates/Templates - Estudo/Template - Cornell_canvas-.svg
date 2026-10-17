@@ -5,67 +5,67 @@
 <marker id="seta-ddd6fe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ddd6fe"/></marker>
 </defs>
 <rect x="64.00" y="4.00" width="1878.00" height="1342.00" fill="#ffffff"/>
-<rect x="80.00" y="20.00" width="1840.00" height="80.00" rx="6.00" fill="#f3f0ff" stroke="#a78bfa" stroke-width="1"/>
+<rect x="80.00" y="20.00" width="1840.00" height="80.00" rx="0.00" fill="#f3f0ff" stroke="#a78bfa" stroke-width="1"/>
 <g fill="#7c3aed">
 <text x="100.00" y="50.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">COMO USAR O MÉTODO CORNELL</text>
 </g>
 <g fill="#1e1e2e">
-<text x="100.00" y="69.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">1 ANTES → anote o tópico</text>
-<text x="100.00" y="85.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">no cabeçalho</text>
+<text x="100.00" y="69.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">1 ANTES → anote o tópico</text>
+<text x="100.00" y="87.50" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">no cabeçalho</text>
 </g>
 <g fill="#1e1e2e">
-<text x="400.00" y="69.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">2 DURANTE → use a coluna</text>
-<text x="400.00" y="85.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">ANOTAÇÕES para capturar ideias</text>
+<text x="400.00" y="69.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">2 DURANTE → use a coluna</text>
+<text x="400.00" y="87.50" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">ANOTAÇÕES para capturar ideias</text>
 </g>
 <g fill="#1e1e2e">
-<text x="700.00" y="69.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">3 LOGO APÓS → preencha</text>
-<text x="700.00" y="85.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">PERGUNTAS / PALAVRAS-CHAVE</text>
+<text x="700.00" y="69.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">3 LOGO APÓS → preencha</text>
+<text x="700.00" y="87.50" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">PERGUNTAS / PALAVRAS-CHAVE</text>
 </g>
 <g fill="#1e1e2e">
-<text x="1000.00" y="69.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">4 ATÉ 24H → escreva o</text>
-<text x="1000.00" y="85.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">RESUMO com suas palavras</text>
+<text x="1000.00" y="69.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">4 ATÉ 24H → escreva o</text>
+<text x="1000.00" y="87.50" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">RESUMO com suas palavras</text>
 </g>
 <g fill="#1e1e2e">
-<text x="1300.00" y="69.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">5 REVISÃO → cubra e</text>
-<text x="1300.00" y="85.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">responda suas perguntas</text>
+<text x="1300.00" y="69.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">5 REVISÃO → cubra e</text>
+<text x="1300.00" y="87.50" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">responda suas perguntas</text>
 </g>
-<rect x="86.00" y="130.00" width="880.00" height="1200.00" rx="8.00" fill="#d4c8f0" stroke="#d4c8f0" stroke-width="2"/>
-<rect x="80.00" y="124.00" width="880.00" height="1200.00" rx="6.00" fill="#fdfcff" stroke="#7c3aed" stroke-width="2"/>
+<rect x="86.00" y="130.00" width="880.00" height="1200.00" rx="0.00" fill="#d4c8f0" stroke="#d4c8f0" stroke-width="2"/>
+<rect x="80.00" y="124.00" width="880.00" height="1200.00" rx="0.00" fill="#fdfcff" stroke="#7c3aed" stroke-width="2"/>
 <rect x="80.00" y="120.00" width="880.00" height="108.00" rx="0.00" fill="#1e1e2e" stroke="#1e1e2e" stroke-width="2"/>
-<rect x="95.00" y="134.00" width="180.00" height="26.00" rx="4.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
+<rect x="95.00" y="134.00" width="180.00" height="26.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#ffffff">
-<text x="102.00" y="148.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">MÉTODO CORNELL</text>
+<text x="102.00" y="149.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">MÉTODO CORNELL</text>
 </g>
 <g fill="#a78bfa">
-<text x="936.00" y="147.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="end" xml:space="preserve">PÁG. 01</text>
+<text x="936.00" y="148.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="end" xml:space="preserve">PÁG. 01</text>
 </g>
 <g fill="#a78bfa">
-<text x="90.00" y="181.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">NOME:</text>
+<text x="90.00" y="182.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">NOME:</text>
 </g>
 <polyline points="140.00,186.00 340.00,186.00" fill="none" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>
 <g fill="#a78bfa">
-<text x="350.00" y="181.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">DISCIPLINA:</text>
+<text x="350.00" y="182.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">DISCIPLINA:</text>
 </g>
 <polyline points="435.00,186.00 615.00,186.00" fill="none" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>
 <g fill="#a78bfa">
-<text x="625.00" y="181.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">DATA:</text>
+<text x="625.00" y="182.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">DATA:</text>
 </g>
 <polyline points="668.00,186.00 788.00,186.00" fill="none" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>
 <g fill="#a78bfa">
-<text x="90.00" y="211.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">PROFESSOR:</text>
+<text x="90.00" y="212.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">PROFESSOR:</text>
 </g>
 <polyline points="158.00,216.00 358.00,216.00" fill="none" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>
 <g fill="#a78bfa">
-<text x="370.00" y="211.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">TÓPICO / AULA:</text>
+<text x="370.00" y="212.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">TÓPICO / AULA:</text>
 </g>
 <polyline points="453.00,216.00 788.00,216.00" fill="none" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>
 <rect x="80.00" y="232.00" width="240.00" height="28.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#ffffff">
-<text x="90.00" y="247.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">⟵  PERGUNTAS / PALAVRAS-CHAVE</text>
+<text x="90.00" y="248.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">⟵  PERGUNTAS / PALAVRAS-CHAVE</text>
 </g>
 <rect x="320.00" y="232.00" width="640.00" height="28.00" rx="0.00" fill="#2d2b55" stroke="#2d2b55" stroke-width="2"/>
 <g fill="#ffffff">
-<text x="330.00" y="247.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">ANOTAÇÕES  ⟶</text>
+<text x="330.00" y="248.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">ANOTAÇÕES  ⟶</text>
 </g>
 <rect x="80.00" y="260.00" width="240.00" height="864.00" rx="0.00" fill="#f0ebff" stroke="#7c3aed" stroke-width="1"/>
 <rect x="320.00" y="260.00" width="640.00" height="864.00" rx="0.00" fill="#fdfcff" stroke="#c4b5fd" stroke-width="1"/>
@@ -123,25 +123,25 @@
 <polyline points="90.00,1092.00 310.00,1092.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round" opacity="0.60"/>
 <polyline points="330.00,1092.00 950.00,1092.00" fill="none" stroke="#ddd6fe" stroke-width="1" stroke-linecap="round" opacity="0.80"/>
 <g fill="#6943fa">
-<text x="100.00" y="268.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Que pergunta isso responde?</text>
+<text x="100.00" y="270.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Que pergunta isso responde?</text>
 </g>
 <g fill="#6943fa">
-<text x="90.00" y="338.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Palavra-chave principal?</text>
+<text x="90.00" y="340.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Palavra-chave principal?</text>
 </g>
 <g fill="#6943fa">
-<text x="90.00" y="402.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Como isso se relaciona com…?</text>
+<text x="90.00" y="404.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Como isso se relaciona com…?</text>
 </g>
 <g fill="#6943fa">
-<text x="90.00" y="466.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Qual o conceito central?</text>
+<text x="90.00" y="468.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Qual o conceito central?</text>
 </g>
 <g fill="#6943fa">
-<text x="90.00" y="530.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Exemplos ou exceções?</text>
+<text x="90.00" y="532.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Exemplos ou exceções?</text>
 </g>
 <g fill="#6943fa">
-<text x="90.00" y="594.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Por que isso importa?</text>
+<text x="90.00" y="596.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Por que isso importa?</text>
 </g>
 <g fill="#1e1e1e">
-<text x="340.00" y="268.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">→ Registre as ideias principais, fatos, datas e definições aqui.</text>
+<text x="340.00" y="270.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">→ Registre as ideias principais, fatos, datas e definições aqui.</text>
 </g>
 <g fill="#7552fa">
 <text x="330.00" y="338.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">•</text>
@@ -161,10 +161,10 @@
 <rect x="80.00" y="1124.00" width="880.00" height="200.00" rx="0.00" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
 <rect x="80.00" y="1124.00" width="880.00" height="26.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#ffffff">
-<text x="90.00" y="1138.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">✎ RESUMO / SÍNTESE — escreva com suas palavras · Revisões: 24h ⬜ 7d ⬜ 21d ⬜</text>
+<text x="90.00" y="1138.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">✎ RESUMO / SÍNTESE — escreva com suas palavras · Revisões: 24h ☐ 7d ☐ 21d ☐</text>
 </g>
 <g fill="#ede8fe">
-<text x="921.00" y="1137.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="end" xml:space="preserve">após a aula — dentro de 24h</text>
+<text x="921.00" y="1139.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="end" xml:space="preserve">após a aula — dentro de 24h</text>
 </g>
 <polyline points="90.00,1182.00 950.00,1182.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round" opacity="0.70"/>
 <polyline points="90.00,1214.00 950.00,1214.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round" opacity="0.70"/>
@@ -172,49 +172,49 @@
 <polyline points="90.00,1278.00 950.00,1278.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round" opacity="0.70"/>
 <polyline points="90.00,1310.00 950.00,1310.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round" opacity="0.70"/>
 <g fill="#626875">
-<text x="90.00" y="1164.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Principais aprendizados desta aula:</text>
+<text x="90.00" y="1166.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Principais aprendizados desta aula:</text>
 </g>
-<rect x="926.00" y="1290.00" width="26.00" height="26.00" rx="13.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
+<rect x="926.00" y="1290.00" width="26.00" height="26.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#ffffff">
-<text x="939.00" y="1305.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="middle" xml:space="preserve">1</text>
+<text x="939.00" y="1306.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="middle" xml:space="preserve">1</text>
 </g>
-<rect x="1046.00" y="130.00" width="880.00" height="1200.00" rx="8.00" fill="#d4c8f0" stroke="#d4c8f0" stroke-width="2"/>
-<rect x="1040.00" y="124.00" width="880.00" height="1200.00" rx="6.00" fill="#fdfcff" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1046.00" y="130.00" width="880.00" height="1200.00" rx="0.00" fill="#d4c8f0" stroke="#d4c8f0" stroke-width="2"/>
+<rect x="1040.00" y="124.00" width="880.00" height="1200.00" rx="0.00" fill="#fdfcff" stroke="#7c3aed" stroke-width="2"/>
 <rect x="1040.00" y="124.00" width="880.00" height="108.00" rx="0.00" fill="#1e1e2e" stroke="#1e1e2e" stroke-width="2"/>
-<rect x="1055.00" y="134.00" width="180.00" height="26.00" rx="4.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1055.00" y="134.00" width="180.00" height="26.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#ffffff">
-<text x="1062.00" y="148.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">MÉTODO CORNELL</text>
+<text x="1062.00" y="149.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">MÉTODO CORNELL</text>
 </g>
 <g fill="#a78bfa">
-<text x="1896.00" y="147.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="end" xml:space="preserve">PÁG. 02</text>
+<text x="1896.00" y="148.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="end" xml:space="preserve">PÁG. 02</text>
 </g>
 <g fill="#a78bfa">
-<text x="1050.00" y="181.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">NOME:</text>
+<text x="1050.00" y="182.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">NOME:</text>
 </g>
 <polyline points="1100.00,186.00 1300.00,186.00" fill="none" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>
 <g fill="#a78bfa">
-<text x="1310.00" y="181.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">DISCIPLINA:</text>
+<text x="1310.00" y="182.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">DISCIPLINA:</text>
 </g>
 <polyline points="1395.00,186.00 1575.00,186.00" fill="none" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>
 <g fill="#a78bfa">
-<text x="1585.00" y="181.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">DATA:</text>
+<text x="1585.00" y="182.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">DATA:</text>
 </g>
 <polyline points="1628.00,186.00 1748.00,186.00" fill="none" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>
 <g fill="#a78bfa">
-<text x="1050.00" y="211.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">PROFESSOR:</text>
+<text x="1050.00" y="212.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">PROFESSOR:</text>
 </g>
 <polyline points="1118.00,216.00 1318.00,216.00" fill="none" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>
 <g fill="#a78bfa">
-<text x="1330.00" y="211.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">TÓPICO / AULA:</text>
+<text x="1330.00" y="212.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">TÓPICO / AULA:</text>
 </g>
 <polyline points="1413.00,216.00 1748.00,216.00" fill="none" stroke="#a78bfa" stroke-width="1" stroke-linecap="round"/>
 <rect x="1040.00" y="232.00" width="240.00" height="28.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#ffffff">
-<text x="1050.00" y="247.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">⟵  PERGUNTAS / PALAVRAS-CHAVE</text>
+<text x="1050.00" y="248.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">⟵  PERGUNTAS / PALAVRAS-CHAVE</text>
 </g>
 <rect x="1280.00" y="232.00" width="640.00" height="28.00" rx="0.00" fill="#2d2b55" stroke="#2d2b55" stroke-width="2"/>
 <g fill="#ffffff">
-<text x="1290.00" y="247.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">ANOTAÇÕES  ⟶</text>
+<text x="1290.00" y="248.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">ANOTAÇÕES  ⟶</text>
 </g>
 <rect x="1040.00" y="260.00" width="240.00" height="864.00" rx="0.00" fill="#f0ebff" stroke="#7c3aed" stroke-width="1"/>
 <rect x="1280.00" y="260.00" width="640.00" height="864.00" rx="0.00" fill="#fdfcff" stroke="#c4b5fd" stroke-width="1"/>
@@ -272,25 +272,25 @@
 <polyline points="1050.00,1092.00 1270.00,1092.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round" opacity="0.60"/>
 <polyline points="1290.00,1092.00 1910.00,1092.00" fill="none" stroke="#ddd6fe" stroke-width="1" stroke-linecap="round" opacity="0.80"/>
 <g fill="#6943fa">
-<text x="1050.00" y="274.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Que pergunta isso responde?</text>
+<text x="1050.00" y="276.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Que pergunta isso responde?</text>
 </g>
 <g fill="#6943fa">
-<text x="1050.00" y="338.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Palavra-chave principal?</text>
+<text x="1050.00" y="340.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Palavra-chave principal?</text>
 </g>
 <g fill="#6943fa">
-<text x="1050.00" y="402.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Como isso se relaciona com…?</text>
+<text x="1050.00" y="404.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Como isso se relaciona com…?</text>
 </g>
 <g fill="#6943fa">
-<text x="1050.00" y="466.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Qual o conceito central?</text>
+<text x="1050.00" y="468.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Qual o conceito central?</text>
 </g>
 <g fill="#6943fa">
-<text x="1050.00" y="530.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Exemplos ou exceções?</text>
+<text x="1050.00" y="532.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Exemplos ou exceções?</text>
 </g>
 <g fill="#6943fa">
-<text x="1050.00" y="594.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Por que isso importa?</text>
+<text x="1050.00" y="596.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Por que isso importa?</text>
 </g>
 <g fill="#677283">
-<text x="1290.00" y="274.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">→ Registre as ideias principais, fatos, datas e definições aqui.</text>
+<text x="1290.00" y="276.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">→ Registre as ideias principais, fatos, datas e definições aqui.</text>
 </g>
 <g fill="#7552fa">
 <text x="1290.00" y="338.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">•</text>
@@ -310,10 +310,10 @@
 <rect x="1040.00" y="1124.00" width="880.00" height="200.00" rx="0.00" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
 <rect x="1040.00" y="1124.00" width="880.00" height="26.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#ffffff">
-<text x="1050.00" y="1138.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">✎ RESUMO / SÍNTESE — escreva com suas palavras · Revisões: 24h ⬜ 7d ⬜ 21d ⬜</text>
+<text x="1050.00" y="1138.90" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="11.00" text-anchor="start" xml:space="preserve">✎ RESUMO / SÍNTESE — escreva com suas palavras · Revisões: 24h ☐ 7d ☐ 21d ☐</text>
 </g>
 <g fill="#ede8fe">
-<text x="1881.00" y="1137.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="end" xml:space="preserve">após a aula — dentro de 24h</text>
+<text x="1881.00" y="1139.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="end" xml:space="preserve">após a aula — dentro de 24h</text>
 </g>
 <polyline points="1050.00,1182.00 1910.00,1182.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round" opacity="0.70"/>
 <polyline points="1050.00,1214.00 1910.00,1214.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round" opacity="0.70"/>
@@ -321,16 +321,16 @@
 <polyline points="1050.00,1278.00 1910.00,1278.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round" opacity="0.70"/>
 <polyline points="1050.00,1310.00 1910.00,1310.00" fill="none" stroke="#c4b5fd" stroke-width="1" stroke-linecap="round" opacity="0.70"/>
 <g fill="#626875">
-<text x="1050.00" y="1164.10" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="9.00" text-anchor="start" xml:space="preserve">Principais aprendizados desta aula:</text>
+<text x="1050.00" y="1166.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Principais aprendizados desta aula:</text>
 </g>
-<rect x="1886.00" y="1290.00" width="26.00" height="26.00" rx="13.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
+<rect x="1886.00" y="1290.00" width="26.00" height="26.00" rx="0.00" fill="#7c3aed" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#ffffff">
-<text x="1899.00" y="1305.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="middle" xml:space="preserve">2</text>
+<text x="1899.00" y="1306.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="middle" xml:space="preserve">2</text>
 </g>
 <g fill="#7a50f7">
-<text x="370.00" y="271.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">FONTE (livro/página/material):</text>
+<text x="370.00" y="272.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">FONTE (livro/página/material):</text>
 </g>
 <g fill="#7a50f7">
-<text x="370.00" y="331.00" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="10.00" text-anchor="start" xml:space="preserve">SEMESTRE:</text>
+<text x="370.00" y="332.80" font-family="Cascadia, 'Cascadia Code', ui-monospace, Menlo, monospace, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">SEMESTRE:</text>
 </g>
 </svg>

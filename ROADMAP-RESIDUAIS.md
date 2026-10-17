@@ -230,13 +230,17 @@ pasta de QA) e na **VPS** (13 notas por `noteId` do meta, com checagem de títul
 `canvas-export.svg`, verificação final 13/13 **byte a byte** com os arquivos do pack; commit/push do toolkit e do
 manager feitos junto. Achado: o `attachmentId` do Projetos no meta (`proj_svg_1`) é inválido na VPS (o script casa
 por título; o real é `F3803Baq1JqJ`).
+**✅ Segunda passada, mesmo dia (Q5/Q6):** 143 textos subiram para 12px (Manual 42 · Cornell 47 · storyboard 60,
+com 7 exceções a 11px e a faixa em 9px), 59 `roundness` normalizados, 2 caixas `⬜`→`☐` e 6 rótulos recentrados
+na célula; **0 vazamentos / 0 colisões novas**, harness **4 ok · 1 warn · 0 fail**; 13 SVGs + 13 capturas
+regerados, zip `77075049…` (89,2 KB), **VPS republicada** (13/13 byte a byte), registry **0.8.2**.
 
 **Permanece:**
 
 | ID | Item | Categoria | Esforço | Risco | Onde | Validação |
 |----|------|-----------|:-------:|:-----:|------|-----------|
-| CT15-Q5 | ≤11px → ≥12px (Manual 42, Cornell 47, storyboard 61) | A11y | M | Médio | 3 JSON | escala do JSON + harness |
-| CT15-Q6 | Placeholder sem convenção (`[..]`/`___`/`__`/`⬜`/nenhum) + 3 famílias tipográficas + `roundness` 0–90 | Consistência | M | Médio | 13 JSON | diff de estilo |
+| CT15-Q5 | **Parcial**: 7 rótulos ficaram em **11px** (5 cabeçalhos de passo do Cornell na grade de 300px + par RESUMO/SÍNTESE) e a **faixa-índice do storyboard** em **9px** (a 12px ficaria 1533px numa faixa de 1260) — chegar a 12px exige **re-layout** (grade/faixa), não escala | A11y | M | Médio | 3 JSON | render + olho humano |
+| CT15-Q6 | **Falso positivo em parte**: as 3 famílias são **por template** (Cascadia/Nunito/Helvetica — trocar move o layout). Aplicado o que era real: `roundness` do miolo → dominante por template (59) e `⬜`→`☐` (2) | Consistência | M | Médio | 13 JSON | diff de estilo |
 | CT15-Q13 | *Descarte*: i18n EN do pack | — | L | — | — | **não fazer** (PT-only) |
 | CT15-Q14 | *Do v8, não do pack*: `_insertTemplate` reinicia `index` em `a00` e ignora `appState` do template | Robustez | M | Médio | `Canvas tools v8.js:2839` | manual |
 
@@ -267,7 +271,7 @@ como está) e **hub mobile registrado para execução pós-rodada 15** junto do 
 
 ## Histórico
 
-- **17/10/2026** — § Canvas-Templates (rodada 15): **batches 1–3 aplicados** (conteúdo via `fix-canvas-templates.py`, doc/artefato/capturas/zip/registry 0.8.1, harness `test-canvas-templates.py` verde: 4 ok · 1 warn · 0 fail); deploy no **demo** e na **VPS** feito por `deploy-canvas-templates.py` (13/13 verificados byte a byte) + commit/push; permanecem CT15-Q5/Q6/Q14.
+- **17/10/2026** — § Canvas-Templates (rodada 15): **batches 1–3 aplicados** (conteúdo via `fix-canvas-templates.py`, doc/artefato/capturas/zip/registry 0.8.1, harness `test-canvas-templates.py` verde: 4 ok · 1 warn · 0 fail); deploy no **demo** e na **VPS** feito por `deploy-canvas-templates.py` (13/13 verificados byte a byte) + commit/push; **2ª passada no mesmo dia (Q5/Q6)**: 143 textos → 12px com 7 exceções medidas a 11px e a faixa do storyboard em 9px, 59 `roundness` + 2 caixas normalizadas, 6 rótulos recentrados, harness 4 ok · 1 warn · 0 fail, zip `77075049…`, VPS republicada e registry 0.8.2; permanecem CT15-Q5 (re-layout) e CT15-Q14.
 - **17/10/2026** — adicionado o § Canvas-Template-Loader (rodada 14; **arquivado** — incorporado ao Canvas-Note-Tools v8, sem batches de código).
 - **14/10/2026** — adicionado o § Kanboard-Integration (rodada 12; **só auditoria** — sem batches ainda) + criado o `BENCHMARK-obsidian-widgets.md` (Trilha B) com a Fase 0.5 do Kanboard.
 - **29/09/2026** — adicionado o § UI-Tweaks (rodada 11; correções aplicadas em batches 1-3, deploy na VPS).

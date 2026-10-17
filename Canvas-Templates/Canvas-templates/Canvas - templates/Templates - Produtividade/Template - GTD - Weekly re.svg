@@ -5,7 +5,7 @@
 <g fill="#1e293b">
 <text x="614.64" y="40.20" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="28.00" text-anchor="middle" xml:space="preserve">🗓️ GTD Weekly Review - Checklist Semanal</text>
 </g>
-<rect x="50.00" y="120.00" width="360.00" height="380.00" rx="12.00" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+<rect x="50.00" y="120.00" width="360.00" height="380.00" rx="4.00" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
 <g fill="#5b21b6">
 <text x="68.86" y="157.50" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="20.00" text-anchor="start" xml:space="preserve">🧹 1. Ficar Claro</text>
 </g>
@@ -25,7 +25,7 @@
 <g fill="#1e293b">
 <text x="105.00" y="356.40" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="16.00" text-anchor="start" xml:space="preserve">Esvaziar a mente (Brain dump)</text>
 </g>
-<rect x="440.00" y="120.00" width="380.00" height="380.00" rx="12.00" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<rect x="440.00" y="120.00" width="380.00" height="380.00" rx="4.00" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
 <g fill="#92400e">
 <text x="460.00" y="157.50" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="20.00" text-anchor="start" xml:space="preserve">🔄 2. Ficar Atualizado</text>
 </g>
@@ -46,7 +46,7 @@
 <text x="495.00" y="356.40" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="16.00" text-anchor="start" xml:space="preserve">Revisar Projetos (Atualizar status e</text>
 <text x="495.00" y="376.40" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="16.00" text-anchor="start" xml:space="preserve">definir próxima ação ativa)</text>
 </g>
-<rect x="850.00" y="120.00" width="360.00" height="380.00" rx="12.00" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+<rect x="850.00" y="120.00" width="360.00" height="380.00" rx="4.00" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
 <g fill="#065f46">
 <text x="870.00" y="157.50" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="20.00" text-anchor="start" xml:space="preserve">💡 3. Ficar Criativo</text>
 </g>

@@ -404,6 +404,148 @@ def contrast_pass(doc, name, log):
     return n
 
 
+# ------------------------------------------------- Q5/Q6 · tipografia e cantos
+
+FONT_MIN = 12  # Q5 (a11y): nenhum texto abaixo disso
+PILL = 30  # Q6: roundness >= isso é pílula/badge de propósito — não tocar
+# Q6: onde o template misturava valores "de meio" (4–16), colapsar no dominante
+ROUNDNESS = {
+    "Manual pessoal": 10,
+    "Projetos": 7,
+    "Cornell": 0,
+    "OKR": 7,
+    "GTD - Weekly": 4,
+    "SCAMPER": 8,
+}
+# Q5: exceções medidas — um passo a 12px já encosta no vizinho, então o teto é 11px
+# (Cornell: os 5 cabeçalhos de passo, na grade de 300px, e o par "RESUMO/SÍNTESE").
+TETO_FONTE = {
+    "LD2ho5avogfLiXirYuPu": 11,
+    "NwLZ76OqlytTYtTzA0MJ": 11,
+    "ghFax4zjL6XxVJLuNnS9": 11,
+    "Il6dhQZNx3TIrdONNoh2": 11,
+    "yQBQZGXmXzbU4ZBbeP8l": 11,
+    "679fJak7fq0q3AY6nmAs": 11,
+    "k1CVsxHaooiTUylakdzK": 11,
+}
+# Q5: a faixa-índice do storyboard (2 linhas) a 12px fica 1533px de largura numa
+# faixa de 1260 — e já vazava 15px a 9px (warn aceito). Fica como está.
+SEM_BUMP = {"lzwTVEsYrnXfPX29xHPe"}
+
+
+def tipografia(doc, name, log):
+    """Q5: `fontSize` < 12 → 12 (ou o teto da exceção), escalando a caixa e
+    PRESERVANDO o alinhamento (centro/direita recuam em x). Q6: roundness do
+    miolo → valor dominante do template."""
+    for e in doc["elements"]:
+        if e.get("type") == "text":
+            fs = e.get("fontSize") or 0
+            alvo_f = TETO_FONTE.get(e["id"], FONT_MIN)
+            if 0 < fs < alvo_f and e["id"] not in SEM_BUMP:
+                k = alvo_f / float(fs)
+                w = e.get("width") or 0
+                novo_w = round(w * k, 2)
+                novo_h = round((e.get("height") or 0) * k, 2)
+                if e.get("textAlign") == "center":
+                    e["x"] = round((e.get("x") or 0) - (novo_w - w) / 2, 2)
+                elif e.get("textAlign") == "right":
+                    e["x"] = round((e.get("x") or 0) - (novo_w - w), 2)
+                if isinstance(e.get("baseline"), (int, float)):
+                    e["baseline"] = round(e["baseline"] * k, 2)
+                log.append(
+                    "%s · %s fontSize %g→%d (caixa ×%.2f, align=%s)"
+                    % (
+                        name,
+                        e["id"][:18],
+                        fs,
+                        alvo_f,
+                        k,
+                        e.get("textAlign") or "left",
+                    )
+                )
+                e["width"], e["height"] = novo_w, novo_h
+                e["fontSize"] = alvo_f
+            continue
+        r = e.get("roundness")
+        if not isinstance(r, dict):
+            continue
+        alvo = next((v for k, v in ROUNDNESS.items() if k in name), None)
+        v = r.get("value")
+        if alvo is None or not isinstance(v, (int, float)):
+            continue
+        if v != alvo and v < PILL:
+            log.append("%s · %s roundness %g → %g" % (name, e["id"][:18], v, alvo))
+            r["value"] = alvo
+
+
+PLACEHOLDERS = {"⬜": "☐"}  # Q6: caixa de marcar como TEXTO (não emoji, que sai grande)
+
+
+def placeholders(doc, name, log):
+    """Q6: normaliza o token de caixa de marcar em todos os campos de texto
+    do elemento (o renderer usa `lines`, a busca usa `text`)."""
+    n = 0
+    for e in doc["elements"]:
+        if e.get("type") != "text":
+            continue
+        for campo in ("text", "originalText", "rawText"):
+            t = e.get(campo)
+            if isinstance(t, str):
+                for de, para in PLACEHOLDERS.items():
+                    if de in t:
+                        n += t.count(de)
+                        e[campo] = t.replace(de, para)
+                        t = e[campo]
+        linhas = e.get("lines")
+        if isinstance(linhas, list):
+            for i, l in enumerate(linhas):
+                if isinstance(l, str):
+                    for de, para in PLACEHOLDERS.items():
+                        if de in l:
+                            linhas[i] = l.replace(de, para)
+    if n:
+        log.append("%s · %d caixa(s) de marcar: %s" % (name, n, " ".join(PLACEHOLDERS)))
+
+
+# Q5: o rótulo continuou maior que a célula (o bump não cabe): recentraliza na
+# vertical em vez de deixá-lo montar na linha de baixo. Só mexe quando a célula é
+# do tamanho do texto (célula <= 2× a altura do texto) — cartão grande fica quieto.
+def encaixe(doc, name, log):
+    for e in doc["elements"]:
+        if e.get("type") != "text" or not (e.get("text") or "").strip():
+            continue
+        tx0, ty0 = e.get("x") or 0, e.get("y") or 0
+        tw, th = e.get("width") or 0, e.get("height") or 0
+        cx, cy = tx0 + tw / 2, ty0 + th / 2
+        melhor = None
+        for o in doc["elements"]:
+            if o.get("type") not in ("rectangle", "ellipse", "diamond"):
+                continue
+            if o.get("isDeleted") or o["id"] == e["id"]:
+                continue
+            fill = o.get("backgroundColor")
+            if not fill or fill == "transparent":
+                continue
+            ox, oy = o.get("x") or 0, o.get("y") or 0
+            ow, oh = o.get("width") or 0, o.get("height") or 0
+            if ox <= cx <= ox + ow and oy <= cy <= oy + oh:
+                if melhor is None or ow * oh < melhor[0]:
+                    melhor = (ow * oh, ox, oy, ow, oh)
+        if not melhor:
+            continue
+        _, ox, oy, ow, oh = melhor
+        if th > oh or oh > 2 * th:
+            continue
+        vaza = max(ox - tx0, oy - ty0, (tx0 + tw) - (ox + ow), (ty0 + th) - (oy + oh))
+        if vaza > 8:
+            novo_y = round(oy + (oh - th) / 2, 2)
+            log.append(
+                "%s · %s centrado na célula (vazava %.0fpx; y %g→%g)"
+                % (name, e["id"][:18], vaza, ty0, novo_y)
+            )
+            e["y"] = novo_y
+
+
 # ------------------------------------------------------------------------ main
 
 
@@ -413,6 +555,9 @@ def main():
         doc = json.load(open(path))
         log = edits(doc["elements"], name)
         structural(doc, name, log)
+        tipografia(doc, name, log)
+        encaixe(doc, name, log)
+        placeholders(doc, name, log)
         n = 0
         for _ in range(
             3

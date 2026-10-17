@@ -29,7 +29,7 @@ CHROME = "google-chrome"
 # ordem do README (template-N-.webp)
 ORDEM = [
     "Template - OKR",
-    "Template - Fayman",
+    "Template - Feynman",
     "Template - GTD",
     "Template - GTD - Weekly review",
     "Template - storyboard",

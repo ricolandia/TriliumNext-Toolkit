@@ -88,6 +88,8 @@ Teste: pai com `#zzprobe=yes` (`isInheritable=true`), filha sem o label.
 
 ```
 Author template master            #template · #iconClass · #label:projeto=promoted
+│                                 · #label:status=promoted · #status=ideia (herdável)
+│                                 · #relation:plotline=promoted
 ├── 📖 Como usar este template
 ├── 00 Briefing                   (logline, premissa, tom, público, promessa)
 ├── 01 Canon                      ← compartilhado pelas TRÊS trilhas
@@ -96,9 +98,10 @@ Author template master            #template · #iconClass · #label:projeto=prom
 │   ├── Temas & Motivos
 │   ├── Linha do tempo
 │   └── Referências
-├── 02 Trilha — Prosa
+├── 02 Trilha — Prosa             #status (herdável) · #label:status=promoted
 │   ├── Manuscrito                ~child:template → _tpl-Cena
-│   ├── Estrutura                 (grade/plot)
+│   ├── Estrutura                 ~relation:plotline (promovida)
+│   │   └── Linhas (plotlines)    uma nota por trama (alvo da relação `plotline`)
 │   └── _tpl-Cena                 #template · ~template:newNoteDefaultParent → Manuscrito
 ├── 03 Trilha — Roteiro
 │   ├── Roteiro                   ~child:template → _tpl-Cena-Roteiro
@@ -131,13 +134,22 @@ Checar por `#pluginId`/`#installedPlugins` (ver
 `Trilium-plugin-manager/trilium-plugin-manager-v4.js:539-543, 994-996,
 1012-1052`). Relação pendurada em render note = nota vazia (falha silenciosa).
 
-## Aberto (decidido com o Ricardo)
+## Decidido e aplicado (17/10/2026)
 
-1. Nomes dos 6 status: `ideia · esboço · rascunho · revisão · final · arquivada`.
-2. `plotline` como **relação** (não label).
-3. Entrada ou não do pack no `registry.json`.
-4. Pasta-destino `Projetos de Escrita/` no VPS: sob qual pasta pai.
-5. Canvas (rodadas 14/15) entram no `99 Ferramentas` quando auditados.
+1. **6 status** — `#status` é **herdável** e nasce em *ideia* no projeto inteiro:
+   definição `#label:status=promoted` + valor `#status=ideia` na mãe, no `01 Canon` e
+   nas três trilhas. Valores: `ideia · esboço · rascunho · revisão · final · arquivada`.
+   Verificado por instanciação (demo): as notas fundas herdam (`#status=ideia` casa 48
+   notas da instância, incluindo `Rascunho` e `Linhas (plotlines)`); trocar num nó vale
+   daí para baixo até alguém trocar de novo.
+2. **`plotline` como relação** — `#relation:plotline=promoted` na mãe e na `Estrutura`;
+   os alvos moram em `Estrutura → Linhas (plotlines)` (uma nota por trama). A cena
+   aponta para a linha pela relação, nunca por label solto.
+3. **Sem entrada no `registry.json`** — o pack vive como conteúdo no VPS (não é plugin).
+4. Pasta-destino `Projetos de Escrita/` — **feito**: sob `10-Projetos` (`bWbXL3ytWhqR`),
+   id `N2ipIf2YDJRL` (é ela que leva `~child:template`).
+5. Canvas/rodada 15 auditado — o texto do `Storyboard` já aponta para o *Insert template*
+   do Canvas Note Tools; falta decidir se a pasta Storyboard vira uma **nota canvas** própria.
 
 ---
 
@@ -152,6 +164,7 @@ Checar por `#pluginId`/`#installedPlugins` (ver
 | Manuscrito (`render`, `~renderNote` → `js - grade`) | `uIgNEhW6EDnT` |
 | Roteiro (`render`, `~renderNote` → `js - Fountain 3`) + `Rascunho` | `Zw29ZrSMulSE` + `0Tm6BwTX4QX6` |
 | Sub-templates privados | `_tpl-Cena` `TBC6bfkkWp9g` · `_tpl-Página` `0plFv00tiNNZ` · `_tpl-Personagem` `Dg9199ryng1B` |
+| `Linhas (plotlines)` (sob `Estrutura`) | `clpPPFDw0jkj` |
 
 **Demo** espelhado (ids de script próprios, resolvidos por capacidade):
 mãe `NZSjCETPrwH3`.
@@ -174,6 +187,14 @@ resultado no demo, agora com as duas telas.
   → preflight por **nota-script**, não por `#pluginId`.
 - O `root` do **demo** tem um PDF (de rodada antiga) como conteúdo, e notas
   criadas vazias herdam esse conteúdo: **não** usar conteúdo para validar no demo.
+- **Probe com réplica numerada**: `probe:js - Fountain` casava o título *exato*
+  (`js - Fountain`, de 30/04 — 10 KB) em vez de `js - Fountain 3` (atual, 75 KB): o
+  resolver passou a preferir o **maior número** do sufixo. E o `wire` só preserva
+  atributo vindo de probe quando o probe **não** resolve — senão o Roteiro ficava com
+  **dois** `~renderNote` (o antigo e o novo).
+- O `POST /etapi/notes/{id}/import` (importar ZIP) dá erro interno na 0.106 com corpo
+  binário (`req.body` não é o `ZipSource` esperado): por ETAPI, publicar/escrever por
+  conteúdo (`PUT /notes/{id}/content`) — e no VPS isso também evita duplicar as notas.
 
 **Aberto / próximos passos**
 

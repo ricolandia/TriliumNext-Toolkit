@@ -34,7 +34,10 @@ import content  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-DEMO = ("http://localhost:8080", None)  # token em TRILIUM_DEMO_TOKEN (env/~/.hermes/.env)
+DEMO = (
+    "http://localhost:8080",
+    None,
+)  # token em TRILIUM_DEMO_TOKEN (env/~/.hermes/.env)
 AGENDA = "/home/ricardo/Documentos/50_Criativo/Scripts_PY_/trilium_agenda_diaria.py"
 UA = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -46,6 +49,9 @@ MANAGED = {
     "template",
     "iconClass",
     "label:projeto",
+    "label:status",
+    "status",
+    "relation:plotline",
     "child:template",
     "renderNote",
     "template:newNoteDefaultParent",
@@ -194,11 +200,15 @@ def resolve_probes(tl):
                 m = re.search(r"(\d+)\s*$", h["title"])
                 return int(m.group(1)) if m else -1
 
-            escolha = (
-                sorted(exact, key=num)[-1]
-                if exact
-                else (sorted(hits, key=num)[-1] if hits else None)
-            )
+            # réplica numerada ("js - Fountain 3") é a versão nova do script —
+            # preferir o MAIOR número; sem numerada, o título exato.
+            numeradas = [h for h in hits if num(h) > 0]
+            if numeradas:
+                escolha = max(numeradas, key=num)
+            elif exact:
+                escolha = exact[0]
+            else:
+                escolha = hits[0] if hits else None
             if escolha:
                 probes[tkey] = escolha["noteId"]
                 print(
@@ -294,14 +304,27 @@ def wire(nodes, ids, tl, probes):
         ]
         have = {(t, n, v) for t, n, v, _ in tl.owned(nid)}
         nomes_quer = {l[0] for l in node["labels"]} | {r[0] for r in node["relations"]}
-        alvos_probe = {r[0] for r in node["relations"] if r[1].startswith("probe:")}
+        # probes: nome do atributo -> noteId resolvido (None se a capacidade falta)
+        alvos_probe = {
+            r[0]: resolve(r[1], ids, probes)
+            for r in node["relations"]
+            if r[1].startswith("probe:")
+        }
         for t, n, v, aid in tl.owned(nid):
             if n not in MANAGED:
                 continue
             if n not in nomes_quer:  # a spec não declara mais este atributo
                 tl.del_attr(aid)
                 print("    - %-12s %s %s (saiu da spec)" % (node["title"], n, v))
-            elif n in alvos_probe:  # alvo por capacidade: não mexer
+            elif n in alvos_probe:
+                # alvo por capacidade: só mexer se o probe RESOLVEU e o valor
+                # atual aponta para outro script (senão ficam dois renderNote).
+                if alvos_probe[n] and v != alvos_probe[n]:
+                    tl.del_attr(aid)
+                    print(
+                        "    - %-12s %s %s (script antigo; o probe aponta para outro)"
+                        % (node["title"], n, v)
+                    )
                 continue
             elif (t, n, v) not in (
                 {("label", a, b) for a, b in quer_labels}

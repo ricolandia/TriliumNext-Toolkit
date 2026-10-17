@@ -27,7 +27,7 @@ A collection of Excalidraw templates for productivity, learning, creativity and 
 
 **Note**: the text is in Portuguese (the pack's origin) and ready to use as-is — double-click any field in the canvas to edit it.
 
-**Update (17/10/2026)**: accessibility/layout pass — WCAG AA contrast in all 13 templates, the Storyboard's cell dividers are real lines, text-overflow fixes (GTD, Manual, Design Thinking, OKR), unified background/grid/zoom, negative origins normalized; previews and the exported SVGs were regenerated from the current state (`fix-canvas-templates.py`, `render-canvas.py`, `test-canvas-templates.py`).
+**Update (17/10/2026)**: accessibility/typography pass — WCAG AA contrast in all 13 templates, the Storyboard's cell dividers are real lines, text-overflow fixes (GTD, Manual, Design Thinking, OKR), unified background/grid/zoom, negative origins normalized; **text floor raised to 12px** (143 labels; the 5 Cornell step headers and the "RESUMO/SÍNTESE" pair stay at 11px because 12px would touch the next column, and the Storyboard's index strip stays at 9px — at 12px it is 1533px wide inside a 1260px band), corner radii collapsed to one value per template, `⬜` → `☐`, and 6 Storyboard cell labels re-centered; previews and the exported SVGs were regenerated from the current state (`fix-canvas-templates.py`, `render-canvas.py`, `test-canvas-templates.py`).
 
 **Update (29/09/2026)**: all templates refreshed (Portuguese text polish, new fields) and a new **Project Board** template added. Source: the "Modelos Trilium" collection review (Trilium VPS `wBlaqjho7HNt`).
 

@@ -24,7 +24,8 @@ DEST_TITLE = "Projetos de Escrita"  # pasta-destino dedicada (leva ~child:templa
 
 # scripts de plugin já instalados na VPS (notas externas; não são remapeadas)
 JS_GRADE = "probe:js - grade"  # Longform Compiler (resolvido por título)
-JS_FOUNTAIN = "probe:js - Fountain"  # Fountain Renderer (resolvido por título)
+JS_FOUNTAIN = "probe:js - Fountain"  # Fountain Renderer — casa "js - Fountain N"
+# e prefere o MAIOR N (a versão nova do script é a numerada)
 
 
 def N(
@@ -54,6 +55,11 @@ def N(
 
 
 # ---------------------------------------------------------------- conteúdos
+
+# `#status` herdável: a definição (promovida na nota) mora em cada raiz de trilha
+# e no canon — assim a instância já nasce com o label sem depender do remap da mãe.
+# Valores: ideia · esboço · rascunho · revisão · final · arquivada (ver SPEC.md).
+STATUS_LABELS = [("label:status", "promoted", True), ("status", "ideia", True)]
 
 MASTER_HTML = """<p><b>Template único de projeto de escrita</b> com as três fases —
 prosa, roteiro e HQ — e um canon compartilhado acima das trilhas, para permitir
@@ -86,6 +92,19 @@ roteiro, com estimativa de páginas, <code>.fountain</code> e PDF.</li>
 <li>Seções do canon que não se aplicam.</li>
 <li><code>99 Ferramentas</code> se você já conhece os plugins.</li>
 </ul>
+<h3>Status (herdável)</h3>
+<p>O label <code>#status</code> já vem definido e herdável: começa em
+<b>ideia</b> no projeto inteiro e você troca no nó que quiser — a mudança vale
+para tudo abaixo dele até alguém trocar de novo. Valores:
+<code>ideia · esboço · rascunho · revisão · final · arquivada</code>.</p>
+<ul><li>Exemplo de uso: <code>#status=rascunho</code> na trilha Prosa e
+<code>#status=final</code> na cena que já passou.</li>
+<li>Para listar o que está em revisão: busque
+<code>#status=revisão</code> (o herança faz a busca pegar a subárvore).</li></ul>
+<h3>Plotlines (relação)</h3>
+<p>Cada linha/trama mora em <i>Estrutura &#8594; Linhas (plotlines)</i>. A cena se
+liga à linha dela pela <b>relação</b> <code>plotline</code> — não por label. Uma
+cena pode apontar para mais de uma linha.</p>
 <h3>Regra de ouro da transmídia</h3>
 <p>Nada que seja comum às mídias pode morar <i>dentro</i> de uma trilha. Se a
 informação vale para a prosa <b>e</b> para a HQ, ela é <b>canon</b>.</p>"""
@@ -132,11 +151,17 @@ MANUSCRITO = """<p>Uma <b>cena por nota</b>. Use <b>+</b> aqui para criá-las no
 formato certo.</p>
 <p>Depois: reordenar na grade e compilar o documento único.</p>"""
 
-ESTRUTURA = """<h3>Arco principal</h3><h3>Plotlines</h3>
-<p>Use a <i>relação</i> <code>plotline</code> ligando a cena à sua linha, em vez de
-criar labels soltos.</p>
+ESTRUTURA = """<h3>Arco principal</h3>
 <h3>Paradas obrigatórias</h3><ul><li>Inciting incident</li><li>Ponto de virada 1</li>
-<li>Meio</li><li>Ponto de virada 2</li><li>Clímax</li></ul>"""
+<li>Meio</li><li>Ponto de virada 2</li><li>Clímax</li></ul>
+<p>As linhas/tramas têm nota própria em <b>Linhas (plotlines)</b>: a cena se liga
+à linha pela <i>relação</i> <code>plotline</code> (nunca por label solto).</p>"""
+
+LINHAS = """<p>Uma nota por <b>linha</b> (trama): dê o nome da linha no título e use o
+corpo para o arco dela (onde começa, onde vira, onde fecha).</p>
+<p>Para ligar as cenas: na nota da cena, adicione a <b>relação</b>
+<code>plotline</code> apontando para a linha. Para ver as cenas de uma linha,
+busque pela relação (<code>~plotline</code>) ou use a grade do Manuscrito.</p>"""
 
 ROTEIRO = """<p>Trilha em <b>roteiro</b> (Fountain): a tela formata o <b>Rascunho</b>
 em padrão de roteiro, com estimativa de páginas, lista de cenas, exportação em
@@ -167,8 +192,9 @@ PAGINAS = """<p>Uma <b>página por nota</b>. Use <b>+</b> aqui.</p>
 <p>Nota pela ordem: página, quadros (descrição + diálogo), e o link para o
 arquivo final.</p>"""
 
-STORYBOARD = """<p>Canvas de rascunho da sequência. Depois de auditado o pack de
-canvas, esta pasta recebe um template de canvas próprio (rodada 15).</p>"""
+STORYBOARD = """<p>Canvas de rascunho da sequência. Comece por <b>Insert template</b>
+(botão do <i>Canvas Note Tools</i>) e escolha <i>Template - Storyboard</i> — vêm do
+pack <i>Canvas Templates for Production</i> (13 templates, auditado na rodada 15).</p>"""
 
 FERRAMENTAS = """<h3>Plugins que o template usa</h3>
 <table border="1" cellspacing="0" cellpadding="4">
@@ -202,7 +228,15 @@ TREE = N(
     "master",
     "Author template master",
     MASTER_HTML,
-    labels=[("template", "", True), ("label:projeto", "promoted", True)],
+    labels=[
+        ("template", "", True),
+        ("label:projeto", "promoted", True),
+        # status: definição (promovível na nota) + valor default herdável
+        ("label:status", "promoted", True),
+        ("status", "ideia", True),
+        # plotline é RELAÇÃO (não label) — definida aqui e na Estrutura
+        ("relation:plotline", "promoted", True),
+    ],
     icon="bx bx-book-alt",
     children=[
         N(
@@ -217,6 +251,7 @@ TREE = N(
             "canon",
             "01 Canon",
             CANON,
+            labels=STATUS_LABELS,
             icon="bx bx-book",
             children=[
                 N(
@@ -244,6 +279,7 @@ TREE = N(
             "prosa",
             "02 Trilha — Prosa",
             PROSA,
+            labels=STATUS_LABELS,
             icon="bx bx-edit",
             children=[
                 N(
@@ -257,7 +293,16 @@ TREE = N(
                         ("child:template", "tpl_cena", True),
                     ],
                 ),
-                N("estrutura", "Estrutura", ESTRUTURA, icon="bx bx-sitemap"),
+                N(
+                    "estrutura",
+                    "Estrutura",
+                    ESTRUTURA,
+                    labels=[("relation:plotline", "promoted", True)],
+                    icon="bx bx-sitemap",
+                    children=[
+                        N("linhas", "Linhas (plotlines)", LINHAS, icon="bx bx-git-branch"),
+                    ],
+                ),
                 N(
                     "tpl_cena",
                     "_tpl-Cena",
@@ -272,6 +317,7 @@ TREE = N(
             "roteiro",
             "03 Trilha — Roteiro",
             ROTEIRO,
+            labels=STATUS_LABELS,
             icon="bx bx-movie-play",
             children=[
                 N(
@@ -298,6 +344,7 @@ TREE = N(
             "hq",
             "04 Trilha — HQ",
             HQ,
+            labels=STATUS_LABELS,
             icon="bx bx-images",
             children=[
                 N(
