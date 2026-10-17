@@ -187,17 +187,10 @@
         },
         {
          "type": "label",
-         "name": "template",
-         "value": "",
-         "isInheritable": false,
-         "position": 20
-        },
-        {
-         "type": "label",
          "name": "canvasTemplate",
          "value": "",
          "isInheritable": false,
-         "position": 30
+         "position": 20
         }
        ],
        "dataFileName": "Template - storyboard.json",
@@ -408,7 +401,7 @@
          "position": 20
         }
        ],
-       "dataFileName": "Template - Fayman.json",
+       "dataFileName": "Template - Feynman.json",
        "attachments": [
         {
          "attachmentId": "LII4xkkJjT4U",
@@ -416,7 +409,7 @@
          "role": "image",
          "mime": "image/svg+xml",
          "position": 0,
-         "dataFileName": "Template - Fayman_canvas-e.svg"
+         "dataFileName": "Template - Feynman_canvas-e.svg"
         }
        ]
       },
@@ -444,17 +437,10 @@
         },
         {
          "type": "label",
-         "name": "template",
-         "value": "",
-         "isInheritable": false,
-         "position": 20
-        },
-        {
-         "type": "label",
          "name": "canvasTemplate",
          "value": "",
          "isInheritable": false,
-         "position": 30
+         "position": 20
         }
        ],
        "dataFileName": "Template - Cornell.json",
@@ -535,17 +521,10 @@
       },
       {
        "type": "label",
-       "name": "template",
-       "value": "",
-       "isInheritable": false,
-       "position": 20
-      },
-      {
-       "type": "label",
        "name": "canvasTemplate",
        "value": "",
        "isInheritable": false,
-       "position": 30
+       "position": 20
       }
      ],
      "dataFileName": "Template - Manual pessoal do u.json",
@@ -617,10 +596,17 @@
      "attributes": [
       {
        "type": "label",
-       "name": "canvasTemplate",
+       "name": "template",
        "value": "",
        "isInheritable": false,
        "position": 10
+      },
+      {
+       "type": "label",
+       "name": "canvasTemplate",
+       "value": "",
+       "isInheritable": false,
+       "position": 20
       }
      ],
      "dataFileName": "Template - Design Thinking.json",

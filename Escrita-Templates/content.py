@@ -1,0 +1,323 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Estrutura e conteúdo do super-template "Author template master".
+
+A estrutura é declarativa: cada nó tem uma `key` simbólica, e as relações
+(`~child:template`, `~template:newNoteDefaultParent`, `~renderNote`) apontam
+para keys — o `build.py` resolve para noteId depois de criar tudo. Alvos com o
+prefixo `probe:` são scripts de plugin resolvidos por título na instância-alvo
+(notas externas, não remapeadas na instanciação).
+
+Regras (ver SPEC.md):
+- Relações pasta ↔ sub-template são SEMPRE internas à subárvore (é o que faz o
+  remap automático valer por projeto).
+- Um único `~child:template` por pasta.
+- O briefing mora em nota-filha (`00 Briefing`), nunca só no corpo da mãe:
+  no caminho ETAPI o conteúdo da própria nota instanciada não é copiado.
+- Contratos de render note espelham os templates já em uso na VPS:
+  * Grade (Longform Compiler): `render` + `~renderNote -> js - grade`, filhos = cenas.
+  * Roteiro (Fountain Renderer): `render` + `~renderNote -> js - Fountain 3`,
+    filho único `Rascunho` (type code).
+"""
+
+DEST_TITLE = "Projetos de Escrita"  # pasta-destino dedicada (leva ~child:template)
+
+# scripts de plugin já instalados na VPS (notas externas; não são remapeadas)
+JS_GRADE = "probe:js - grade"  # Longform Compiler (resolvido por título)
+JS_FOUNTAIN = "probe:js - Fountain"  # Fountain Renderer (resolvido por título)
+
+
+def N(
+    key,
+    title,
+    html="",
+    labels=(),
+    relations=(),
+    children=(),
+    icon=None,
+    type="text",
+    mime=None,
+):
+    labels = list(labels)
+    if icon and not any(l[0] == "iconClass" for l in labels):
+        labels.append(("iconClass", icon, True))
+    return {
+        "key": key,
+        "title": title,
+        "html": html,
+        "labels": labels,
+        "relations": list(relations),
+        "children": list(children),
+        "type": type,
+        "mime": mime,
+    }
+
+
+# ---------------------------------------------------------------- conteúdos
+
+MASTER_HTML = """<p><b>Template único de projeto de escrita</b> com as três fases —
+prosa, roteiro e HQ — e um canon compartilhado acima das trilhas, para permitir
+<b>transmídia</b>: a mesma história em mais de uma mídia sem reescrever a base.</p>
+<p>Comece por <b>00 Briefing</b> e <b>01 Canon</b>; depois abra a trilha que vai
+usar e apague as outras. O passo a passo está em <i>📖 Como usar este template</i>.</p>"""
+
+COMO_USAR = """<h3>Passo a passo</h3>
+<ol>
+<li>Crie o projeto pelo botão <b>+</b> na pasta <i>Projetos de Escrita</i> — a
+estrutura inteira vem junto.</li>
+<li>Preencha o <b>00 Briefing</b> e o campo promovido <code>#projeto</code> (dá
+escopo às buscas de todo o projeto).</li>
+<li>Preencha o <b>01 Canon</b> — vale para <b>todas</b> as trilhas.</li>
+<li>Escolha a(s) trilha(s) e <b>apague as que não vai usar</b> (inclusive a
+pasta <code>_tpl-*</code> interna delas).</li>
+<li>Dentro de cada trilha, use <b>+</b> na pasta de destino: o template da
+unidade (cena / página) já está ligado e cai no lugar certo.</li>
+</ol>
+<h3>As duas telas (render notes)</h3>
+<ul>
+<li><b>Manuscrito</b> (Prosa) — grade das cenas: arraste para reordenar e
+compile o documento único (Longform Compiler).</li>
+<li><b>Roteiro</b> (Roteiro) — a tela formata o <b>Rascunho</b> em padrão de
+roteiro, com estimativa de páginas, <code>.fountain</code> e PDF.</li>
+</ul>
+<h3>O que apagar</h3>
+<ul>
+<li>Trilhas não usadas (<b>02 Prosa</b>, <b>03 Roteiro</b>, <b>04 HQ</b>).</li>
+<li>Seções do canon que não se aplicam.</li>
+<li><code>99 Ferramentas</code> se você já conhece os plugins.</li>
+</ul>
+<h3>Regra de ouro da transmídia</h3>
+<p>Nada que seja comum às mídias pode morar <i>dentro</i> de uma trilha. Se a
+informação vale para a prosa <b>e</b> para a HQ, ela é <b>canon</b>.</p>"""
+
+BRIEFING = """<h3>Logline</h3><p><i>Uma frase. Protagonista + conflito + o que está em jogo.</i></p>
+<h3>Premissa</h3><p>O que acontece, para quem, e por que agora.</p>
+<h3>Tom e gênero</h3><p>Ex.: noir melancólico, comédia dramática, aventura YA.</p>
+<h3>Público e promessa</h3><p>Quem lê/assiste e o que essa pessoa leva no fim.</p>
+<h3>Mídias previstas</h3><ul><li>[ ] Prosa</li><li>[ ] Roteiro (audiovisual)</li><li>[ ] HQ</li></ul>
+<h3>Decisões abertas</h3><ul><li>…</li></ul>"""
+
+CANON = """<p>Base compartilhada por todas as trilhas. <b>Se vale para mais de uma mídia,
+mora aqui.</b></p>
+<ul><li><b>Personagens</b> — ficha por personagem (template ligado).</li>
+<li><b>Mundo</b> — lugares, regras, tecnologia, magia.</li>
+<li><b>Temas &amp; Motivos</b> — o que a obra discute; imagens que retornam.</li>
+<li><b>Linha do tempo</b> — eventos na ordem dos fatos (não na ordem do relato).</li>
+<li><b>Referências</b> — obras, imagens, pesquisa.</li></ul>"""
+
+PERSONAGENS = """<p>Um nó por personagem. Use <b>+</b> aqui: a ficha já vem no formato
+certo.</p>"""
+
+MUNDO = """<h3>Lugares</h3><h3>Regras do mundo</h3>
+<p>O que pode e o que não pode acontecer (e as consequências).</p>
+<h3>Materiais e pesquisa</h3>"""
+
+TEMAS = """<h3>Temas</h3><p>As perguntas que a obra faz — não as respostas.</p>
+<h3>Motivos e imagens</h3><p>Objetos, cores, gestos que voltam e ganham sentido.</p>
+<h3>Tom por mídia</h3><p>O mesmo tema na prosa 🡒 na tela 🡒 no quadrinho.</p>"""
+
+TIMELINE = """<p>Ordem dos fatos. Marque com <code>#canon</code> o que já está
+travado e <code>#ideia</code> o que ainda é hipótese.</p>
+<ul><li>…</li></ul>"""
+
+REFERENCIAS = """<p>Obras, imagens, áudios, links. Uma entrada por referência, com
+<b>por que</b> ela serve.</p>"""
+
+PROSA = """<p>Trilha em <b>prosa</b>: notas atômicas (uma cena por nota) compiladas
+num documento único pelo <b>Longform Compiler</b>.</p>
+<ul><li><b>Manuscrito</b> — grade das cenas + compilação.</li>
+<li><b>Estrutura</b> — esqueleto, arcos, plotlines.</li></ul>"""
+
+MANUSCRITO = """<p>Uma <b>cena por nota</b>. Use <b>+</b> aqui para criá-las no
+formato certo.</p>
+<p>Depois: reordenar na grade e compilar o documento único.</p>"""
+
+ESTRUTURA = """<h3>Arco principal</h3><h3>Plotlines</h3>
+<p>Use a <i>relação</i> <code>plotline</code> ligando a cena à sua linha, em vez de
+criar labels soltos.</p>
+<h3>Paradas obrigatórias</h3><ul><li>Inciting incident</li><li>Ponto de virada 1</li>
+<li>Meio</li><li>Ponto de virada 2</li><li>Clímax</li></ul>"""
+
+ROTEIRO = """<p>Trilha em <b>roteiro</b> (Fountain): a tela formata o <b>Rascunho</b>
+em padrão de roteiro, com estimativa de páginas, lista de cenas, exportação em
+<code>.fountain</code> e PDF.</p>
+<p><b>Escreva no Rascunho</b> (nota-filha). A tela só mostra.</p>"""
+
+FOUNTAIN_STARTER = """Title: (título do projeto)
+Credit: written by
+Author: (nome)
+Draft date: (data)
+
+INT. LOCAL — DIA
+
+PERSONAGEM
+Fala.
+
+INT. OUTRO LOCAL — NOITE
+
+PERSONAGEM
+Outra fala.
+"""
+
+HQ = """<p>Trilha em <b>quadrinhos</b>: roteiro em HQ → storyboard → páginas.</p>
+<ul><li><b>Páginas</b> — uma nota por página (template ligado).</li>
+<li><b>Storyboard</b> — canvas de rascunho (Canvas Note Tools).</li></ul>"""
+
+PAGINAS = """<p>Uma <b>página por nota</b>. Use <b>+</b> aqui.</p>
+<p>Nota pela ordem: página, quadros (descrição + diálogo), e o link para o
+arquivo final.</p>"""
+
+STORYBOARD = """<p>Canvas de rascunho da sequência. Depois de auditado o pack de
+canvas, esta pasta recebe um template de canvas próprio (rodada 15).</p>"""
+
+FERRAMENTAS = """<h3>Plugins que o template usa</h3>
+<table border="1" cellspacing="0" cellpadding="4">
+<tr><th>Recurso</th><th>Nota-script</th><th>Onde</th></tr>
+<tr><td>Longform Compiler</td><td><code>js - grade</code></td>
+<td>Grade + documento compilado (trilha Prosa)</td></tr>
+<tr><td>Fountain Renderer</td><td><code>js - Fountain 3</code></td>
+<td>Tela do roteiro + PDF (trilha Roteiro)</td></tr>
+<tr><td>Canvas Note Tools</td><td>—</td>
+<td>Storyboard / Estrutura (trilha HQ)</td></tr>
+</table>
+<p><b>Preflight:</b> o pack verifica a <b>nota-script</b> (capacidade), não o
+label <code>#pluginId</code> — na VPS os packs estão instalados como notas, fora
+do contrato do gerenciador. Sem o script, a tela fica vazia.</p>"""
+
+TPL_CENA = """<h3>Objetivo da cena</h3><p>O que muda no fim dela (se nada muda, corte).</p>
+<h3>Onde / quando</h3><h3>Quem</h3><h3>Rascunho</h3>"""
+
+TPL_PERSONAGEM = """<h3>Quem é</h3><p>Uma linha.</p>
+<h3>Quer / Precisa</h3><p>Desejo consciente × necessidade real.</p>
+<h3>Ferida e mentira</h3><h3>Voz</h3><p>Como fala; o que nunca diria.</p>
+<h3>Arco</h3><p>De onde sai 🡒 onde chega.</p>"""
+
+TPL_PAGINA = """<h3>Página N</h3>
+<h3>Quadro 1</h3><p>Descrição visual.</p><p><b>BALÃO:</b> texto.</p>"""
+
+
+# ------------------------------------------------------------------- árvore
+
+TREE = N(
+    "master",
+    "Author template master",
+    MASTER_HTML,
+    labels=[("template", "", True), ("label:projeto", "promoted", True)],
+    icon="bx bx-book-alt",
+    children=[
+        N(
+            "como_usar",
+            "📖 Como usar este template",
+            COMO_USAR,
+            icon="bx bx-info-circle",
+        ),
+        N("briefing", "00 Briefing", BRIEFING, icon="bx bx-target-lock"),
+        N("preflight", "⚙ Preflight", FERRAMENTAS, icon="bx bx-check-shield"),
+        N(
+            "canon",
+            "01 Canon",
+            CANON,
+            icon="bx bx-book",
+            children=[
+                N(
+                    "personagens",
+                    "Personagens",
+                    PERSONAGENS,
+                    icon="bx bx-user",
+                    relations=[("child:template", "tpl_personagem", True)],
+                ),
+                N(
+                    "tpl_personagem",
+                    "_tpl-Personagem",
+                    TPL_PERSONAGEM,
+                    labels=[("template", "", True)],
+                    relations=[("template:newNoteDefaultParent", "personagens", True)],
+                    icon="bx bxs-user-detail",
+                ),
+                N("mundo", "Mundo", MUNDO, icon="bx bx-globe"),
+                N("temas", "Temas & Motivos", TEMAS, icon="bx bx-palette"),
+                N("timeline", "Linha do tempo", TIMELINE, icon="bx bx-time-five"),
+                N("referencias", "Referências", REFERENCIAS, icon="bx bx-link"),
+            ],
+        ),
+        N(
+            "prosa",
+            "02 Trilha — Prosa",
+            PROSA,
+            icon="bx bx-edit",
+            children=[
+                N(
+                    "manuscrito",
+                    "Manuscrito",
+                    MANUSCRITO,
+                    icon="bx bx-list-ol",
+                    type="render",
+                    relations=[
+                        ("renderNote", JS_GRADE, True),
+                        ("child:template", "tpl_cena", True),
+                    ],
+                ),
+                N("estrutura", "Estrutura", ESTRUTURA, icon="bx bx-sitemap"),
+                N(
+                    "tpl_cena",
+                    "_tpl-Cena",
+                    TPL_CENA,
+                    labels=[("template", "", True)],
+                    relations=[("template:newNoteDefaultParent", "manuscrito", True)],
+                    icon="bx bx-file",
+                ),
+            ],
+        ),
+        N(
+            "roteiro",
+            "03 Trilha — Roteiro",
+            ROTEIRO,
+            icon="bx bx-movie-play",
+            children=[
+                N(
+                    "roteiro_doc",
+                    "Roteiro",
+                    ROTEIRO,
+                    icon="bx bx-file-blank",
+                    type="render",
+                    relations=[("renderNote", JS_FOUNTAIN, True)],
+                    children=[
+                        N(
+                            "rascunho",
+                            "Rascunho",
+                            FOUNTAIN_STARTER,
+                            icon="bx bx-pencil",
+                            type="code",
+                            mime="text/plain",
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        N(
+            "hq",
+            "04 Trilha — HQ",
+            HQ,
+            icon="bx bx-images",
+            children=[
+                N(
+                    "paginas",
+                    "Páginas",
+                    PAGINAS,
+                    icon="bx bx-book-content",
+                    relations=[("child:template", "tpl_pagina", True)],
+                ),
+                N("storyboard", "Storyboard", STORYBOARD, icon="bx bx-shape-square"),
+                N(
+                    "tpl_pagina",
+                    "_tpl-Página",
+                    TPL_PAGINA,
+                    labels=[("template", "", True)],
+                    relations=[("template:newNoteDefaultParent", "paginas", True)],
+                    icon="bx bx-file",
+                ),
+            ],
+        ),
+        N("ferramentas", "99 Ferramentas", FERRAMENTAS, icon="bx bx-wrench"),
+    ],
+)

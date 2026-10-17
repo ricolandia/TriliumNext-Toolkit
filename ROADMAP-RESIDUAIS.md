@@ -211,6 +211,48 @@ em 29/09/2026), com uma **triagem única** de prioridade.
 | KB-D7.3 | `#kb-config-warn` usa tinta `#f59e0b` no fundo (borda/strong já por token) | UI/tema | S | Baixo | `#kb-config-warn` | revisão no tema claro |
 | KB-Q13 | Benchmark: lacunas de produto (query language, DnD, raias/WIP) — ver `BENCHMARK-obsidian-widgets.md` | Produto | — | — | benchmark | triagem pós-15 |
 
+## Canvas-Templates (rodada 15 — aplicada e publicada (pack + demo + VPS))
+
+Rodada 15 (17/10/2026): **corrigir agora** (aprovado). O pack é tecnicamente íntegro (825 elementos sem id
+duplicado, sem referência quebrada, sem `isDeleted`; zip = repo; previews SVG em sincronia), mas entregava
+**6 templates com contraste reprovado em AA (1.27–3.76:1)**, **12 divisórias invisíveis** no storyboard,
+**4 vazamentos de texto** (28–71 px), **origem negativa em 4 templates** e um README que mostrava o
+**estado antigo (EN)**. Detalhe, evidências e o que cada batch mudou: `AUDITORIA-ESPECIALISTAS.md` § Rodada 15
+(inclusive *Batches executados*).
+
+**✅ Executado (17/10):** CT15-Q1·Q2·Q3·Q4 (conteúdo), CT15-Q7·Q8·Q9·Q10·Q11·Q12 (meta/README/capturas/zip/registry)
+— com os três scripts do pack (`fix-canvas-templates.py`, `render-canvas.py`, `test-canvas-templates.py`) e o
+harness **verde (4 ok · 1 warn · 0 fail)**. Nota: CT15-Q1 entregou **65 correções** medidas contra o fundo
+real; o item "Manual rótulos `#4b5563`" era **falso positivo** (o fundo é `#fdfcff`, 4.52: passa) e não foi mexido.
+
+**✅ Deploy (17/10):** `deploy-canvas-templates.py` (novo) aplicou o pack no **demo** (13 notas criadas sob uma
+pasta de QA) e na **VPS** (13 notas por `noteId` do meta, com checagem de título) — conteúdo **e** anexo
+`canvas-export.svg`, verificação final 13/13 **byte a byte** com os arquivos do pack; commit/push do toolkit e do
+manager feitos junto. Achado: o `attachmentId` do Projetos no meta (`proj_svg_1`) é inválido na VPS (o script casa
+por título; o real é `F3803Baq1JqJ`).
+
+**Permanece:**
+
+| ID | Item | Categoria | Esforço | Risco | Onde | Validação |
+|----|------|-----------|:-------:|:-----:|------|-----------|
+| CT15-Q5 | ≤11px → ≥12px (Manual 42, Cornell 47, storyboard 61) | A11y | M | Médio | 3 JSON | escala do JSON + harness |
+| CT15-Q6 | Placeholder sem convenção (`[..]`/`___`/`__`/`⬜`/nenhum) + 3 famílias tipográficas + `roundness` 0–90 | Consistência | M | Médio | 13 JSON | diff de estilo |
+| CT15-Q13 | *Descarte*: i18n EN do pack | — | L | — | — | **não fazer** (PT-only) |
+| CT15-Q14 | *Do v8, não do pack*: `_insertTemplate` reinicia `index` em `a00` e ignora `appState` do template | Robustez | M | Médio | `Canvas tools v8.js:2839` | manual |
+
+## Canvas-Template-Loader (rodada 14 — arquivado)
+
+Rodada 14 (17/10/2026): **nada a corrigir**. O widget foi absorvido pelo
+Canvas-Note-Tools v8, que já resolve todos os achados críticos/altos (perda de
+canvas por JSON ilegível, remap de vínculos, escape do título, a11y, i18n, cache,
+posição) — ver `AUDITORIA-ESPECIALISTAS.md` § Rodada 14. A pasta fica como histórico.
+
+| ID | Item | Categoria | Esforço | Risco | Onde | Validação |
+|----|------|-----------|:-------:|:-----:|------|-----------|
+| CTL-Q1 | **Não reativar o widget em paralelo ao v8** (`#canvasTemplate` e 🧩 são do Canvas Note Tools) | Produto | S | Baixo | `Canvas-Template-Loader/` | decisão de uso |
+| CTL-C8.1 | Se algum dia for reativado: extrair a clonagem para função pura e cobrir com teste (hoje a pasta tem 1 arquivo, sem teste) | Testes | S | Baixo | `Canvas Templater.js:386-410` | `bun` |
+| CTL-Doc | ✅ **RESOLVIDO** (17/10) — README marcado como histórico com ponteiro para a rodada 14 e para o v8 | Doc | S | Baixo | `README.md` | revisão |
+
 ## Pendências de produto (novas, 29/09/2026)
 
 Fora das rodadas de auditoria. Decisões do Ricardo: **nomenclatura em 2 camadas**
@@ -225,6 +267,8 @@ como está) e **hub mobile registrado para execução pós-rodada 15** junto do 
 
 ## Histórico
 
+- **17/10/2026** — § Canvas-Templates (rodada 15): **batches 1–3 aplicados** (conteúdo via `fix-canvas-templates.py`, doc/artefato/capturas/zip/registry 0.8.1, harness `test-canvas-templates.py` verde: 4 ok · 1 warn · 0 fail); deploy no **demo** e na **VPS** feito por `deploy-canvas-templates.py` (13/13 verificados byte a byte) + commit/push; permanecem CT15-Q5/Q6/Q14.
+- **17/10/2026** — adicionado o § Canvas-Template-Loader (rodada 14; **arquivado** — incorporado ao Canvas-Note-Tools v8, sem batches de código).
 - **14/10/2026** — adicionado o § Kanboard-Integration (rodada 12; **só auditoria** — sem batches ainda) + criado o `BENCHMARK-obsidian-widgets.md` (Trilha B) com a Fase 0.5 do Kanboard.
 - **29/09/2026** — adicionado o § UI-Tweaks (rodada 11; correções aplicadas em batches 1-3, deploy na VPS).
 - **29/09/2026** — adicionado o § Attribute-GC (rodada 10; correções aplicadas em batches 1-3, deploy sha idêntico).

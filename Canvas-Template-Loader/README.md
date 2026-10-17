@@ -6,6 +6,16 @@
 > "Canvas Templater" pode ser removida do Trilium (a pasta fica só como
 > histórico/referência).
 
+> 🔍 **Auditado na rodada 14 (17/10/2026) — veredito: ARQUIVAR, nada a corrigir.**
+> `bun build` OK; sha256 do zip **idêntico** ao do repo
+> (`8f4a8a7afdde4d57ca3e0bc251149be213e8b8f60fe3e14335f206a8253d84cd`); sem manifest
+> e sem entrada no `registry.json`; a nota já **não existe** no Trilium da VPS.
+> O v8 cobre 100% e já corrige os achados críticos/altos deste arquivo (canvas
+> ilegível sobrescrito, clonagem sem remap de `boundElements`/bindings/grupos,
+> título injetado em `innerHTML`, a11y, i18n, cache, posição). Relatório:
+> `../AUDITORIA-ESPECIALISTAS.md` § Rodada 14; residual em
+> `../ROADMAP-RESIDUAIS.md` § Canvas-Template-Loader.
+
 A lightweight template system for Trilium Canvas. Insert complete visual frameworks directly into your Excalidraw canvases with a single click.
 
 ## Features

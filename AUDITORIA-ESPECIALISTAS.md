@@ -90,8 +90,7 @@ melhorias de baixo risco e alto valor, com esforço estimado e validação.
 ~~4. Shared-Notes~~ ✅ 29/09 · ~~5. AI-Chat~~ ✅ 29/09 · ~~6. Daily-Note-Map~~ ⛔ removido da
 coleção (29/09 — o mapa nativo do Trilium cobre; decisão no `SESSION.md`) ·
 ~~6. Minimalist Pomodoro + Time Tracker~~ ✅ 29/09 · ~~7. Word-Counter~~ ✅ 29/09 ·
-~~8. Daily-Note-Navigator~~ ✅ 29/09 · ~~9. Knowledge-Dashboard~~ ✅ 29/09 (auditado) · ~~10. Attribute-GC~~ ✅ 29/09 (auditado) · ~~11. UI-Tweaks~~ ✅ 29/09 (auditado) · ~~12. Kanboard~~ ✅ 14/10 (auditado) · **13. Mastodon (próximo)** ·
-14. Canvas-Template-Loader · 15. Canvas-Templates.
+~~8. Daily-Note-Navigator~~ ✅ 29/09 · ~~9. Knowledge-Dashboard~~ ✅ 29/09 (auditado) · ~~10. Attribute-GC~~ ✅ 29/09 (auditado) · ~~11. UI-Tweaks~~ ✅ 29/09 (auditado) · ~~12. Kanboard~~ ✅ 14/10 (auditado) · **13. Mastodon** (⏸ parkado em 17/10 — retomar quando quiser) · ~~14. Canvas-Template-Loader~~ ✅ 17/10 (auditado — **arquivado**: incorporado ao Canvas-Note-Tools v8) · ~~15. Canvas-Templates~~ ✅ 17/10 (auditado — correções propostas em 3 batches) · **fila vazia**.
 
 ---
 
@@ -3304,4 +3303,349 @@ correto após o fix do `checkConfig`; o demo nunca teve credenciais de Kanboard)
 **novos** KB-D4.1 (`overflow:hidden` do `#kb-app`), KB-D4.2 (alvo de toque do deletar), KB-D7.3 (tinta do
 `#kb-config-warn`). Produto (KB-Q1…Q5, KB-Q13) segue no benchmark/roadmap.
 
-**Próximo da lista:** Mastodon-Sender (rodada 13).
+---
+
+## Rodada 14 — Canvas-Template-Loader (17/10/2026)
+
+**Escopo:** `Canvas-Template-Loader/Canvas-Templater/Canvas Templater.js` (481 linhas),
+`Canvas-Templater.zip`, `Canvas-Template-Loader/README.md`. Sem `manifest.json`.
+
+**Fase 0 (mecânica):** `bun build` (sintaxe) ✅ · sha256 **repo = zip**
+(`8f4a8a7afdde4d57ca3e0bc251149be213e8b8f60fe3e14335f206a8253d84cd`) — o zip é um
+**export do Trilium** (`formatVersion 2`, `appVersion 0.103.0`; a nota exportada tem
+`#widget` + `#readOnly`, `type: code`, `mime: application/javascript;env=frontend`;
+`index.html`/`navigation.html`/`style.css` entram como `noImport`) · **sem manifest e
+sem entrada no `registry.json`** (o sucessor é `canvas-note-tools`) · **deploy:** a nota
+"Canvas Templater" **não existe** mais na VPS (só a menção no handoff); as 13 notas
+`#canvasTemplate` seguem vivas (inventário da rodada 15).
+
+### ➕ Fase 0.5 — referência just-in-time
+
+O "estado da arte" aqui não é Obsidian: é o **sucessor no próprio repo**,
+`Canvas-Note-Tools/Canvas-note-tools/Canvas tools v8.js` (3.296 linhas), que absorveu
+este widget (botão 🧩). Conferido na fonte, o v8 já faz:
+
+| Defeito do Canvas Templater | Como o v8 resolve (linhas) |
+|---|---|
+| `catch (_) { canvasData = {} }` + `setContent` = **apaga o canvas** | `throw new Error(L.canvasJson)` no parse inválido (`1964`, `2029`, `2084`, `2230`, `2321`, `2365`) |
+| Clonagem troca só `clone.id` | `idMap`/`mapRef`/`gidMap` remapeando `boundElements`, `startBinding`/`endBinding`, `containerId`, `frameId`, `groupIds` (`2810-2833`) |
+| Título injetado em `innerHTML` | `escapeHtml()` (`102`, uso em `2773`) |
+| Template copia `isDeleted` | `filter(e => e && !e.isDeleted)` (`2799`) |
+| Posição por `maxX/maxY` (origem) | `e.x + e.width` e `minY` (`2805-2807`) |
+| Sem `type`/`version`/`index`/`updated` | defaults + `c.index`/`c.updated` (`2793-2795`, `2838-2840`) |
+| PT fixo, sem a11y | i18n PT/EN (`640-955`), `aria-label` em todos os botões (`1274-1284`), `:focus-visible` (`1726-1735`), `role="dialog" aria-modal` (`1249`) |
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Código | 1 | 2 | 6 | 5 | 4 | 18 |
+| 🎨 UI/UX | 1 | 4 | 6 | 5 | 5 | 21 |
+| ⚡ Quick wins | — | — | — | — | — | 8 itens (veredito: **arquivar**) |
+
+**Top 5 (triagem sugerida):**
+1. **[Crítica · Código]** Canvas com JSON ilegível é **sobrescrito** com só os clones: `catch (_) { canvasData = {}; }` + `if (!canvasData.elements) canvasData.elements = []` + `canvasNote.setContent(JSON.stringify(canvasData))` **destrói `appState`, `files` e todos os elementos** (`340-342`, `355-356`, `416-418`).
+2. **[Crítica · UI]** A **única ação do widget não é operável por teclado**: os itens são `div` com `click` (`251`, `274-279`); sem `role`/`tabindex`/`keydown` e sem `:focus-visible` (`166-174`) — e o botão 🧩 só tem `title` (`133-150`).
+3. **[Alta · Código]** Inserção **não remapeia referências**: só `clone.id`, `seed`, `versionNonce` são renovados (`386-410`) — setas (`startBinding`/`endBinding`), `containerId`, `frameId` e `groupIds` apontam para ids inexistentes ou ficam **compartilhados entre duas inserções** do mesmo template.
+4. **[Alta · Código]** `item.innerHTML` com `${tpl.title}` cru (`265-272`): um template com título hostil executa script no contexto do Trilium (stored injection).
+5. **[Alta · Código/UI]** Posicionamento usa `el.x`/`el.y` sem `width`/`height` e desloca sempre `+offset` nos dois eixos (`364-380`) → o template cai **por cima** de conteúdo largo ou longe demais.
+
+### 👨‍💻 Código — achados
+
+**Crítica**
+
+- **C1.1 · canvas ilegível tratado como vazio (perda de dados)** (`335-342`, `355-356`, `416-418`): ver Top 5 item 1. O caminho degradado existe para o canvas e **não** para o template (`349-352` lança). Correção: lançar em vez de degradar para `{}`. (verificar em runtime com canvas corrompido)
+
+**Alta**
+
+- **C2.1 · injeção via título do template** (`265-272`): usar `textContent`/`escapeHtml`.
+- **C1.2 · clones sem remap de referências** (`386-410`): mapa id→novoId para `boundElements`, `startBinding`, `endBinding`, `containerId`, `frameId`, com `groupIds` novos por inserção (senão dois clones ficam "grudados").
+
+**Média**
+
+- **C4.1 · `groupIds` preservados** (`386-410`): mover/remover um clone afeta o outro.
+- **C4.2 · elementos deletados do template voltam** (`386`): falta `filter(e => !e.isDeleted)` — o filtro existe para o canvas (`362`) e não para o template.
+- **C3.1 · busca de templates a cada abertura do painel** (`225-236`, chamada em `196`): `api.searchForNotes('#canvasTemplate')` no backend sem cache.
+- **C4.3 · posição ignora `width`/`height`** (`364-380`).
+- **C1.3 · clones sem `index`/`updated`** (`403-407`): ordem z ambígua no Excalidraw. (verificar em runtime)
+- **C4.6 · canvas novo sem `type`/`version`** (`355-356`): garante só `elements`; num canvas `{}` o JSON resultante pode não renderizar.
+
+**Baixa**
+
+- **C5.1 · listener global sem remoção** (`199-206`): `document.addEventListener('click', …)` sem `removeEventListener`/`destroy()`; `#cti-root` fica órfão.
+- **C4.4 · `this.noteId` sem guarda** (`301`): `getNote(undefined)` → erro genérico.
+- **C4.5 · `String.prototype.substr`** (`395`): obsoleto; usar `slice`.
+- **C7.1 · strings PT fixas** (`289`, `306`, `431`): sem i18n.
+- **C2.2 · `window._cti` reatribuído + root órfão** (`57-65`, `179`): botão vivo ligado a instância morta se o script for desativado.
+
+**Sugestão**
+
+- C8.1 sem testes (a pasta tem um único arquivo) · C7.2 sem constante de versão (`42-45`) · C5.2 `console.log` de boot (`1`) · C6.1 passa `TEMPLATE_CONFIG` inteiro nos args (`420-424`).
+
+### 🎨 UI/UX — achados
+
+**Crítica:** D3.1 itens de template em `div` não focável — a única ação do widget é inacessível (`251`, `274-279`).
+
+**Alta:** D3.2 sem `:focus-visible` em controle algum (`166-174`) · D3.3 botão 🧩 sem `aria-label`/`aria-expanded` (`133-150`) · D5.1 inserção corrompe referências (UX: textos/etiquetas soltos, vínculos quebrados) (`386-410`) · D2.1 UI inteira em PT fixo (`117`, `134`, `221`, `231`, `243`, `288`, `306`, `430`, `444`).
+
+**Média:** D1.1 posicionamento sobrepõe conteúdo (`364-380`) · D5.2 erro com a mesma cor de info (`123-129`, `288`) · D5.3 sem trava de reentrância na inserção (`274-279`, `303-306`) · D3.4 sem `Escape`/`role="dialog"` (`199-206`) · D4.1 painel com `width:280px`/`max-height:420px` fixos, sem limite pela viewport (`91-93`) · D2.2 título em `innerHTML` (`270`).
+
+**Baixa:** D7.1 contraste ~4.0:1 em 11px no tema escuro (verificar em runtime) · D8.1 status/título em 11px (`111`, `126`) · D6.1 sem `:active` (`166-169`) · D4.2 alvos ~33-36px (`255-263`) · D1.2 sem botão ✕ de fechar (`102-131`).
+
+**Sugestão:** D6.2 sem `prefers-reduced-motion` (`155-164`) · D5.4 vazio não orienta (`242-244`) · D2.3 font stack sem `system-ui` (`86`) · D4.3 títulos sem ellipsis (`265-272`) · D6.3 scrollbar sem estilo (`93`, `121`).
+
+### ⚡ Quick wins — backlog
+
+Nenhum item vale execução **neste arquivo**: os 8 candidatos (remap, `type`/`version`, posição, `isDeleted`, `textContent`, contagem na mensagem, `substr`, i18n/escopo) já estão no v8 (`2785-2847`). O único ganho real é de documentação: marcar a pasta como histórica (feito) e não reativar o widget no Trilium.
+
+### Claims do README × código
+
+| Claim | Situação |
+|---|---|
+| "1-Click Insertion" | ✔ (painel + `insertTemplate`) |
+| "Templates are standard Excalidraw canvas notes" | ✔ (`#canvasTemplate`) |
+| Instalação: `JS Frontend` + `#widget` | ✔ (o `!!!meta.json` do zip traz `type: code`, `mime …env=frontend`, `#widget`) |
+| "easy to edit, duplicate, and expand" | ⚠ parcial: editar/duplicar ✔; **inserir duas vezes** o mesmo template quebra vínculos e compartilha grupos (`386-410`) |
+| "⚠ INCORPORADO ao Canvas Note Tools (v8) … a nota pode ser removida" | ✔ correto — e a nota **já não existe** na VPS |
+
+### Pontos fortes (não mexer)
+
+- Contrato `#canvasTemplate` — **sobreviveu** e é o vocabulário do v8 e do pack de canvas.
+- Mínimo e auto-contido (481 linhas), sem patch global, backend com **array de args** (sandbox-ok) e `throw` claro para template inválido.
+- Auto-posicionamento como intenção (o v8 corrigiu só a matemática) e mensagem de sucesso com o nome do template.
+
+### Veredito da rodada 14
+
+**Arquivar — nada a corrigir.** O script foi legitimamente absorvido: o v8 faz 100% do que
+ele faz e cobre **todos** os achados críticos/altos (perda de canvas, remap de vínculos,
+escape, a11y, i18n, cache, posição). Corrigir este arquivo seria manter duas implementações
+da mesma função. A pasta fica como **histórico/referência** (o README já avisa; a nota foi
+removida do Trilium).
+
+### Triagem e batches
+
+| Batch | Conteúdo | Estado |
+|---|---|---|
+| 1 | **Nenhuma alteração de código.** Marcar a pasta como histórica no README, com ponteiro para esta rodada e para o v8 | ✅ (só doc) |
+| 2 | — (não aplicável) | — |
+| 3 | Residual → `ROADMAP-RESIDUAIS.md` § Canvas-Template-Loader (valor de documentação) | ✅ |
+
+**Residual:** nenhum item de código. Fica no roadmap a nota de produto "não reativar o widget em paralelo ao v8".
+
+**Próximo da lista:** 15. Canvas-Templates (o inventário que o super-template `Escrita-Templates` consome).
+
+---
+
+## Rodada 15 — Canvas-Templates (17/10/2026)
+
+**Escopo:** `Canvas-Templates/` — **pack de conteúdo** (13 canvas Excalidraw, JSON + SVG de preview),
+`README.md`, 12 capturas `.webp` e `Canvas-templates.zip`. **Não há JS** (por isso `bun build` não se
+aplica; a "linguagem" auditada é o payload Excalidraw + o `!!!meta.json` do export). Alvo real: o pack
+alimenta o `#canvasTemplate` do Canvas Note Tools v8 e o `Storyboard`/`99 Ferramentas` do super-template
+`Escrita-Templates`.
+
+**Fase 0 (mecânica) — resultado:**
+
+| Checagem | Resultado |
+|---|---|
+| `Canvas-templates.zip` × repo | ✅ **30 arquivos, nomes e sha256 idênticos** |
+| zip **publicado** (registry `zipUrl`) × local | ✅ `dd43bc58…` nos dois (`http=200`, 135.459 B) |
+| Registry | ✅ `canvas-templates-for-production` v0.8.0 · `minAppVersion 0.106.0` · `zipUrl` vivo (não há `manifest.json`: a distribuição é por registry) |
+| `!!!meta.json` | ✅ 13 notas `canvas` (mime `application/json`), **todas com `#canvasTemplate`**; 13 anexos `canvas-export.svg` |
+| Payload (13 JSON, 825 elementos) | ✅ todos `type=excalidraw`/`version=2`/`appState`/`files`; **0** ids duplicados; **0** `isDeleted`; **0** `boundElements`/`containerId`/`frameId`/bindings órfãos; **0** textos vazios; todo texto com `fontFamily`/`fontSize` |
+| SVG de preview × JSON | ✅ **100% das palavras** do JSON presentes em cada SVG (previews atuais) |
+| Inventário VPS | ✅ **13 notas** `#canvasTemplate` (mesmos 13 títulos — nenhuma órfã/duplicada) |
+
+### ➕ Fase 0.5 — referência just-in-time
+
+Três referências, na ordem em que decidem: **(a) o consumidor** — `_insertTemplate` do
+`Canvas tools v8.js` (`2780-2857`): filtra só `isDeleted` (`2799`), remapeia ids (`2812/2828`) e **reescreve
+`index` reiniciando em `a00`** (`2839`), mas **ignora `appState`** (fundo/zoom/grade do template) e só
+mescla o que existe em `files`; **(b) o exporter do Excalidraw** (chave a chave) — é a régua que o pack
+**cumpre**; **(c) o Trilium** — o label `#template` do pack não é lixo: o próprio Attribute-GC o lista como
+**system label** (`attribute-gc.js:29`); com valor vazio ele não referencia nada (as pastas é que o usam com
+`_template_list_view`). Nada disso mudou a decisão de corrigir o pack (as lacunas são de conteúdo, não de
+schema).
+
+### Resumo executivo
+
+| Especialista | Crítica | Alta | Média | Baixa | Sugestão | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 👨‍💻 Dados/Schema Excalidraw | 0 | 3 | 7 | 10 | 4 | 24 |
+| 🎨 UI/UX | 3 | 6 | 8 | 5 | 5 | 27 |
+| ⚡ Quick wins | — | 2 | 4 | 3 | — | 9 itens (3 S) |
+
+**O pack é seguro para inserir** (nenhum payload quebra o `_insertTemplate`) — o problema é **visual e de
+documentação**, e é real: 6 dos 13 templates têm falha de contraste (1.27–3.76:1), 12 divisórias do
+storyboard **não desenham nada**, 4 textos **vazam** dos nós/painéis (28–71 px), e as capturas do README
+são a versão **em inglês**, de antes da revisão de 29/09.
+
+**Top 5 (triagem sugerida):**
+
+1. **[Crítica · UI]** **Placeholders ilegíveis**: Cornell `#c4b5fd` (22 elementos, 9–12px) sobre cards `#fdfcff`/`#f0ebff` = **1.81 / 1.59**; Manual, intro `#8b7fd4` 10px sobre elipse `#a78bfa` = **1.27** (o pior); storyboard, rótulos brancos 9px sobre barra `#868e96` = **3.32**. São justamente as perguntas que o usuário deve responder. *(medido em WCAG sobre os hexes do próprio JSON)*
+2. **[Alta · Dados]** **12 linhas de comprimento zero no storyboard**: as 12 `line` divisórias têm `points=[[0,0],[0,0]]`, `width=0`, `height=0` (só `x`/`y` posicionados) → as divisórias das células **não renderizam** e o v8 as copia para o canvas do usuário (`storyboard.json`, ids `Jjc6tlb5…`–`oCc6Pznel…` em x=226/353/646/773/1066/1193, y=248/728).
+3. **[Alta · Dados]** **Texto vaza do nó**: GTD `esclarecer_txt` (x 437→665, ~242–302 px reais) dentro do diamond `esclarecer_dia` (400→600) = **+65 px**; `acao_txt` vaza **+28 px**; Manual, rodapé (`5sasYEeH…`, 1180→1459) sai do painel (`PKvfQKa3…`, 68→1388) = **+71 px**; Design Thinking `pi_left_text` (120→289) do retângulo `pi_left_1` (100→260) = **+29 px**.
+4. **[Alta · UI]** **Capturas do README são a versão EN antiga**: `imagens/*.webp` são de **14/05/2026** e os 13 JSONs de **29/09/2026** (`git log`); o SVG atual do Manual traz `MANUAL PESSOAL` e a captura mostra `PERSONAL USER MANUAL`. São 12 capturas para 13 templates.
+5. **[Alta · Dados/Produto]** **4 templates com origem negativa** (OKR −180/−40, SCAMPER −380, Fayman −23,7/−63,8, Plot Timeline −40/−80): o v8 posiciona por `dx=maxX, dy=minY` (`2804-2808`) e, em canvas **vazio**, `dx=dy=0` → o template entra fora do viewport (SCAMPER 380 px à esquerda) e parece que "não inseriu nada". *(verificar em runtime)*
+
+### 👨‍💻 Dados/Schema — achados
+
+**Alta:** A1 12 `line` de comprimento zero (storyboard, acima) · A2 vazamento GTD (2 nós) · A3 vazamento do rodapé do Manual.
+**Média:** M1 `boundElements` **fantasma** no SCAMPER (`txt_e_desc` aponta para a seta `1ZYHVI4L…`, que está presa a `Isz-gc20…`/`box_e`; o v8 remapeia e copia o fantasma) · M2 **miolo do SCAMPER de outro canvas**: 9 dos 31 elementos com `roughness:1` + `#1e1e1e` (contra 22 com `roughness:0` + paleta) e 1 texto em `fontFamily:6` (Nunito) vs 15 em `2` (Helvetica) · M3 OKR escalado ×1.045345 sem reescalar `obj_desc` (`fs=16`, `w=460` → vaza **+61,86 px** de `obj_box`) · M4 OKR: `kr2_box.x=380` vs `kr1/3/4=381,87`; barras param 112,55 px antes da caixa e o rótulo `kr*_pb_txt` fica **fora** da barra · M5 Design Thinking `pi_left_text` vaza **+29 px** · M6 origem negativa (Top 5 nº 5) · M7 Design Thinking é o único canvas **sem o label `#template`** (12/13 têm).
+**Baixa:** B1 11 "arrows" sem ponta (`startArrowhead`/`endArrowhead` nulos) em Character Arc (4) e Plot Timeline (7), contra 29 setas com `arrow` · B2 `elbowed` presente só nas 7 setas do SCAMPER · B3 `boundElements` ora `null` ora `[]` (107 elementos) · B4 **`index` duplicado em 8 templates** (Character Arc 5 pares, Plot Timeline 3, AIDA/Cornell/Fayman/OKR/GTD/GTD-W 1–2) — sinal de colagem entre canvases (o v8 reindexa na inserção) · B5 `seed` repetido **entre** templates (19 valores; ex.: 1001–1005 em Design Thinking/Projetos/Character Arc) · B6 `strokeStyle:"dotted"` só em 2 linhas do Plot Timeline (resto `solid` ×823) · B7 sombras do Manual em 4 direções diferentes (`csSYXu3t…` no mesmo (x,y) do cartão = sobra de 3,3 px) · B8 `dataFileName` `Template - Fayman.json` (título "Feynman") + `storyboard.json` minúsculo · B9 anexo do Projetos com `attachmentId` **feito à mão** (`proj_svg_1`) vs 12 aleatórios · B10 `viewBackgroundColor` varia em 4 cores e `gridModeEnabled:false` em 2.
+**Sugestão:** S1 308 de 385 textos fora da escala do Excalidraw (só 16/20/28/36 são presets) · S2 dimensões/fontes fracionárias (18,2935/21,3333/26,1336/36,5871; Fayman 473,34×224,21) · S3 o v8 reinicia o `index` em `a00` a cada inserção (z-order pode não sair como desenhado) — **achado do v8, não do pack** · S4 o v8 ignora o `appState` do template (fundo/zoom/grade nunca aplicados).
+
+### 🎨 UI/UX — achados
+
+**Crítica:** D3.1 Cornell (22 guias `#c4b5fd` 9–12px, **1.81/1.59**) · D3.2 storyboard (24 rótulos brancos 9px sobre `#868e96`, **3.32**) · D3.3 Manual (intro `#8b7fd4` 10px sobre elipse `#a78bfa`, **1.27**).
+**Alta:** D3.4 Manual, 23 rótulos `#6b7280` 9px sobre card `#e5e0f5` (**3.76**) · D3.5 GTD "Sim" `#10b981` (**2.54**) e "Não" `#ef4444` (**3.76**) sobre branco · D2.1 capturas EN velhas (Top 5 nº 4) · D2.2 placeholder sem convenção (`[..]` em AIDA/OKR, `___` em Projetos/storyboard, `__` em Character Arc/Plot Timeline, `⬜` em Cornell/Fayman, **nenhum** em Design Thinking/SCAMPER/GTD) · D1.1 **3 famílias tipográficas** no mesmo pack (Cascadia mono em Manual/Cornell, Nunito no storyboard e 1 texto do SCAMPER, Helvetica nos 10) · D4.1 **150 textos ≤11px** em 3 templates.
+**Média:** D2.3 cores hardcoded, sem token/par claro-escuro (6 templates só funcionam em 1 tema; verificar em runtime) · D1.2 só **4 de 13** ensinam a usar (Cornell "COMO USAR", Projetos "Como atualizar", Manual, OKR "Regras") · D5.1 README lista 10 · D5.2 nome do zip errado · D2.4 título × arquivo (Fayman) · D4.2 `appState.zoom` de 0,9 a 1,2 e grade desligada em 2 · D2.5 `roundness` de 0 a 90 · D5.3 OKR: os 4 KRs mostram **"0% 🟢"** com cores diferentes (emoji contradiz o estado) · D3.5 Projetos: "+ novo projeto" `#94a3b8` (**2.56**) e legenda ⚪/⏸/📦 que não casa com as cores dos pontos.
+**Baixa:** D7.1 fontes fracionárias · D3.6 Design Thinking comunica **só por cor** (4 post-its sem rótulo; WCAG 1.4.1) · D2.6 Design Thinking é outlier de paleta/convenção · D5.4 emoji sem fallback · D2.7 `#template` duplicado em 3 notas.
+**Sugestão:** paleta-token única para os 13 · bloco "Como usar · Apague o que não usar" (e 1 exemplo preenchido) · README em PT · validar nos 2 temas · travar escala (corpo ≥12px; títulos 20/28).
+
+### ⚡ Quick wins — backlog (triado)
+
+| # | Item | Sev | Esf. | Risco | Validação |
+|---|---|---|---|---|---|
+| 1 | README: 10 → **13** bullets (+ Character Arc, Plot Timeline; separar GTD/GTD-W) | Alta | S | Baixo | contar bullets × 13 JSON |
+| 2 | `#template` duplicado (3 notas) + ausente no Design Thinking | Média | S | Baixo | 1 `template` por nota no meta |
+| 3 | README: `Canvas_Templates.zip` → `Canvas-templates.zip` | Média | S | Baixo | `ls *.zip` |
+| 4 | Registry 0.8.0 → **0.8.1** + descrição "13 templates" (com o zip reexportado) | Média | S | Baixo | instalar pelo manager |
+| 5 | 12 capturas → **13**, regeradas do estado atual (corrige o EN de 14/05) | Alta | S | Médio | conferir PT nos `.webp` |
+| 6 | Renomear `Fayman`→`Feynman` + capitalização | Baixa | S | Baixo | `dataFileName` × título |
+| 7 | Reescrever o zip após os fixes (o export reescreve `!!!meta.json`) | Alta | S | Médio | sha novo; 30 arquivos |
+| 8 | ≤11px → ≥12px (Manual 42, Cornell 47, storyboard 61) | Média | M | Médio | escala do JSON |
+| 9 | Unificar paleta/fonte/zoom e normalizar tamanhos fracionários | Baixa | M | Médio | diff de estilo |
+| 10 | **Descarte:** i18n EN do pack | Baixa | L | — | não fazer (PT-only documentado) |
+
+### Claims do README × conteúdo
+
+| Claim | Situação |
+|---|---|
+| "Templates included" (10 itens) | ⚠ **omite Character Arc e Plot Timeline** (13 no pack) |
+| "Import `Canvas_Templates.zip`" | ⚠ arquivo real: `Canvas-templates.zip` |
+| "The text is in Portuguese" | ✔ (PT-only; mas "translate by yourself" agora é desnecessário — o pack é PT de origem) |
+| "the notes will appear with the `#canvasTemplate` label automatically" | ✔ (13/13 no meta) |
+| "Ideal for use with the **Canvas Template Loader**" | ⚠ **sucessor**: o loader foi incorporado (rodada 14); hoje é o **Canvas Note Tools (Insert template)** — o `description` do registry já diz isso, o README não |
+
+### Pontos fortes (não mexer)
+
+- **Payload impecável**: 825 elementos sem id duplicado, sem referência quebrada, sem `isDeleted`, sem texto vazio — o pack é **seguro** para o `_insertTemplate`.
+- **Artefato em sincronia tripla**: repo = zip = publicado (sha `dd43bc58…`) e registry coerente (`minAppVersion 0.106.0`), com **previews SVG 100% fiéis** ao JSON.
+- **Contrato `#canvasTemplate`** cumprido nas 13 notas + `#template=_template_list_view` nas 3 pastas (galeria) — a navegação do pack no Trilium funciona.
+- **Cobertura de uso**: os 13 cobrem produtividade **e** narrativa (Character Arc, Plot Timeline, Storyboard) — exatamente o vocabulário que o super-template de escrita precisa.
+
+### Inventário para o super-template `Escrita-Templates` (VPS, 17/10/2026)
+
+| # | Template | Pasta | Elementos | id (VPS) | Uso na escrita |
+|---:|---|---|---:|---|---|
+| 1 | Storyboard | Filme | 132 | `JZdUCoZlcK61` | **decupagem de cena** |
+| 2 | Character Arc | Filme | 29 | `rR0wwcy3ZXf8` | **arco de personagem** |
+| 3 | Plot Timeline | Filme | 42 | `35IdsHQDJAoq` | **estrutura em 3 atos** |
+| 4 | Projetos | (raiz) | 96 | `x3RDQ4yqrgRB` | painel de projetos |
+| 5 | Manual pessoal do usuário | (raiz) | 115 | `XD04bELT8xJi` | canon de estilo/voz |
+| 6 | Cornell | Estudo | 207 | `5uYOhPWsfMBR` | fichamento de pesquisa |
+| 7 | Feynman | Estudo | 13 | `BoAhuTZF7r9X` | explicar premissa/conceito |
+| 8 | GTD | Produtividade | 40 | `jBzDxrkiXqPC` | pipeline de tarefas |
+| 9 | GTD - Weekly review | Produtividade | 31 | `YSYePRBoWBGe` | revisão semanal |
+| 10 | OKR | (raiz) | 29 | `9C3X1uhmdgoZ` | metas do projeto |
+| 11 | AIDA | (raiz) | 19 | `4vCuEYWziyRP` | marketing/sinopse |
+| 12 | SCAMPER | (raiz) | 31 | `NhbLhaY58WRX` | brainstorming |
+| 13 | Design Thinking | (raiz) | 41 | `ZqTBPxBzS7Ym` | ideação |
+
+> Sugestão de ligação: o `99 Ferramentas` do super-template aponta para as 3 primeiras (narrativa) e o
+> `Storyboard` da trilha HQ/roteiro usa o `Template - Storyboard` (`JZdUCoZlcK61`).
+
+### Veredito da rodada 15
+
+**Corrigir agora (3 batches).** Diferente da rodada 14, aqui há defeito de produto: o pack é
+**tecnicamente íntegro** mas entrega **6 templates com contraste reprovado em AA**, **divisórias invisíveis**
+no storyboard, **4 vazamentos de texto** e um **README que mostra o estado antigo (EN)**. O custo é baixo
+(edições pontuais por `id` + doc + reexport) e o ganho é direto para quem usa o pack e para o super-template.
+
+### Triagem e batches (propostos — aguardando o "pode executar")
+
+| Batch | Conteúdo | Esforço |
+|---|---|---|
+| 1 — **conteúdo visível** | A1 (12 divisórias), A2/A3/M5 (vazamentos), D3.1–D3.5 (contraste → `#5b21b6`/`#2d1b69`/barra `#495057`/`#4b5563`/`#047857`+`#b91c1c`), M6 (origem ≥0 nos 4), M1 (fantasma), M3/M4 (OKR), D5.3 (emoji), M2/B7/B10 (estilo), B4/B5 (`index`/`seed`) — via script declarativo `fix-canvas-templates.py` (edita por `id`, preserva 1 linha) | M |
+| 2 — **doc/artefato** | README (13 bullets, nome do zip, PT-only, sucessor, 13ª captura), 13 capturas regeradas, meta (dedup `#template` + Design Thinking, `Fayman`→`Feynman`), **reexportar o zip**, registry **0.8.1** + descrição | S |
+| 3 — **harness** | `test-canvas-templates.py`: schema/refs/`isDeleted` + **contraste** + **overflow de texto** + lista do README × arquivos + labels do meta + zip × repo | S |
+
+**⚠️ Dependências que o batch 1 cria** (decidir junto):
+1. **SVG de preview** não é gerável offline (o export do Excalidraw usa o rough.js/fontes do app) → ou
+   regerar os 13 no Trilium (o `canvas-export.svg` vem do próprio app) ou aceitar 1 rodada de preview
+   defasado até o próximo export.
+2. **As 13 notas da VPS/demo são instâncias** → aplicar via `PATCH /notes/{id}/content` (por título, sem
+   duplicar) e conferir no demo antes.
+3. **`_tpl-Cena`/escrita**: nenhum canvas do super-template referencia ainda estas notas — a ligação
+   (Storyboard → `JZdUCoZlcK61`) entra junto com o bump.
+
+### Batches executados (17/10/2026)
+
+**Batch 1 — conteúdo visível** (`fix-canvas-templates.py`, declarativo por `id`/regra; dry-run + `--apply`):
+
+- **65 correções de contraste**, medidas contra o **fundo real** (shape mais ao topo sob o centro do texto) e
+  priorizando mexer no *fundo* quando o texto é branco (mantém a intenção do design): Design Thinking
+  `q2_header` `#f58231`→`#c15509` (2.59→4.59), storyboard barra `#868e96`→`#495057` (3.32→8.0), Manual
+  `#0d9488`→`#0b8177`, Cornell guias `#c4b5fd`→`#7957fa`, Manual intro `#8b7fd4`→`#2d1b69` (1.27→4.87), GTD
+  `Sim`/`Não`. O harness confirma **0 textos < 4.5**.
+  - ⚠️ **Falso positivo corrigido:** D3.4 (Manual, 23 rótulos `#6b7280` sobre `#e5e0f5` = 3.76) — o rect
+    `#e5e0f5` está **atrás** do card `#fdfcff` (posições 17 × 18 no array = sombra); sobre o fundo real o
+    contraste é **4.52** (passa AA). Nada foi alterado.
+- **12 divisórias do storyboard** (`points=[[0,0],[0,0]]`, `w=h=0`) → verticais reais (`[[0,0],[0,60]]`,
+  `y` no topo da barra); o rótulo/valor `PLANO` saiu de x=200 (a cavalo da divisória de 226) para 240.
+- **4 vazamentos**: GTD `esclarecer_txt` (fs 18→14, w 228→196, x 437→402 — centralizado no diamond) e
+  `acao_txt` (fs 18→14, w 308→269, x 380→375,5); Manual rodapé x 1180→1060 (direita 1339 < 1388 do painel);
+  Design Thinking `pi_left_text` fs 20→18, w 169→152, x 120→104.
+- **Origem ≥ 0** em OKR (+180/+40), SCAMPER (+380), Feynman (+23,7/+63,8) e Plot Timeline (+40/+80), com
+  `scrollX/scrollY = 0` — em canvas vazio o v8 insere pela origem, e o SCAMPER entrava 380 px fora da tela.
+- **OKR**: `obj_desc` 16→13px/374 (cabe nos 418,14 da caixa), `kr2_box.x` 380→381,87 (alinha com kr1/3/4),
+  KRs com o emoji da própria cor (`🟢🔴🔵🟡` no lugar de 4× `🟢`).
+- **SCAMPER**: `boundElements` fantasma removido; hub (9 elementos) `roughness` 1→0, stroke `#1e1e1e`→`#0f172a`,
+  `fontFamily` 6→2.
+- **Estrutura/estilo**: `index` reindexado nos **10** templates com chave duplicada (404 elementos; ordem de
+  pintura preservada), `roughness` 1→0 nas 2 linhas do Plot Timeline (o resto do pack já era 0 — logo o
+  `seed` fica inerte e não foi mexido), `appState` unificado (fundo `#ffffff`, grade on, zoom 1) e as sombras
+  do Manual normalizadas em +6/+6.
+- Diff semântico: **524 de 825** elementos tocados, atribuídos em `index` 404 · `x/y` 244 · `strokeColor` 59 ·
+  `backgroundColor` 36 · `roughness` 11 · `points` 12 · `fontSize` 4 · `text` 3.
+
+**Batch 2 — doc/artefato:**
+
+- `README.md`: **13** templates (grupos Produtividade / Estudo / Criatividade / Narrativa),
+  `Canvas-templates.zip` (nome real), PT-BR explícito, sucessor (**Canvas Note Tools → Insert template**) e o
+  bloco *Update (17/10/2026)*.
+- **13 capturas `.webp` regeradas** do estado atual (antes: 12 capturas de **14/05**, em inglês):
+  `render-canvas.py` gera o SVG a partir do JSON e o Chrome headless fotografa na **proporção do canvas** (o
+  Manual, 1487×2200, ficou legível — OCR confirma PT: "MANUAL PESSOAL … Revisé a cada 6-12 meses").
+- **SVG de preview** dos 13 anexos **regerados** do JSON (antes: export do Excalidraw da versão anterior) —
+  agora o harness verifica **SVG × JSON por palavra** (13/13).
+- `!!!meta.json`: `template` **duplicado** removido (Storyboard, Cornell, Manual) e **adicionado** no Design
+  Thinking; `dataFileName` do canvas e do anexo `Fayman`→`Feynman` (arquivos renomeados com `git mv`, e
+  `navigation.html`/`index.html` atualizados).
+- `Canvas-templates.zip` reexportado: **30 arquivos, 87,1 KB**, sha256 `764ea533…`.
+- `registry.json` (Trilium-plugin-manager): `canvas-templates-for-production` **0.8.0 → 0.8.1** + descrição
+  com os 13 templates e "WCAG AA".
+
+**Batch 3 — harness** (`test-canvas-templates.py`, sai 1 se falhar): schema (`type`/`version`/`appState`/`files`),
+ids/refs/`isDeleted`/texto vazio, degenerados (`points` sem comprimento, área zero), `index`/`seed` duplicados,
+appState unificado, origem negativa, **contraste contra o fundo real**, vazamento > 8px (WARN), lista do README
+× arquivos, labels do meta, **SVG × JSON** e **zip × repo (sha256)**. Resultado: **4 ok · 1 warn · 0 fail**
+(o warn é o rótulo de 15 px da barra do storyboard, aceito).
+
+**Deploy (17/10):** feito por `deploy-canvas-templates.py` (novo script do pack). **Demo** primeiro: as 13 notas
+foram criadas sob uma pasta de QA (conteúdo + labels `template`/`canvasTemplate` + anexo) e voltaram **byte a
+byte** iguais aos arquivos do pack — ou seja, o Trilium aceita o JSON como está e não o re-serializa. Depois a
+**VPS**: 13 notas atualizadas por `noteId` (o `!!!meta.json` do pack guarda os ids de origem) com checagem de
+título, conteúdo e anexo — verificação final **13/13** com conteúdo e SVG idênticos e labels corretos.
+- Achado no deploy: o `attachmentId` do **Projetos** no meta (`proj_svg_1`) é **inválido** na VPS (id feito à
+  mão) — o script casa o anexo por título (`canvas-export.svg`), então isso não é bloqueante, mas o meta
+  deveria usar o id real (`F3803Baq1JqJ`).
+- O endpoint `POST /etapi/notes/{id}/import` (que importaria o zip como o usuário faz) dá erro interno na
+  0.106 com corpo binário — a importação do zip fica como validação de UI; no VPS o caminho **é PATCH**, já
+  que reimportar duplicaria as 13 notas.
+
+**Residual:** itens M (≥12px, paleta-token, i18n descartado) → `ROADMAP-RESIDUAIS.md` § Canvas-Templates.
+
+**Próximo da lista:** **fila vazia** (13 Mastodon parkado · 14 arquivado · 15 auditado/triado) → segue o
+`ROADMAP-RESIDUAIS.md` + o super-template `Escrita-Templates`.
