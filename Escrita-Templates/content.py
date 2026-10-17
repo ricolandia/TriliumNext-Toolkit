@@ -93,9 +93,14 @@ escopo às buscas de todo o projeto).</li>
 <li>Preencha o <b>01 Canon</b> — vale para <b>todas</b> as trilhas.</li>
 <li>Escolha a(s) trilha(s) e <b>apague as que não vai usar</b> (inclusive a
 pasta <code>_tpl-*</code> interna delas).</li>
-<li>Dentro de cada trilha, use <b>+</b> na pasta de destino: o template da
-unidade (cena / página / <b>canvas</b>) já está ligado e cai no lugar certo.</li>
+<li>Dentro de cada trilha, use <b>+</b> na pasta de destino e <b>escolha o
+modelo</b> com o nome "<b>(modelo)</b>" na lista: a unidade (cena / página /
+canvas) cai no lugar certo, já no formato.</li>
 </ol>
+<p><b>Atenção ao criar:</b> o <b>+</b> abre uma lista que começa com os tipos
+(<i>Text</i>, <i>Canvas</i>…) — o primeiro, "<i>Text</i>", já vem selecionado, e
+confirmar assim cria uma nota <b>vazia comum</b>. Desça até a seção
+<i>Templates</i> e escolha o modelo "<b>(modelo)</b>".</p>
 <h3>Exemplos prontos</h3>
 <p>As notas com <b>◇</b> e "exemplo" no título existem para você ver o formato:
 abra, entenda e depois <b>renomeie</b> para o primeiro item real ou <b>apague</b>.</p>
@@ -116,7 +121,7 @@ roteiro, com estimativa de páginas, <code>.fountain</code> e PDF.</li>
 <h3>O que apagar</h3>
 <ul>
 <li>Trilhas não usadas (<b>02 Prosa</b>, <b>03 Roteiro</b>, <b>04 HQ</b>) — os
-canvases delas vão junto.</li>
+canvases e as notas "<b>(modelo)</b>" delas vão junto.</li>
 <li>Seções do canon que não se aplicam.</li>
 <li><code>99 Ferramentas</code> se você já conhece os plugins.</li>
 </ul>
@@ -139,9 +144,17 @@ informação vale para a prosa <b>e</b> para a HQ, ela é <b>canon</b>.</p>"""
 
 TUTORIAL = """<p>Roteiro do <b>primeiro dia</b>, na ordem. Cada passo é curto.
 Dúvida em algum ponto? O <b>📖 Como usar este template</b> tem os detalhes.</p>
+<h3>0 · Como o <b>+</b> funciona (leia uma vez)</h3>
+<p>O <b>+</b> abre uma lista: primeiro os <b>tipos</b> de nota (<i>Text</i>,
+<i>Canvas</i>…), depois os <b>modelos</b> prontos, na seção <i>Templates</i>. O
+primeiro item (<i>Text</i>) já vem selecionado — se você só confirmar, nasce uma
+nota <b>vazia comum</b>.</p>
+<p>Então: sempre <b>escolha o modelo com o nome "(modelo)"</b> na lista. É ele que
+traz o formato, o canvas e as ligações certas.</p>
 <h3>1 · Criar (2 min)</h3>
 <ol>
-<li><b>+</b> na pasta <i>Projetos de Escrita</i> → nasce o projeto inteiro.</li>
+<li><b>+</b> na pasta <i>Projetos de Escrita</i> e escolha o modelo
+<b>Author template master</b> → nasce o projeto inteiro.</li>
 <li>Renomeie a nota do projeto com o nome da obra.</li>
 <li>Veja a árvore: <b>00 Briefing</b>, <b>01 Canon</b> e as três trilhas. As que
 você não vai usar, apague no passo 3.</li>
@@ -157,8 +170,8 @@ e as setas (aliado · rival · mentor · família).</li>
 preencha o que já sabe. Canon cresce com o projeto.</li>
 </ol>
 <h3>3 · Escolher a trilha</h3>
-<p>Uma para começar. <b>Apague as outras</b> (a nota e o <code>_tpl-*</code>
-dela).</p>
+<p>Uma para começar. <b>Apague as outras</b> (a nota da trilha, o modelo
+"<b>(modelo)</b>" dela e os canvases).</p>
 <ul>
 <li><b>Prosa</b> → <b>Manuscrito</b>: <b>+</b> cria uma cena no formato certo (há
 "◇ Cena 1" de exemplo). Arraste na grade para ordenar e compile o documento
@@ -200,8 +213,9 @@ mora aqui.</b></p>
 <li><b>Linha do tempo</b> — eventos na ordem dos fatos (não na ordem do relato).</li>
 <li><b>Referências</b> — obras, imagens, pesquisa.</li></ul>"""
 
-PERSONAGENS = """<p>Cada personagem é uma nota. Use <b>+</b> aqui dentro: a ficha já
-vem no formato certo (Quem é · Quer/Precisa · Ferida e mentira · Voz · Arco).</p>
+PERSONAGENS = """<p>Cada personagem é uma nota. Use <b>+</b> aqui dentro e, na lista, escolha o
+modelo <b>Personagem (modelo)</b> — a ficha já vem no formato certo (Quem é ·
+Quer/Precisa · Ferida e mentira · Voz · Arco).</p>
 <p>Há um <b>exemplo pronto</b> ao lado — "◇ Personagem 1 — exemplo": abra para ver
 o formato, depois <b>renomeie</b> para o seu primeiro personagem ou apague.</p>
 <p>Para as <b>relações</b> entre eles (aliado, rival, mentor, família), abra
@@ -227,8 +241,8 @@ num documento único pelo <b>Longform Compiler</b>.</p>
 <ul><li><b>Manuscrito</b> — grade das cenas + compilação.</li>
 <li><b>Estrutura</b> — esqueleto, arcos, plotlines.</li></ul>"""
 
-MANUSCRITO = """<p>Uma <b>cena por nota</b>. Use <b>+</b> aqui para criá-las no
-formato certo (objetivo · onde/quando · quem · rascunho). Há um exemplo pronto ao
+MANUSCRITO = """<p>Uma <b>cena por nota</b>. Use <b>+</b> aqui e escolha o modelo <b>Cena (modelo)</b>
+na lista — a nota vem no formato certo (objetivo · onde/quando · quem · rascunho). Há um exemplo pronto ao
 lado ("◇ Cena 1 — exemplo"): renomeie ou apague.</p>
 <p>Depois: reordenar na grade e compilar o documento único.</p>"""
 
@@ -272,15 +286,15 @@ HQ = """<p>Trilha em <b>quadrinhos</b>: roteiro em HQ → storyboard → página
 <ul><li><b>Páginas</b> — uma nota por página (template ligado).</li>
 <li><b>Storyboard</b> — canvas de rascunho (Canvas Note Tools).</li></ul>"""
 
-PAGINAS = """<p>Uma <b>página por nota</b>. Use <b>+</b> aqui — a nota já vem com o
-Quadro 1 desenhado para você seguir (há um exemplo pronto ao lado: "◇ Página 1 —
+PAGINAS = """<p>Uma <b>página por nota</b>. Use <b>+</b> aqui e escolha o modelo <b>Página
+(modelo)</b> na lista — a nota já vem com o Quadro 1 desenhado para você seguir (há um exemplo pronto ao lado: "◇ Página 1 —
 exemplo").</p>
 <p>Nota pela ordem: página, quadros (descrição + diálogo) e o link para o arquivo
 final.</p>"""
 
 STORYBOARD = """<p>Rascunho visual da cena: <b>1 página por linha, 1 quadro por bloco</b>.
-Use <b>+</b> aqui e o canvas já vem pronto (página com 4 quadros; o Quadro 1 vem
-preenchido de exemplo).</p>
+Use <b>+</b> aqui e escolha o modelo <b>Storyboard (modelo)</b> na lista — o canvas
+vem pronto (página com 4 quadros; o Quadro 1 preenchido de exemplo).</p>
 <p>Troque os textos do exemplo: o que <b>se vê</b> (ação), o que <b>se ouve</b>
 (balão/som) e quanto <b>tempo</b> o quadro fica. Rascunho é para riscar e
 reescrever.</p>
@@ -333,15 +347,16 @@ EXEMPLO = "◇"  # selo das notas de exemplo (renomeie ou apague)
 MAPA = """<p>Desenho das <b>relações</b> entre personagens: um nó por personagem, uma
 seta por relação — escreva o tipo na seta (aliado · rival · mentor · família ·
 dívida).</p>
-<p><b>+</b> aqui cria um mapa novo, já com exemplo de 4 nós para você trocar pelos
-seus. Dá para arrastar a nota do personagem para dentro do canvas: o Canvas Note
+<p><b>+</b> aqui e escolha o modelo <b>Mapa de relações (modelo)</b> na lista:
+vem um mapa novo, já com exemplo de 4 nós, para você trocar pelos seus. Dá para arrastar a nota do personagem para dentro do canvas: o Canvas Note
 Tools mantém card e nota em sincronia.</p>"""
 
 ARCOS = """<p>O esqueleto da história num só desenho: <b>colunas = atos</b> (1º · 2º · 3º),
 <b>linhas = tramas</b> (A-plot, B-plot…) e <b>marcadores = paradas</b> (inciting
 incident · virada 1 · meio · virada 2 · clímax).</p>
-<p><b>+</b> aqui cria um mapa novo com esse exemplo montado. Escreva nas faixas os
-nomes das suas <b>Linhas (plotlines)</b>.</p>
+<p><b>+</b> aqui e escolha <b>Mapa de arcos (modelo)</b> na lista: vem um mapa novo
+com esse exemplo montado. Escreva nas faixas os nomes das suas
+<b>Linhas (plotlines)</b>.</p>
 <p>Serve para ver <b>buracos</b> (trama que some) e <b>cruzamentos</b> (duas tramas
 no mesmo ponto). Para listar as cenas de uma trama, use a relação
 <code>plotline</code> e a grade do Manuscrito.</p>"""
@@ -407,7 +422,7 @@ TREE = N(
                             children=[
                                 N(
                                     "tpl_mapa",
-                                    "_tpl-Mapa",
+                                    "Mapa de relações (modelo)",
                                     labels=[("template", "", True)],
                                     icon="bx bx-network-chart",
                                     type="canvas",
@@ -422,7 +437,7 @@ TREE = N(
                 ),
                 N(
                     "tpl_personagem",
-                    "_tpl-Personagem",
+                    "Personagem (modelo)",
                     TPL_PERSONAGEM,
                     labels=[("template", "", True)],
                     relations=[("template:newNoteDefaultParent", "personagens", True)],
@@ -482,7 +497,7 @@ TREE = N(
                             children=[
                                 N(
                                     "tpl_arcos",
-                                    "_tpl-Arcos",
+                                    "Mapa de arcos (modelo)",
                                     labels=[("template", "", True)],
                                     icon="bx bx-line-chart",
                                     type="canvas",
@@ -497,7 +512,7 @@ TREE = N(
                 ),
                 N(
                     "tpl_cena",
-                    "_tpl-Cena",
+                    "Cena (modelo)",
                     TPL_CENA,
                     labels=[("template", "", True)],
                     relations=[("template:newNoteDefaultParent", "manuscrito", True)],
@@ -563,7 +578,7 @@ TREE = N(
                     children=[
                         N(
                             "tpl_storyboard",
-                            "_tpl-Storyboard",
+                            "Storyboard (modelo)",
                             labels=[("template", "", True)],
                             icon="bx bx-shape-square",
                             type="canvas",
@@ -576,7 +591,7 @@ TREE = N(
                 ),
                 N(
                     "tpl_pagina",
-                    "_tpl-Página",
+                    "Página (modelo)",
                     TPL_PAGINA,
                     labels=[("template", "", True)],
                     relations=[("template:newNoteDefaultParent", "paginas", True)],

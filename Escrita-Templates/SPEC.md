@@ -42,7 +42,7 @@ Teste empírico no demo (ETAPI `POST /etapi/create-note` sob um pai com
 ```
 T (template)  Gv8prIrJHCs4
 ├── F  "02 Cenas"   ZzMMxFF9WuoI   ~child:template → IT
-└── IT "_tpl-Cena"  XrK8T2wUE61t   #template, ~template:newNoteDefaultParent → F
+└── IT "Cena (modelo)"  XrK8T2wUE61t   #template, ~template:newNoteDefaultParent → F
 D (destino)      BLAZA9iOityI   ~child:template → T
 ```
 
@@ -52,7 +52,7 @@ própria nota):
 ```
 xzGPqGX7OuVd   ~template → Gv8prIrJHCs4          (aponta para o template ORIGINAL)
 nLUGueySFI03  "02 Cenas"   ~child:template → 8TcalTknmZwa   (cópia de IT, DENTRO da instância)
-8TcalTknmZwa  "_tpl-Cena"  #template + ~template:newNoteDefaultParent → nLUGueySFI03 (cópia de F)
+8TcalTknmZwa  "Cena (modelo)"  #template + ~template:newNoteDefaultParent → nLUGueySFI03 (cópia de F)
 ```
 
 - Rede de relações internas **remapeada para as cópias** (mesmo teste com
@@ -94,31 +94,31 @@ Author template master            #template · #iconClass · #label:projeto=prom
 ├── 00 Briefing                   (logline, premissa, tom, público, promessa)
 ├── 🚀 Tutorial de uso (primeiro projeto)   roteiro do primeiro dia (5 blocos)
 ├── 01 Canon                      ← compartilhado pelas TRÊS trilhas
-│   ├── Personagens               ~child:template → _tpl-Personagem
+│   ├── Personagens               ~child:template → Personagem (modelo)
 │   │   ├── ◇ Personagem 1 — exemplo   (formato pronto: renomeie ou apague)
-│   │   └── Mapa de relações      ~child:template → _tpl-Mapa
-│   │       └── _tpl-Mapa         #template · CANVAS (4 nós + setas tipadas)
+│   │   └── Mapa de relações      ~child:template → Mapa de relações (modelo)
+│   │       └── Mapa de relações (modelo)         #template · CANVAS (4 nós + setas tipadas)
 │   ├── Mundo
 │   ├── Temas & Motivos
 │   ├── Linha do tempo
 │   └── Referências
 ├── 02 Trilha — Prosa             #status (herdável) · #label:status=promoted
-│   ├── Manuscrito                ~child:template → _tpl-Cena
+│   ├── Manuscrito                ~child:template → Cena (modelo)
 │   │   └── ◇ Cena 1 — exemplo    (formato pronto: renomeie ou apague)
 │   ├── Estrutura                 ~relation:plotline (promovida)
 │   │   ├── Linhas (plotlines)    uma nota por trama (alvo da relação `plotline`)
-│   │   └── Mapa de arcos & plotlines  ~child:template → _tpl-Arcos
-│   │       └── _tpl-Arcos        #template · CANVAS (3 atos × 3 tramas)
-│   └── _tpl-Cena                 #template · ~template:newNoteDefaultParent → Manuscrito
+│   │   └── Mapa de arcos & plotlines  ~child:template → Mapa de arcos (modelo)
+│   │       └── Mapa de arcos (modelo)        #template · CANVAS (3 atos × 3 tramas)
+│   └── Cena (modelo)                 #template · ~template:newNoteDefaultParent → Manuscrito
 ├── 03 Trilha — Roteiro
-│   ├── Roteiro                   ~child:template → _tpl-Cena-Roteiro
-│   └── _tpl-Cena-Roteiro         #template · #fountainDraft
+│   ├── Roteiro                   ~child:template → Cena (modelo)-Roteiro
+│   └── Cena (modelo)-Roteiro         #template · #fountainDraft
 ├── 04 Trilha — HQ
-│   ├── Páginas                   ~child:template → _tpl-Pagina
+│   ├── Páginas                   ~child:template → Página (modelo)
 │   │   └── ◇ Página 1 — exemplo  (formato pronto: renomeie ou apague)
-│   ├── Storyboard                ~child:template → _tpl-Storyboard
-│   │   └── _tpl-Storyboard       #template · CANVAS (página com 4 quadros)
-│   └── _tpl-Pagina               #template
+│   ├── Storyboard                ~child:template → Storyboard (modelo)
+│   │   └── Storyboard (modelo)       #template · CANVAS (página com 4 quadros)
+│   └── Página (modelo)               #template
 └── 99 Ferramentas                (packs: Canvas Note Tools / Longform / Fountain)
 ```
 
@@ -141,16 +141,16 @@ Os moldes trazem **exemplo dentro**: o leigo vê o formato em vez de pasta vazia
 
 | Canvas | Onde (pasta com `+`) | Exemplo que vem dentro |
 |---|---|---|
-| `_tpl-Mapa` | `01 Canon → Personagens → Mapa de relações` | 4 nós (Protagonista · Aliado · Rival · Mentor) + setas "aliado/rival/mentor" + legenda de tipos |
-| `_tpl-Arcos` | `02 Trilha — Prosa → Estrutura → Mapa de arcos & plotlines` | 3 atos × 3 tramas (A/B/C-plot) + marcadores nas 5 paradas (C-plot com "buraco" de propósito) |
-| `_tpl-Storyboard` | `04 Trilha — HQ → Storyboard` | página com 4 quadros; Q1 preenchido (ação · balão · tempo) |
+| `Mapa de relações (modelo)` | `01 Canon → Personagens → Mapa de relações` | 4 nós (Protagonista · Aliado · Rival · Mentor) + setas "aliado/rival/mentor" + legenda de tipos |
+| `Mapa de arcos (modelo)` | `02 Trilha — Prosa → Estrutura → Mapa de arcos & plotlines` | 3 atos × 3 tramas (A/B/C-plot) + marcadores nas 5 paradas (C-plot com "buraco" de propósito) |
+| `Storyboard (modelo)` | `04 Trilha — HQ → Storyboard` | página com 4 quadros; Q1 preenchido (ação · balão · tempo) |
 
 - **Sem `#canvasTemplate`** de propósito: eles vêm pelo `+` da pasta e **não** devem
   aparecer no menu 🧩 do Canvas Note Tools (que lista o pack de 13).
 - Exemplos com selo `◇` no título ("renomeie ou apague"): `◇ Personagem 1`,
   `◇ Cena 1`, `◇ Página 1`.
 - `Storyboard` deixou de ser nota de texto solta: virou pasta-com-conteúdo com
-  `~child:template → _tpl-Storyboard`.
+  `~child:template → Storyboard (modelo)`.
 - O caminho antigo (pack *Canvas Templates for Production* + 🧩 *Insert template*)
   ficou documentado como **avançado** no `Storyboard` e no `99 Ferramentas`.
 
@@ -197,9 +197,9 @@ Checar por `#pluginId`/`#installedPlugins` (ver
 | Pasta-destino "Projetos de Escrita" (sob `10-Projetos`) | `N2ipIf2YDJRL` |
 | Manuscrito (`render`, `~renderNote` → `js - grade`) | `uIgNEhW6EDnT` |
 | Roteiro (`render`, `~renderNote` → `js - Fountain 3`) + `Rascunho` | `Zw29ZrSMulSE` + `0Tm6BwTX4QX6` |
-| Sub-templates privados | `_tpl-Cena` `TBC6bfkkWp9g` · `_tpl-Página` `0plFv00tiNNZ` · `_tpl-Personagem` `Dg9199ryng1B` |
+| Sub-templates privados | `Cena (modelo)` `TBC6bfkkWp9g` · `Página (modelo)` `0plFv00tiNNZ` · `Personagem (modelo)` `Dg9199ryng1B` |
 | `Linhas (plotlines)` (sob `Estrutura`) | `clpPPFDw0jkj` |
-| Canvases (rodada 16) | `_tpl-Mapa` `CR5EqN2o4fWO` · `_tpl-Arcos` `7oXupvJcRtBM` · `_tpl-Storyboard` `YDzGtzzManbG` |
+| Canvases (rodada 16) | `Mapa de relações (modelo)` `CR5EqN2o4fWO` · `Mapa de arcos (modelo)` `7oXupvJcRtBM` · `Storyboard (modelo)` `YDzGtzzManbG` |
 | Notas-guia novas (rodada 16) | `Mapa de relações` `3xkWdeCMK4Jc` · `Mapa de arcos & plotlines` `uSK87wnqXAic` |
 | Exemplos `◇` (rodada 16) | `cAz7mYO41JTB` · `vqqzjwDPvMBW` · `C2uE80GFbf6k` |
 | `🚀 Tutorial de uso (primeiro projeto)` | `soxgrUbLyNUD` (demo `39AVeQuCboe8`) |
@@ -208,8 +208,8 @@ Checar por `#pluginId`/`#installedPlugins` (ver
 mãe `NZSjCETPrwH3`.
 
 **Validação end-to-end** (instância real, depois removida): numa instância do
-VPS, `Manuscrito → child:template` aponta para o `_tpl-Cena` **da instância** e
-`_tpl-Cena → template:newNoteDefaultParent` aponta para o `Manuscrito` **da
+VPS, `Manuscrito → child:template` aponta para o `Cena (modelo)` **da instância** e
+`Cena (modelo) → template:newNoteDefaultParent` aponta para o `Manuscrito` **da
 instância**; `~renderNote` continua apontando para o script externo. Mesmo
 resultado no demo, agora com as duas telas.
 
@@ -230,7 +230,21 @@ resultado no demo, agora com as duas telas.
   resolver passou a preferir o **maior número** do sufixo. E o `wire` só preserva
   atributo vindo de probe quando o probe **não** resolve — senão o Roteiro ficava com
   **dois** `~renderNote` (o antigo e o novo).
-- **`build.py` passou a sincronizar conteúdo** de nota existente (texto/código/canvas):
+- **O `+` abre um diálogo de tipo/modelo** (`note_type_chooser` + `note_types.ts`, v0.106.0):
+  a lista mostra primeiro os **tipos em branco** e **"Text" já vem focado** — confirmar
+  direto cria uma **nota vazia comum** (foi o que aconteceu no 1º teste de campo). Depois
+  vêm os **modelos** (`#template`) na seção *Templates*, em ordem alfabética **global** da
+  instância (na VPS: 31 — os 6 do template, os 13 do pack e os 12 do "Modelos Trilium").
+  Escolher um item de modelo é o que envia `type` + `templateNoteId` ao backend, que aí
+  **clona de verdade** (conteúdo + subárvore). Consequências aplicadas: os modelos foram
+  **renomeados para "<Nome> (modelo)"** (legíveis no menu) e as notas de uso passaram a
+  dizer "use `+` e **escolha o modelo (modelo)**".
+- **`child:template`/`~template` sozinhos não clonam**: por ETAPI o backend cria a nota do
+  tipo do template mas **vazia** — a cópia do conteúdo/subárvore é do **cliente** (o
+  `templateNoteId` que a UI manda). Instanciação (criar filho **sem** escolher tipo pelo
+  menu) também passa por aí: no `+` é sempre preciso escolher o modelo.
+- **`build.py` passou a sincronizar conteúdo** (e **título**) de nota existente
+  (texto/código/canvas):
   antes só o `type` era ajustado, então editar texto no `content.py` não chegava ao
   Trilium. Render note **nunca** é sincronizada (o conteúdo dela é do script do plugin).
 - O backend **aplica o `~template`** ao criar filho sob pasta com `~child:template`
@@ -246,8 +260,9 @@ resultado no demo, agora com as duas telas.
 
 **Aberto / próximos passos**
 
-- **Pendente (1 clique):** abrir o Trilium e usar o `+` em `Storyboard`, `Mapa de relações`
-  e `Mapa de arcos & plotlines` para conferir que nasce o canvas com o exemplo dentro.
+- **Pendente (1 clique):** abrir o Trilium, clicar `+` em `Storyboard` e **escolher
+  `Storyboard (modelo)`** na seção *Templates* da lista — deve nascer o canvas com o
+  exemplo dentro (mesmo teste em `Mapa de relações` e `Mapa de arcos & plotlines`).
 - Rodadas 14 (Canvas-Template-Loader) e 15 (Canvas-Templates) alimentam o
   `99 Ferramentas` (o pack virou o caminho "avançado").
 - Registrar StoryLine / Canvas2Document no `BENCHMARK-obsidian-widgets.md`.

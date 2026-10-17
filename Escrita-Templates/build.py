@@ -310,6 +310,12 @@ def walk(nodes, parent, tl, st, probes, prefix=""):
                     print(
                         "    ~ %-24s type %s -> %s" % (node["title"], cur["type"], tipo)
                     )
+                if cur["title"] != node["title"]:
+                    tl.req("/notes/" + nid, "PATCH", {"title": node["title"]})
+                    print(
+                        "    ~ %-24s título %r -> %r"
+                        % (node["title"], cur["title"][:22], node["title"])
+                    )
                 # conteúdo: o build sincroniza texto/código/canvas. Render note
                 # NÃO (o conteúdo dela é gerado pelo script do plugin).
                 if tipo != "render":

@@ -49,8 +49,14 @@ template** (não do pack de 13) — o `+` da pasta já cria pronto:
 | `02 Prosa → Estrutura → Mapa de arcos & plotlines` | atos × tramas + paradas (o esqueleto) |
 | `04 HQ → Storyboard` | página com 4 quadros (ação · balão · tempo) |
 
-Os moldes trazem **exemplo dentro** (o leigo vê o formato), não têm `#canvasTemplate`
+Os modelos trazem **exemplo dentro** (o leigo vê o formato), não têm `#canvasTemplate`
 (e não poluem o menu 🧩) e as notas de exemplo vêm com selo `◇` + "renomeie ou apague".
+
+> **Como criar:** o `+` abre uma lista que começa com os tipos de nota (o primeiro,
+> *Text*, já vem selecionado — confirmar cria uma nota vazia comum). Desça até a seção
+> **Templates** e escolha o modelo **"<Nome> (modelo)"**: é ele que traz o formato, o
+> canvas e as ligações certas. Vale para tudo no template, inclusive a criação do
+> próprio projeto (`Author template master`).
 
 ```bash
 python3 make-canvas.py --write --png    # regera os JSONs (e os PNGs de conferência)
