@@ -158,7 +158,7 @@ def storyboard():
     g.text(
         40,
         55,
-        "rascunho: risque e reescreva · a página oficial nasce em Páginas",
+        "rascunho livre — risque, reescreva e desenhe por cima",
         fs=12,
         stroke=TINTA_FRACA,
     )

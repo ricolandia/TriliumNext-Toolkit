@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Harness do pack Canvas-Templates (rodada 15, batch 3).
 
-Valida os 13 canvas Excalidraw e o artefato do pack SEM abrir o Trilium:
+Valida os 16 canvas Excalidraw e o artefato do pack SEM abrir o Trilium:
 
     python3 test-canvas-templates.py
 
@@ -355,8 +355,8 @@ def main():
     for p in paths:
         titles.append(os.path.basename(p).replace(".json", ""))
         check_payload(os.path.basename(p).replace(".json", ""), p)
-    if len(paths) != 13:
-        bad("pack: %d canvas (esperado 13)" % len(paths))
+    if len(paths) != 16:
+        bad("pack: %d canvas (esperado 16)" % len(paths))
     meta_titles = check_meta()
     if len(meta_titles) != len(titles):
         bad(

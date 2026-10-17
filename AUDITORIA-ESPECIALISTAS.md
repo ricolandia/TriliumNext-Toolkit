@@ -3677,6 +3677,17 @@ Prova: `Canvas-Note-Tools/Canvas-note-tools/test-insert-template.js`, **27 asser
 **4 falhas** (appState não adotado, índices reiniciando em `a00`, repetição em 2 inserções, ordem global);
 com o conserto, verde. Plugin **0.9.1** no registry + `Canvas-note-tools.zip` regenerado (v8 em sincronia).
 
+**Ampliação (17/10/2026, rodada 16) — o pack passou a 16 templates:** os 3 canvases do
+**super-template de escrita** entraram no pack — `Template - Storyboard (HQ)`,
+`Template - Mapa de relações` e `Template - Mapa de arcos & plotlines` (gerados por
+`Escrita-Templates/make-canvas.py`, com exemplo dentro). Mesmas regras do pack (texto ≥ 12px,
+contraste AA medido, origem ≥ 0); `fix-canvas-templates.py` não foi tocado. Publicados na VPS
+na pasta **`Templates - Escrita`** (`L422o4kdpxL5`): `1PEo8pmH5BPo` · `FbB728dEd14C` ·
+`Ap7OmPMatHAy` — conteúdo **e** anexo `canvas-export.svg` **byte a byte**; 13 notas antigas
+reconferidas (`= já é o atual`). Zip novo **`214bb3c7…`** (36 arquivos, 98 KB), harness
+`test-canvas-templates.py` **4 ok · 1 warn · 0 fail** (warn = a faixa do storyboard, o de
+sempre), registry **0.9.0**.
+
 **Residual:** itens M (8 rótulos de grade ≤ 11px, paleta-token, i18n descartado) →
 `ROADMAP-RESIDUAIS.md` § Canvas-Templates.
 

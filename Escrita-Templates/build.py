@@ -47,6 +47,7 @@ UA = (
 # atributos que o build gerencia (removidos se saírem da spec)
 MANAGED = {
     "template",
+    "canvasTemplate",
     "iconClass",
     "label:projeto",
     "label:status",

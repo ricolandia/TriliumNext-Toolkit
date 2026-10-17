@@ -245,6 +245,11 @@ falhas (appState não adotado; `a00,a01,a02,a00,a01,a02` repetidos) — é o tes
 **0.9.1** no registry (changelog) + `Canvas-note-tools.zip` regenerado com o v8 em sincronia. Falta só o olho
 no Trilium (o teste cobre o backend puro, não a UI).
 
+**✅ Ampliação (17/10, rodada 16):** o pack ganhou os 3 canvases do super-template de escrita
+(**Storyboard (HQ)**, **Mapa de relações**, **Mapa de arcos & plotlines**) — 16 templates,
+zip `214bb3c7…`, registry **0.9.0**, publicados na VPS em `Templates - Escrita`
+(`L422o4kdpxL5`) byte a byte; harness 4 ok · 1 warn · 0 fail.
+
 **Permanece:**
 
 | ID | Item | Categoria | Esforço | Risco | Onde | Validação |

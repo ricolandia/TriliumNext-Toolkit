@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24.00 4.00 1032.00 857.43" width="1032" height="857">
+<defs>
+</defs>
+<rect x="24.00" y="4.00" width="1032.00" height="857.43" fill="#ffffff"/>
+<g fill="#1f2937">
+<text x="40.00" y="41.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="24.00" text-anchor="start" xml:space="preserve">Storyboard — página 1</text>
+</g>
+<g fill="#4b5563">
+<text x="40.00" y="65.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">rascunho livre — risque, reescreva e desenhe por cima</text>
+</g>
+<rect x="40.00" y="90.00" width="1000.00" height="720.00" rx="6.00" fill="none" stroke="#94a3b8" stroke-width="2"/>
+<rect x="60.00" y="110.00" width="470.00" height="320.00" rx="8.00" fill="#e0f2fe" stroke="#0369a1" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="74.00" y="132.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="start" xml:space="preserve">Q1</text>
+</g>
+<g fill="#1f2937">
+<text x="74.00" y="165.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">AÇÃO: Ela abre a porta; a sala está vazia.</text>
+</g>
+<g fill="#1f2937">
+<text x="74.00" y="195.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">BALÃO: — Cheguei.</text>
+</g>
+<g fill="#1f2937">
+<text x="74.00" y="225.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">TEMPO: 3s</text>
+</g>
+<g fill="#4b5563">
+<text x="74.00" y="265.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">(desenhe o quadro aqui)</text>
+</g>
+<rect x="550.00" y="110.00" width="470.00" height="320.00" rx="8.00" fill="#f1f5f9" stroke="#0369a1" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="564.00" y="132.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="start" xml:space="preserve">Q2</text>
+</g>
+<g fill="#1f2937">
+<text x="564.00" y="165.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">AÇÃO: (o que se vê)</text>
+</g>
+<g fill="#1f2937">
+<text x="564.00" y="195.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">BALÃO: (fala ou som)</text>
+</g>
+<g fill="#1f2937">
+<text x="564.00" y="225.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">TEMPO: (ex.: 2s)</text>
+</g>
+<g fill="#4b5563">
+<text x="564.00" y="265.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">(desenhe o quadro aqui)</text>
+</g>
+<rect x="60.00" y="450.00" width="470.00" height="320.00" rx="8.00" fill="#f1f5f9" stroke="#0369a1" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="74.00" y="472.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="start" xml:space="preserve">Q3</text>
+</g>
+<g fill="#1f2937">
+<text x="74.00" y="505.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">AÇÃO: (o que se vê)</text>
+</g>
+<g fill="#1f2937">
+<text x="74.00" y="535.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">BALÃO: (fala ou som)</text>
+</g>
+<g fill="#1f2937">
+<text x="74.00" y="565.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">TEMPO: (ex.: 2s)</text>
+</g>
+<g fill="#4b5563">
+<text x="74.00" y="605.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">(desenhe o quadro aqui)</text>
+</g>
+<rect x="550.00" y="450.00" width="470.00" height="320.00" rx="8.00" fill="#f1f5f9" stroke="#0369a1" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="564.00" y="472.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="start" xml:space="preserve">Q4</text>
+</g>
+<g fill="#1f2937">
+<text x="564.00" y="505.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">AÇÃO: (o que se vê)</text>
+</g>
+<g fill="#1f2937">
+<text x="564.00" y="535.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">BALÃO: (fala ou som)</text>
+</g>
+<g fill="#1f2937">
+<text x="564.00" y="565.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">TEMPO: (ex.: 2s)</text>
+</g>
+<g fill="#4b5563">
+<text x="564.00" y="605.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">(desenhe o quadro aqui)</text>
+</g>
+<g fill="#4b5563">
+<text x="40.00" y="840.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">AÇÃO · BALÃO · TEMPO — um quadro por bloco de leitura</text>
+</g>
+</svg>

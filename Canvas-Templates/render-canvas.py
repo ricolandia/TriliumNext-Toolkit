@@ -41,6 +41,9 @@ ORDEM = [
     "Template - Projetos",
     "Template - Character Arc",
     "Template - Plot Timeline",
+    "Template - Storyboard (HQ)",
+    "Template - Mapa de relações",
+    "Template - Mapa de arcos & plotlines",
 ]
 
 FONTE = {

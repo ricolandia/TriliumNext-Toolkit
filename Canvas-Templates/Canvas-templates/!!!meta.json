@@ -702,6 +702,173 @@
        "dataFileName": "Template - Projetos.svg"
       }
      ]
+    },
+    {
+     "isClone": false,
+     "noteId": "rbClQhF5YH8H",
+     "notePath": [
+      "QgXTZQn9ibdq",
+      "rbClQhF5YH8H"
+     ],
+     "title": "Templates - Escrita",
+     "notePosition": 170,
+     "prefix": null,
+     "isExpanded": false,
+     "type": "book",
+     "mime": "",
+     "attributes": [
+      {
+       "type": "relation",
+       "name": "template",
+       "value": "_template_list_view",
+       "isInheritable": false,
+       "position": 10
+      },
+      {
+       "type": "label",
+       "name": "color",
+       "value": "#c7d2fe",
+       "isInheritable": false,
+       "position": 20
+      },
+      {
+       "type": "label",
+       "name": "iconClass",
+       "value": "bx bx-edit",
+       "isInheritable": false,
+       "position": 30
+      }
+     ],
+     "attachments": [],
+     "dirFileName": "Templates - Escrita",
+     "children": [
+      {
+       "isClone": false,
+       "noteId": "HWJ8J2vLlE7G",
+       "notePath": [
+        "QgXTZQn9ibdq",
+        "rbClQhF5YH8H",
+        "HWJ8J2vLlE7G"
+       ],
+       "title": "Template - Storyboard (HQ)",
+       "notePosition": 10,
+       "prefix": null,
+       "isExpanded": false,
+       "type": "canvas",
+       "mime": "application/json",
+       "attributes": [
+        {
+         "type": "label",
+         "name": "template",
+         "value": "",
+         "isInheritable": false,
+         "position": 10
+        },
+        {
+         "type": "label",
+         "name": "canvasTemplate",
+         "value": "",
+         "isInheritable": false,
+         "position": 20
+        }
+       ],
+       "dataFileName": "Template - Storyboard (HQ).json",
+       "attachments": [
+        {
+         "attachmentId": "zJKflTlkqu5C",
+         "title": "canvas-export.svg",
+         "role": "image",
+         "mime": "image/svg+xml",
+         "position": 0,
+         "dataFileName": "Template - Storyboard (HQ)_canvas-export.svg"
+        }
+       ]
+      },
+      {
+       "isClone": false,
+       "noteId": "WKiT2aulZaJf",
+       "notePath": [
+        "QgXTZQn9ibdq",
+        "rbClQhF5YH8H",
+        "WKiT2aulZaJf"
+       ],
+       "title": "Template - Mapa de relações",
+       "notePosition": 20,
+       "prefix": null,
+       "isExpanded": false,
+       "type": "canvas",
+       "mime": "application/json",
+       "attributes": [
+        {
+         "type": "label",
+         "name": "template",
+         "value": "",
+         "isInheritable": false,
+         "position": 10
+        },
+        {
+         "type": "label",
+         "name": "canvasTemplate",
+         "value": "",
+         "isInheritable": false,
+         "position": 20
+        }
+       ],
+       "dataFileName": "Template - Mapa de relações.json",
+       "attachments": [
+        {
+         "attachmentId": "YxuyGvF5yXkp",
+         "title": "canvas-export.svg",
+         "role": "image",
+         "mime": "image/svg+xml",
+         "position": 0,
+         "dataFileName": "Template - Mapa de relações_canvas-export.svg"
+        }
+       ]
+      },
+      {
+       "isClone": false,
+       "noteId": "tuwzZuBtxeiX",
+       "notePath": [
+        "QgXTZQn9ibdq",
+        "rbClQhF5YH8H",
+        "tuwzZuBtxeiX"
+       ],
+       "title": "Template - Mapa de arcos & plotlines",
+       "notePosition": 30,
+       "prefix": null,
+       "isExpanded": false,
+       "type": "canvas",
+       "mime": "application/json",
+       "attributes": [
+        {
+         "type": "label",
+         "name": "template",
+         "value": "",
+         "isInheritable": false,
+         "position": 10
+        },
+        {
+         "type": "label",
+         "name": "canvasTemplate",
+         "value": "",
+         "isInheritable": false,
+         "position": 20
+        }
+       ],
+       "dataFileName": "Template - Mapa de arcos & plotlines.json",
+       "attachments": [
+        {
+         "attachmentId": "YKl1KU57wAyc",
+         "title": "canvas-export.svg",
+         "role": "image",
+         "mime": "image/svg+xml",
+         "position": 0,
+         "dataFileName": "Template - Mapa de arcos & plotlines_canvas-export.svg"
+        }
+       ]
+      }
+     ]
     }
    ]
   },

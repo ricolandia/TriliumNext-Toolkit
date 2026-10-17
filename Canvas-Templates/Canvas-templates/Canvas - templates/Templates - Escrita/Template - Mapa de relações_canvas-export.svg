@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24.00 4.00 992.00 742.00" width="992" height="742">
+<defs>
+<marker id="seta-94a3b8" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker>
+</defs>
+<rect x="24.00" y="4.00" width="992.00" height="742.00" fill="#ffffff"/>
+<g fill="#1f2937">
+<text x="40.00" y="41.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="24.00" text-anchor="start" xml:space="preserve">Mapa de relações</text>
+</g>
+<g fill="#4b5563">
+<text x="40.00" y="65.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">um nó por personagem · escreva o tipo na seta</text>
+</g>
+<rect x="380.00" y="300.00" width="240.00" height="90.00" rx="12.00" fill="#e0f2fe" stroke="#0369a1" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="400.00" y="347.40" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="16.00" text-anchor="start" xml:space="preserve">Protagonista</text>
+</g>
+<rect x="760.00" y="170.00" width="240.00" height="90.00" rx="12.00" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="780.00" y="217.40" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="16.00" text-anchor="start" xml:space="preserve">Aliado</text>
+</g>
+<rect x="760.00" y="470.00" width="240.00" height="90.00" rx="12.00" fill="#fef3c7" stroke="#92400e" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="780.00" y="517.40" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="16.00" text-anchor="start" xml:space="preserve">Rival</text>
+</g>
+<rect x="60.00" y="300.00" width="240.00" height="90.00" rx="12.00" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="80.00" y="347.40" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="16.00" text-anchor="start" xml:space="preserve">Mentor</text>
+</g>
+<polyline points="620.00,345.00 760.00,215.00" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" marker-end="url(#seta-94a3b8)"/>
+<g fill="#1f2937">
+<text x="640.00" y="255.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">aliado</text>
+</g>
+<polyline points="620.00,375.00 760.00,470.00" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" marker-end="url(#seta-94a3b8)"/>
+<g fill="#1f2937">
+<text x="650.00" y="450.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">rival</text>
+</g>
+<polyline points="300.00,345.00 380.00,345.00" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" marker-end="url(#seta-94a3b8)"/>
+<g fill="#1f2937">
+<text x="305.00" y="320.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">mentor</text>
+</g>
+<rect x="40.00" y="640.00" width="960.00" height="90.00" rx="8.00" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="60.00" y="672.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="start" xml:space="preserve">Tipos: aliado · rival · mentor · família · dívida · segredo</text>
+</g>
+<g fill="#4b5563">
+<text x="60.00" y="700.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">Dá para arrastar a nota do personagem para dentro do canvas: o card fica em sincronia com a nota.</text>
+</g>
+</svg>

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24.00 4.00 1172.00 707.43" width="1172" height="707">
+<defs>
+<marker id="seta-e2e8f0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e2e8f0"/></marker>
+</defs>
+<rect x="24.00" y="4.00" width="1172.00" height="707.43" fill="#ffffff"/>
+<g fill="#1f2937">
+<text x="40.00" y="41.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="24.00" text-anchor="start" xml:space="preserve">Mapa de arcos &amp; plotlines</text>
+</g>
+<g fill="#4b5563">
+<text x="40.00" y="65.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">colunas = atos · linhas = tramas · marcadores = paradas</text>
+</g>
+<rect x="60.00" y="100.00" width="360.00" height="560.00" rx="4.00" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+<g fill="#4b5563">
+<text x="190.00" y="124.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="start" xml:space="preserve">ATO 1</text>
+</g>
+<rect x="440.00" y="100.00" width="360.00" height="560.00" rx="4.00" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+<g fill="#4b5563">
+<text x="570.00" y="124.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="start" xml:space="preserve">ATO 2</text>
+</g>
+<rect x="820.00" y="100.00" width="360.00" height="560.00" rx="4.00" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+<g fill="#4b5563">
+<text x="950.00" y="124.60" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="14.00" text-anchor="start" xml:space="preserve">ATO 3</text>
+</g>
+<polyline points="130.00,115.00 130.00,655.00" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-linecap="round"/>
+<polyline points="390.00,115.00 390.00,655.00" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-linecap="round"/>
+<polyline points="620.00,115.00 620.00,655.00" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-linecap="round"/>
+<polyline points="890.00,115.00 890.00,655.00" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-linecap="round"/>
+<polyline points="1090.00,115.00 1090.00,655.00" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-linecap="round"/>
+<rect x="60.00" y="170.00" width="1120.00" height="120.00" rx="6.00" fill="#fef3c7" stroke="#92400e" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="76.00" y="191.70" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="start" xml:space="preserve">A-plot (principal)</text>
+</g>
+<ellipse cx="130.00" cy="229.00" rx="9.00" ry="9.00" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
+<ellipse cx="390.00" cy="229.00" rx="9.00" ry="9.00" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
+<ellipse cx="620.00" cy="229.00" rx="9.00" ry="9.00" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
+<ellipse cx="890.00" cy="229.00" rx="9.00" ry="9.00" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
+<ellipse cx="1090.00" cy="229.00" rx="9.00" ry="9.00" fill="#ffffff" stroke="#92400e" stroke-width="2"/>
+<rect x="60.00" y="330.00" width="1120.00" height="120.00" rx="6.00" fill="#e0f2fe" stroke="#0369a1" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="76.00" y="351.70" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="start" xml:space="preserve">B-plot (romance)</text>
+</g>
+<ellipse cx="130.00" cy="389.00" rx="9.00" ry="9.00" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<ellipse cx="620.00" cy="389.00" rx="9.00" ry="9.00" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<ellipse cx="1090.00" cy="389.00" rx="9.00" ry="9.00" fill="#ffffff" stroke="#0369a1" stroke-width="2"/>
+<rect x="60.00" y="490.00" width="1120.00" height="120.00" rx="6.00" fill="#dcfce7" stroke="#166534" stroke-width="2"/>
+<g fill="#1f2937">
+<text x="76.00" y="511.70" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="13.00" text-anchor="start" xml:space="preserve">C-plot (mistério)</text>
+</g>
+<ellipse cx="890.00" cy="549.00" rx="9.00" ry="9.00" fill="#ffffff" stroke="#166534" stroke-width="2"/>
+<g fill="#4b5563">
+<text x="106.00" y="690.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">inciting</text>
+</g>
+<g fill="#4b5563">
+<text x="366.00" y="690.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">virada 1</text>
+</g>
+<g fill="#4b5563">
+<text x="596.00" y="690.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">meio</text>
+</g>
+<g fill="#4b5563">
+<text x="866.00" y="690.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">virada 2</text>
+</g>
+<g fill="#4b5563">
+<text x="1066.00" y="690.80" font-family="Helvetica, Arial, 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'" font-size="12.00" text-anchor="start" xml:space="preserve">clímax</text>
+</g>
+</svg>

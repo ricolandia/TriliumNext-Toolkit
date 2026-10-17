@@ -336,8 +336,8 @@ TPL_PAGINA = """<h3>Página N</h3>
 <h3>Quadro 1</h3><p>Descrição visual.</p><p><b>BALÃO:</b> texto.</p>"""
 
 # --- canvases do próprio template (gerados por `make-canvas.py`; rodada 16) ---
-# Sem `#canvasTemplate` de propósito: vêm pelo `+` das pastas e NÃO devem aparecer
-# no menu 🧩 do Canvas Note Tools (que lista o pack de 13).
+# Com `#canvasTemplate` (decisão do Ricardo, 17/10): vêm pelo `+` das pastas E
+# aparecem no menu 🧩 do Canvas Note Tools para inserir num canvas já aberto.
 CANVAS_STORYBOARD = canvas("_tpl-Storyboard")
 CANVAS_MAPA = canvas("_tpl-Mapa")
 CANVAS_ARCOS = canvas("_tpl-Arcos")
@@ -423,7 +423,7 @@ TREE = N(
                                 N(
                                     "tpl_mapa",
                                     "Mapa de relações (modelo)",
-                                    labels=[("template", "", True)],
+                                    labels=[("template", "", True), ("canvasTemplate", "", True)],
                                     icon="bx bx-network-chart",
                                     type="canvas",
                                     content=CANVAS_MAPA,
@@ -498,7 +498,7 @@ TREE = N(
                                 N(
                                     "tpl_arcos",
                                     "Mapa de arcos (modelo)",
-                                    labels=[("template", "", True)],
+                                    labels=[("template", "", True), ("canvasTemplate", "", True)],
                                     icon="bx bx-line-chart",
                                     type="canvas",
                                     content=CANVAS_ARCOS,
@@ -579,7 +579,7 @@ TREE = N(
                         N(
                             "tpl_storyboard",
                             "Storyboard (modelo)",
-                            labels=[("template", "", True)],
+                            labels=[("template", "", True), ("canvasTemplate", "", True)],
                             icon="bx bx-shape-square",
                             type="canvas",
                             content=CANVAS_STORYBOARD,
