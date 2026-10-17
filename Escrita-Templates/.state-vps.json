@@ -1,14 +1,19 @@
 {
  "_dest": "N2ipIf2YDJRL",
  "_parent": "wBlaqjho7HNt",
+ "arcos": "uSK87wnqXAic",
  "briefing": "ONiIeH2pINLl",
  "canon": "ZtLwURhex9l2",
  "como_usar": "KIgYTapX74Df",
  "estrutura": "AExIQH5byZm9",
+ "ex_cena": "vqqzjwDPvMBW",
+ "ex_pagina": "C2uE80GFbf6k",
+ "ex_personagem": "cAz7mYO41JTB",
  "ferramentas": "UFRlVJ5cDUug",
  "hq": "9cvuI7D6HgBU",
  "linhas": "clpPPFDw0jkj",
  "manuscrito": "uIgNEhW6EDnT",
+ "mapa": "3xkWdeCMK4Jc",
  "master": "3205BequZUs1",
  "mundo": "Tz4LWcJ0eidQ",
  "paginas": "bAvqvfcOkzQd",
@@ -22,7 +27,10 @@
  "storyboard": "sGweD4Ca9puP",
  "temas": "Qmhob5RIZVFY",
  "timeline": "1o04vfHhktza",
+ "tpl_arcos": "7oXupvJcRtBM",
  "tpl_cena": "TBC6bfkkWp9g",
+ "tpl_mapa": "CR5EqN2o4fWO",
  "tpl_pagina": "0plFv00tiNNZ",
- "tpl_personagem": "Dg9199ryng1B"
+ "tpl_personagem": "Dg9199ryng1B",
+ "tpl_storyboard": "YDzGtzzManbG"
 }

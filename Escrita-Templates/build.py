@@ -60,7 +60,7 @@ MANAGED = {
 SCRIPTS = [
     ("Longform Compiler (grade)", "js - grade"),
     ("Fountain Renderer (roteiro)", "js - Fountain"),
-    ("Canvas Note Tools", "#canvasTemplate"),
+    ("Canvas Note Tools (opcional)", "#canvasTemplate"),
 ]
 
 
@@ -178,6 +178,31 @@ class Trilium:
         return d.get("results", [])
 
 
+# ------------------------------------------------------- conteúdo (texto/JSON)
+
+
+def canon_json(v):
+    """JSON canônico: o ETAPI devolve `dict` para nota canvas e `str` para o resto."""
+    if isinstance(v, (dict, list)):
+        return json.dumps(v, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return json.dumps(
+        json.loads(v), sort_keys=True, ensure_ascii=False, separators=(",", ":")
+    )
+
+
+def conteudo_igual(atual, novo, eh_canvas):
+    if atual is None:
+        return False
+    if eh_canvas:
+        try:
+            return canon_json(atual) == canon_json(novo)
+        except Exception:
+            return False
+    if isinstance(atual, dict):  # canvas chegou como dict e o nó não é canvas
+        return False
+    return (atual or "").strip() == (novo or "").strip()
+
+
 # ------------------------------------------------------------------ probes
 
 
@@ -270,6 +295,9 @@ def walk(nodes, parent, tl, st, probes, prefix=""):
                 '    ! %s: sem "%s" nesta instância -> pasta comum'
                 % (node["title"], "renderNote")
             )
+        corpo = node.get("content")
+        if corpo is None:
+            corpo = node.get("html") or ""
         nid = st.get(node["key"])
         if nid:
             try:
@@ -282,10 +310,18 @@ def walk(nodes, parent, tl, st, probes, prefix=""):
                     print(
                         "    ~ %-24s type %s -> %s" % (node["title"], cur["type"], tipo)
                     )
+                # conteúdo: o build sincroniza texto/código/canvas. Render note
+                # NÃO (o conteúdo dela é gerado pelo script do plugin).
+                if tipo != "render":
+                    atual = tl.req("/notes/%s/content" % nid)
+                    if not conteudo_igual(atual, corpo, tipo == "canvas"):
+                        tl.req("/notes/%s/content" % nid, "PUT", raw=corpo)
+                        print(
+                            "    ~ %-24s conteúdo atualizado (%d B)"
+                            % (node["title"], len(corpo))
+                        )
         if not nid:
-            nid = tl.create(
-                parent, node["title"], node.get("html"), tipo, node.get("mime")
-            )
+            nid = tl.create(parent, node["title"], corpo, tipo, node.get("mime"))
             print("  + %s%-28s %s" % (prefix, node["title"], nid))
         ids[node["key"]] = nid
         ids.update(walk(node["children"], nid, tl, st, probes, prefix + "  "))

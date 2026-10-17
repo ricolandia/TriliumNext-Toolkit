@@ -17,7 +17,9 @@ compartilhado acima das trilhas**, para permitir transmídia.
 |---|---|
 | `SPEC.md` | Mecânica verificada do Trilium (v0.106), a árvore e o porquê de cada fio |
 | `content.py` | Estrutura e conteúdo (declarativo: `key` + alvos simbólicos) |
-| `build.py` | Builder ETAPI idempotente (demo/VPS), com `--preflight`, `--test`, `--prune` |
+| `make-canvas.py` | Gera os 3 canvases do template (`Canvas/*.json` + PNG de conferência + checagens) |
+| `Canvas/` | Os canvases (fonte de verdade do desenho; o `content.py` só lê) |
+| `build.py` | Builder ETAPI idempotente (demo/VPS); sincroniza conteúdo; `--preflight`, `--test`, `--prune` |
 | `.state-<target>.json` | Estado `key -> noteId` (evita varredura no VPS) |
 
 ## Uso
@@ -33,6 +35,25 @@ python3 -u build.py --target vps --dest-parent bWbXL3ytWhqR
 - Alvo de plugin é **capacidade** (`probe:js - grade`), não `#pluginId`: na VPS
   os packs estão instalados como notas, fora do contrato do gerenciador. Se o
   script não existe na instância, a tela vira pasta comum em vez de quebrar.
+
+## Canvases (com exemplo dentro)
+
+Três pontos do template dependem de canvas e cada um tem o seu, **do próprio
+template** (não do pack de 13) — o `+` da pasta já cria pronto:
+
+| Onde | Canvas |
+|---|---|
+| `01 Canon → Personagens → Mapa de relações` | relações entre personagens (nós + setas tipadas) |
+| `02 Prosa → Estrutura → Mapa de arcos & plotlines` | atos × tramas + paradas (o esqueleto) |
+| `04 HQ → Storyboard` | página com 4 quadros (ação · balão · tempo) |
+
+Os moldes trazem **exemplo dentro** (o leigo vê o formato), não têm `#canvasTemplate`
+(e não poluem o menu 🧩) e as notas de exemplo vêm com selo `◇` + "renomeie ou apague".
+
+```bash
+python3 make-canvas.py --write --png    # regera os JSONs (e os PNGs de conferência)
+python3 make-canvas.py --check          # fonte >=12px, contraste AA, origem >=0
+```
 
 ## Contratos (espelhados dos templates já em uso na VPS)
 

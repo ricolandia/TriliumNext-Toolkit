@@ -94,21 +94,29 @@ Author template master            #template · #iconClass · #label:projeto=prom
 ├── 00 Briefing                   (logline, premissa, tom, público, promessa)
 ├── 01 Canon                      ← compartilhado pelas TRÊS trilhas
 │   ├── Personagens               ~child:template → _tpl-Personagem
+│   │   ├── ◇ Personagem 1 — exemplo   (formato pronto: renomeie ou apague)
+│   │   └── Mapa de relações      ~child:template → _tpl-Mapa
+│   │       └── _tpl-Mapa         #template · CANVAS (4 nós + setas tipadas)
 │   ├── Mundo
 │   ├── Temas & Motivos
 │   ├── Linha do tempo
 │   └── Referências
 ├── 02 Trilha — Prosa             #status (herdável) · #label:status=promoted
 │   ├── Manuscrito                ~child:template → _tpl-Cena
+│   │   └── ◇ Cena 1 — exemplo    (formato pronto: renomeie ou apague)
 │   ├── Estrutura                 ~relation:plotline (promovida)
-│   │   └── Linhas (plotlines)    uma nota por trama (alvo da relação `plotline`)
+│   │   ├── Linhas (plotlines)    uma nota por trama (alvo da relação `plotline`)
+│   │   └── Mapa de arcos & plotlines  ~child:template → _tpl-Arcos
+│   │       └── _tpl-Arcos        #template · CANVAS (3 atos × 3 tramas)
 │   └── _tpl-Cena                 #template · ~template:newNoteDefaultParent → Manuscrito
 ├── 03 Trilha — Roteiro
 │   ├── Roteiro                   ~child:template → _tpl-Cena-Roteiro
 │   └── _tpl-Cena-Roteiro         #template · #fountainDraft
 ├── 04 Trilha — HQ
 │   ├── Páginas                   ~child:template → _tpl-Pagina
-│   ├── Storyboard
+│   │   └── ◇ Página 1 — exemplo  (formato pronto: renomeie ou apague)
+│   ├── Storyboard                ~child:template → _tpl-Storyboard
+│   │   └── _tpl-Storyboard       #template · CANVAS (página com 4 quadros)
 │   └── _tpl-Pagina               #template
 └── 99 Ferramentas                (packs: Canvas Note Tools / Longform / Fountain)
 ```
@@ -121,6 +129,29 @@ Regras do desenho:
 - Um único `~child:template` por pasta; nada de pilha de templates.
 - `#projeto` promovido na mãe (`#label:projeto=promoted`) → o Ricardo digita o
   nome do projeto na instância e as buscas ficam escopadas.
+
+## Os três canvases do template (rodada 16, 17/10/2026)
+
+Fonte de verdade do desenho: **`make-canvas.py`** → `Canvas/*.json` (o `content.py`
+apenas lê o JSON). Regras herdadas da rodada 15: texto ≥ 12px, contraste WCAG AA
+medido contra o fundo real, origem ≥ 0, `index` sequencial, `roundness` consistente.
+Os moldes trazem **exemplo dentro**: o leigo vê o formato em vez de pasta vazia
+(decisão do Ricardo). Teto de peso: os três somam ~51 KB numa instância de 62 KB.
+
+| Canvas | Onde (pasta com `+`) | Exemplo que vem dentro |
+|---|---|---|
+| `_tpl-Mapa` | `01 Canon → Personagens → Mapa de relações` | 4 nós (Protagonista · Aliado · Rival · Mentor) + setas "aliado/rival/mentor" + legenda de tipos |
+| `_tpl-Arcos` | `02 Trilha — Prosa → Estrutura → Mapa de arcos & plotlines` | 3 atos × 3 tramas (A/B/C-plot) + marcadores nas 5 paradas (C-plot com "buraco" de propósito) |
+| `_tpl-Storyboard` | `04 Trilha — HQ → Storyboard` | página com 4 quadros; Q1 preenchido (ação · balão · tempo) |
+
+- **Sem `#canvasTemplate`** de propósito: eles vêm pelo `+` da pasta e **não** devem
+  aparecer no menu 🧩 do Canvas Note Tools (que lista o pack de 13).
+- Exemplos com selo `◇` no título ("renomeie ou apague"): `◇ Personagem 1`,
+  `◇ Cena 1`, `◇ Página 1`.
+- `Storyboard` deixou de ser nota de texto solta: virou pasta-com-conteúdo com
+  `~child:template → _tpl-Storyboard`.
+- O caminho antigo (pack *Canvas Templates for Production* + 🧩 *Insert template*)
+  ficou documentado como **avançado** no `Storyboard` e no `99 Ferramentas`.
 
 ## Preflight de plugins (contrato `#pluginId`, nunca título)
 
@@ -148,8 +179,10 @@ Checar por `#pluginId`/`#installedPlugins` (ver
 3. **Sem entrada no `registry.json`** — o pack vive como conteúdo no VPS (não é plugin).
 4. Pasta-destino `Projetos de Escrita/` — **feito**: sob `10-Projetos` (`bWbXL3ytWhqR`),
    id `N2ipIf2YDJRL` (é ela que leva `~child:template`).
-5. Canvas/rodada 15 auditado — o texto do `Storyboard` já aponta para o *Insert template*
-   do Canvas Note Tools; falta decidir se a pasta Storyboard vira uma **nota canvas** própria.
+5. **Canvases próprios do template (rodada 16, 17/10)** — cada nota que dependia de
+   canvas ganhou um **canvas do próprio template**, com exemplo dentro, vindo pelo `+` da
+   pasta (não do pack de 13); o caminho antigo ficou como "avançado". Ver a seção
+   *Os três canvases do template*.
 
 ---
 
@@ -165,6 +198,9 @@ Checar por `#pluginId`/`#installedPlugins` (ver
 | Roteiro (`render`, `~renderNote` → `js - Fountain 3`) + `Rascunho` | `Zw29ZrSMulSE` + `0Tm6BwTX4QX6` |
 | Sub-templates privados | `_tpl-Cena` `TBC6bfkkWp9g` · `_tpl-Página` `0plFv00tiNNZ` · `_tpl-Personagem` `Dg9199ryng1B` |
 | `Linhas (plotlines)` (sob `Estrutura`) | `clpPPFDw0jkj` |
+| Canvases (rodada 16) | `_tpl-Mapa` `CR5EqN2o4fWO` · `_tpl-Arcos` `7oXupvJcRtBM` · `_tpl-Storyboard` `YDzGtzzManbG` |
+| Notas-guia novas (rodada 16) | `Mapa de relações` `3xkWdeCMK4Jc` · `Mapa de arcos & plotlines` `uSK87wnqXAic` |
+| Exemplos `◇` (rodada 16) | `cAz7mYO41JTB` · `vqqzjwDPvMBW` · `C2uE80GFbf6k` |
 
 **Demo** espelhado (ids de script próprios, resolvidos por capacidade):
 mãe `NZSjCETPrwH3`.
@@ -192,14 +228,25 @@ resultado no demo, agora com as duas telas.
   resolver passou a preferir o **maior número** do sufixo. E o `wire` só preserva
   atributo vindo de probe quando o probe **não** resolve — senão o Roteiro ficava com
   **dois** `~renderNote` (o antigo e o novo).
+- **`build.py` passou a sincronizar conteúdo** de nota existente (texto/código/canvas):
+  antes só o `type` era ajustado, então editar texto no `content.py` não chegava ao
+  Trilium. Render note **nunca** é sincronizada (o conteúdo dela é do script do plugin).
+- O backend **aplica o `~template`** ao criar filho sob pasta com `~child:template`
+  (mesmo por ETAPI e mesmo com `content` explícito), mas a **clonagem do template**
+  (conteúdo + filhos) é do **cliente**: por ETAPI, criar filho numa pasta com template
+  de canvas gera uma nota canvas **vazia**. O `+` da UI só se prova com clique no Trilium.
+- **Instanciação leva canvas**: a cópia em profundidade trouxe os 3 canvases
+  (12,5 / 19,6 / 19,2 KB) e remapeou `child:template` para as cópias internas; os
+  canvases **não** têm `#canvasTemplate` (não poluem o menu 🧩).
 - O `POST /etapi/notes/{id}/import` (importar ZIP) dá erro interno na 0.106 com corpo
   binário (`req.body` não é o `ZipSource` esperado): por ETAPI, publicar/escrever por
   conteúdo (`PUT /notes/{id}/content`) — e no VPS isso também evita duplicar as notas.
 
 **Aberto / próximos passos**
 
-- Confirmar: 6 status, `plotline` como relação, entrada no `registry.json`.
+- **Pendente (1 clique):** abrir o Trilium e usar o `+` em `Storyboard`, `Mapa de relações`
+  e `Mapa de arcos & plotlines` para conferir que nasce o canvas com o exemplo dentro.
 - Rodadas 14 (Canvas-Template-Loader) e 15 (Canvas-Templates) alimentam o
-  `99 Ferramentas` e o `Storyboard`.
+  `99 Ferramentas` (o pack virou o caminho "avançado").
 - Registrar StoryLine / Canvas2Document no `BENCHMARK-obsidian-widgets.md`.
 

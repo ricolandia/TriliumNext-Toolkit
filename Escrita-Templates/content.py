@@ -20,7 +20,20 @@ Regras (ver SPEC.md):
     filho único `Rascunho` (type code).
 """
 
+import json
+import os
+
 DEST_TITLE = "Projetos de Escrita"  # pasta-destino dedicada (leva ~child:template)
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+CANVAS_DIR = os.path.join(HERE, "Canvas")
+
+
+def canvas(nome):
+    """JSON do canvas gerado por `make-canvas.py` (fonte de verdade do desenho)."""
+    with open(os.path.join(CANVAS_DIR, nome + ".json"), encoding="utf-8") as fh:
+        return fh.read()
+
 
 # scripts de plugin já instalados na VPS (notas externas; não são remapeadas)
 JS_GRADE = "probe:js - grade"  # Longform Compiler (resolvido por título)
@@ -38,6 +51,7 @@ def N(
     icon=None,
     type="text",
     mime=None,
+    content=None,
 ):
     labels = list(labels)
     if icon and not any(l[0] == "iconClass" for l in labels):
@@ -51,6 +65,7 @@ def N(
         "children": list(children),
         "type": type,
         "mime": mime,
+        "content": content,
     }
 
 
@@ -77,8 +92,18 @@ escopo às buscas de todo o projeto).</li>
 <li>Escolha a(s) trilha(s) e <b>apague as que não vai usar</b> (inclusive a
 pasta <code>_tpl-*</code> interna delas).</li>
 <li>Dentro de cada trilha, use <b>+</b> na pasta de destino: o template da
-unidade (cena / página) já está ligado e cai no lugar certo.</li>
+unidade (cena / página / <b>canvas</b>) já está ligado e cai no lugar certo.</li>
 </ol>
+<h3>Exemplos prontos</h3>
+<p>As notas com <b>◇</b> e "exemplo" no título existem para você ver o formato:
+abra, entenda e depois <b>renomeie</b> para o primeiro item real ou <b>apague</b>.</p>
+<h3>Os três canvases</h3>
+<ul>
+<li><b>Mapa de relações</b> (Canon &#8594; Personagens) — quem é o quê de quem.</li>
+<li><b>Mapa de arcos &amp; plotlines</b> (Prosa &#8594; Estrutura) — o esqueleto.</li>
+<li><b>Storyboard</b> (HQ) — o rascunho visual, página a página.</li>
+</ul>
+<p>Cada um aparece pelo <b>+</b> da pasta dele, já com um exemplo dentro.</p>
 <h3>As duas telas (render notes)</h3>
 <ul>
 <li><b>Manuscrito</b> (Prosa) — grade das cenas: arraste para reordenar e
@@ -88,7 +113,8 @@ roteiro, com estimativa de páginas, <code>.fountain</code> e PDF.</li>
 </ul>
 <h3>O que apagar</h3>
 <ul>
-<li>Trilhas não usadas (<b>02 Prosa</b>, <b>03 Roteiro</b>, <b>04 HQ</b>).</li>
+<li>Trilhas não usadas (<b>02 Prosa</b>, <b>03 Roteiro</b>, <b>04 HQ</b>) — os
+canvases delas vão junto.</li>
 <li>Seções do canon que não se aplicam.</li>
 <li><code>99 Ferramentas</code> se você já conhece os plugins.</li>
 </ul>
@@ -124,8 +150,12 @@ mora aqui.</b></p>
 <li><b>Linha do tempo</b> — eventos na ordem dos fatos (não na ordem do relato).</li>
 <li><b>Referências</b> — obras, imagens, pesquisa.</li></ul>"""
 
-PERSONAGENS = """<p>Um nó por personagem. Use <b>+</b> aqui: a ficha já vem no formato
-certo.</p>"""
+PERSONAGENS = """<p>Cada personagem é uma nota. Use <b>+</b> aqui dentro: a ficha já
+vem no formato certo (Quem é · Quer/Precisa · Ferida e mentira · Voz · Arco).</p>
+<p>Há um <b>exemplo pronto</b> ao lado — "◇ Personagem 1 — exemplo": abra para ver
+o formato, depois <b>renomeie</b> para o seu primeiro personagem ou apague.</p>
+<p>Para as <b>relações</b> entre eles (aliado, rival, mentor, família), abra
+<b>Mapa de relações</b>: tem exemplo dentro e o <b>+</b> de lá cria um mapa novo.</p>"""
 
 MUNDO = """<h3>Lugares</h3><h3>Regras do mundo</h3>
 <p>O que pode e o que não pode acontecer (e as consequências).</p>
@@ -148,14 +178,18 @@ num documento único pelo <b>Longform Compiler</b>.</p>
 <li><b>Estrutura</b> — esqueleto, arcos, plotlines.</li></ul>"""
 
 MANUSCRITO = """<p>Uma <b>cena por nota</b>. Use <b>+</b> aqui para criá-las no
-formato certo.</p>
+formato certo (objetivo · onde/quando · quem · rascunho). Há um exemplo pronto ao
+lado ("◇ Cena 1 — exemplo"): renomeie ou apague.</p>
 <p>Depois: reordenar na grade e compilar o documento único.</p>"""
 
 ESTRUTURA = """<h3>Arco principal</h3>
 <h3>Paradas obrigatórias</h3><ul><li>Inciting incident</li><li>Ponto de virada 1</li>
 <li>Meio</li><li>Ponto de virada 2</li><li>Clímax</li></ul>
 <p>As linhas/tramas têm nota própria em <b>Linhas (plotlines)</b>: a cena se liga
-à linha pela <i>relação</i> <code>plotline</code> (nunca por label solto).</p>"""
+à linha pela <i>relação</i> <code>plotline</code> (nunca por label solto).</p>
+<p>Para <b>ver</b> o esqueleto, abra <i>Mapa de arcos &amp; plotlines</i> — colunas
+= atos, linhas = tramas, marcadores = paradas. As tramas são as mesmas notas de
+<b>Linhas (plotlines)</b>.</p>"""
 
 LINHAS = """<p>Uma nota por <b>linha</b> (trama): dê o nome da linha no título e use o
 corpo para o arco dela (onde começa, onde vira, onde fecha).</p>
@@ -188,13 +222,23 @@ HQ = """<p>Trilha em <b>quadrinhos</b>: roteiro em HQ → storyboard → página
 <ul><li><b>Páginas</b> — uma nota por página (template ligado).</li>
 <li><b>Storyboard</b> — canvas de rascunho (Canvas Note Tools).</li></ul>"""
 
-PAGINAS = """<p>Uma <b>página por nota</b>. Use <b>+</b> aqui.</p>
-<p>Nota pela ordem: página, quadros (descrição + diálogo), e o link para o
-arquivo final.</p>"""
+PAGINAS = """<p>Uma <b>página por nota</b>. Use <b>+</b> aqui — a nota já vem com o
+Quadro 1 desenhado para você seguir (há um exemplo pronto ao lado: "◇ Página 1 —
+exemplo").</p>
+<p>Nota pela ordem: página, quadros (descrição + diálogo) e o link para o arquivo
+final.</p>"""
 
-STORYBOARD = """<p>Canvas de rascunho da sequência. Comece por <b>Insert template</b>
-(botão do <i>Canvas Note Tools</i>) e escolha <i>Template - Storyboard</i> — vêm do
-pack <i>Canvas Templates for Production</i> (13 templates, auditado na rodada 15).</p>"""
+STORYBOARD = """<p>Rascunho visual da cena: <b>1 página por linha, 1 quadro por bloco</b>.
+Use <b>+</b> aqui e o canvas já vem pronto (página com 4 quadros; o Quadro 1 vem
+preenchido de exemplo).</p>
+<p>Troque os textos do exemplo: o que <b>se vê</b> (ação), o que <b>se ouve</b>
+(balão/som) e quanto <b>tempo</b> o quadro fica. Rascunho é para riscar e
+reescrever.</p>
+<p>O storyboard <i>não</i> vira página automaticamente: a página oficial é a nota
+criada em <b>Páginas</b>.</p>
+<p><i>Avançado:</i> para o storyboard "de filmagem" (time code, PAN/TILT), use o
+botão 🧩 do <i>Canvas Note Tools</i> e escolha <i>Template - Storyboard</i> do pack
+<i>Canvas Templates for Production</i>.</p>"""
 
 FERRAMENTAS = """<h3>Plugins que o template usa</h3>
 <table border="1" cellspacing="0" cellpadding="4">
@@ -204,8 +248,14 @@ FERRAMENTAS = """<h3>Plugins que o template usa</h3>
 <tr><td>Fountain Renderer</td><td><code>js - Fountain 3</code></td>
 <td>Tela do roteiro + PDF (trilha Roteiro)</td></tr>
 <tr><td>Canvas Note Tools</td><td>—</td>
-<td>Storyboard / Estrutura (trilha HQ)</td></tr>
+<td><b>Opcional</b>: cards e relações nos canvases (Storyboard · Mapa de relações ·
+Arcos &amp; plotlines) — os canvases funcionam sem ele</td></tr>
 </table>
+<h3>Avançado (packs de canvas)</h3>
+<p>Quer os 13 templates prontos de canvas (OKR, GTD, storyboard "de filmagem"…)?
+Instale o pack <i>Canvas Templates for Production</i> e use o botão 🧩
+(<i>Insert template</i>) do Canvas Note Tools. Os canvases do projeto já vêm
+prontos pelo <b>+</b> — o pack é para outros desenhos.</p>
 <p><b>Preflight:</b> o pack verifica a <b>nota-script</b> (capacidade), não o
 label <code>#pluginId</code> — na VPS os packs estão instalados como notas, fora
 do contrato do gerenciador. Sem o script, a tela fica vazia.</p>"""
@@ -220,6 +270,31 @@ TPL_PERSONAGEM = """<h3>Quem é</h3><p>Uma linha.</p>
 
 TPL_PAGINA = """<h3>Página N</h3>
 <h3>Quadro 1</h3><p>Descrição visual.</p><p><b>BALÃO:</b> texto.</p>"""
+
+# --- canvases do próprio template (gerados por `make-canvas.py`; rodada 16) ---
+# Sem `#canvasTemplate` de propósito: vêm pelo `+` das pastas e NÃO devem aparecer
+# no menu 🧩 do Canvas Note Tools (que lista o pack de 13).
+CANVAS_STORYBOARD = canvas("_tpl-Storyboard")
+CANVAS_MAPA = canvas("_tpl-Mapa")
+CANVAS_ARCOS = canvas("_tpl-Arcos")
+
+EXEMPLO = "◇"  # selo das notas de exemplo (renomeie ou apague)
+
+MAPA = """<p>Desenho das <b>relações</b> entre personagens: um nó por personagem, uma
+seta por relação — escreva o tipo na seta (aliado · rival · mentor · família ·
+dívida).</p>
+<p><b>+</b> aqui cria um mapa novo, já com exemplo de 4 nós para você trocar pelos
+seus. Dá para arrastar a nota do personagem para dentro do canvas: o Canvas Note
+Tools mantém card e nota em sincronia.</p>"""
+
+ARCOS = """<p>O esqueleto da história num só desenho: <b>colunas = atos</b> (1º · 2º · 3º),
+<b>linhas = tramas</b> (A-plot, B-plot…) e <b>marcadores = paradas</b> (inciting
+incident · virada 1 · meio · virada 2 · clímax).</p>
+<p><b>+</b> aqui cria um mapa novo com esse exemplo montado. Escreva nas faixas os
+nomes das suas <b>Linhas (plotlines)</b>.</p>
+<p>Serve para ver <b>buracos</b> (trama que some) e <b>cruzamentos</b> (duas tramas
+no mesmo ponto). Para listar as cenas de uma trama, use a relação
+<code>plotline</code> e a grade do Manuscrito.</p>"""
 
 
 # ------------------------------------------------------------------- árvore
@@ -260,6 +335,34 @@ TREE = N(
                     PERSONAGENS,
                     icon="bx bx-user",
                     relations=[("child:template", "tpl_personagem", True)],
+                    children=[
+                        N(
+                            "ex_personagem",
+                            EXEMPLO + " Personagem 1 — exemplo",
+                            TPL_PERSONAGEM,
+                            icon="bx bx-user",
+                        ),
+                        N(
+                            "mapa",
+                            "Mapa de relações",
+                            MAPA,
+                            icon="bx bx-network-chart",
+                            relations=[("child:template", "tpl_mapa", True)],
+                            children=[
+                                N(
+                                    "tpl_mapa",
+                                    "_tpl-Mapa",
+                                    labels=[("template", "", True)],
+                                    icon="bx bx-network-chart",
+                                    type="canvas",
+                                    content=CANVAS_MAPA,
+                                    relations=[
+                                        ("template:newNoteDefaultParent", "mapa", True)
+                                    ],
+                                ),
+                            ],
+                        ),
+                    ],
                 ),
                 N(
                     "tpl_personagem",
@@ -292,6 +395,14 @@ TREE = N(
                         ("renderNote", JS_GRADE, True),
                         ("child:template", "tpl_cena", True),
                     ],
+                    children=[
+                        N(
+                            "ex_cena",
+                            EXEMPLO + " Cena 1 — exemplo",
+                            TPL_CENA,
+                            icon="bx bx-file",
+                        ),
+                    ],
                 ),
                 N(
                     "estrutura",
@@ -300,7 +411,32 @@ TREE = N(
                     labels=[("relation:plotline", "promoted", True)],
                     icon="bx bx-sitemap",
                     children=[
-                        N("linhas", "Linhas (plotlines)", LINHAS, icon="bx bx-git-branch"),
+                        N(
+                            "linhas",
+                            "Linhas (plotlines)",
+                            LINHAS,
+                            icon="bx bx-git-branch",
+                        ),
+                        N(
+                            "arcos",
+                            "Mapa de arcos & plotlines",
+                            ARCOS,
+                            icon="bx bx-line-chart",
+                            relations=[("child:template", "tpl_arcos", True)],
+                            children=[
+                                N(
+                                    "tpl_arcos",
+                                    "_tpl-Arcos",
+                                    labels=[("template", "", True)],
+                                    icon="bx bx-line-chart",
+                                    type="canvas",
+                                    content=CANVAS_ARCOS,
+                                    relations=[
+                                        ("template:newNoteDefaultParent", "arcos", True)
+                                    ],
+                                ),
+                            ],
+                        ),
                     ],
                 ),
                 N(
@@ -353,8 +489,35 @@ TREE = N(
                     PAGINAS,
                     icon="bx bx-book-content",
                     relations=[("child:template", "tpl_pagina", True)],
+                    children=[
+                        N(
+                            "ex_pagina",
+                            EXEMPLO + " Página 1 — exemplo",
+                            TPL_PAGINA,
+                            icon="bx bx-file",
+                        ),
+                    ],
                 ),
-                N("storyboard", "Storyboard", STORYBOARD, icon="bx bx-shape-square"),
+                N(
+                    "storyboard",
+                    "Storyboard",
+                    STORYBOARD,
+                    icon="bx bx-shape-square",
+                    relations=[("child:template", "tpl_storyboard", True)],
+                    children=[
+                        N(
+                            "tpl_storyboard",
+                            "_tpl-Storyboard",
+                            labels=[("template", "", True)],
+                            icon="bx bx-shape-square",
+                            type="canvas",
+                            content=CANVAS_STORYBOARD,
+                            relations=[
+                                ("template:newNoteDefaultParent", "storyboard", True)
+                            ],
+                        ),
+                    ],
+                ),
                 N(
                     "tpl_pagina",
                     "_tpl-Página",
