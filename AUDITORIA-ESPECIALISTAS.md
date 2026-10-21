@@ -3686,7 +3686,9 @@ na pasta **`Templates - Escrita`** (`L422o4kdpxL5`): `1PEo8pmH5BPo` · `FbB728dE
 `Ap7OmPMatHAy` — conteúdo **e** anexo `canvas-export.svg` **byte a byte**; 13 notas antigas
 reconferidas (`= já é o atual`). Zip novo **`214bb3c7…`** (36 arquivos, 98 KB), harness
 `test-canvas-templates.py` **4 ok · 1 warn · 0 fail** (warn = a faixa do storyboard, o de
-sempre), registry **0.9.0**.
+sempre), registry **0.9.0**. Os três **não** levam `#canvasTemplate` (o 🧩 lista o kit, sem
+duplicata) e o **espelho é fonte única**: `make-canvas.py --kit` grava no pack e a checagem
+`kit:` do harness **falha** se os dois lados divergirem (testado plantando divergência).
 
 **Residual:** itens M (8 rótulos de grade ≤ 11px, paleta-token, i18n descartado) →
 `ROADMAP-RESIDUAIS.md` § Canvas-Templates.

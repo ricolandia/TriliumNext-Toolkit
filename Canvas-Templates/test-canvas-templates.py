@@ -323,6 +323,35 @@ def check_svg():
     ok("svg: %d previews em sincronia com o JSON" % n)
 
 
+def check_kit():
+    """Os 3 canvases de "Templates - Escrita" são espelho do super-template de escrita
+    (`make-canvas.py --kit`): compara com `Escrita-Templates/Canvas/*.json` — o appState
+    do pack não tem `gridSize`."""
+    base = os.path.join(BASE, "..", "Escrita-Templates", "Canvas")
+    pares = [
+        ("Template - Storyboard (HQ)", "_tpl-Storyboard.json"),
+        ("Template - Mapa de relações", "_tpl-Mapa.json"),
+        ("Template - Mapa de arcos & plotlines", "_tpl-Arcos.json"),
+    ]
+    if not os.path.isdir(base):
+        warn("kit: Escrita-Templates/Canvas não está ao lado — espelho não conferido")
+        return
+    for titulo, origem in pares:
+        p_kit = os.path.join(DIR, "Canvas - templates", "Templates - Escrita", titulo + ".json")
+        p_esc = os.path.join(base, origem)
+        if not os.path.exists(p_kit) or not os.path.exists(p_esc):
+            bad("kit: %s sem par (%s)" % (titulo, "falta no pack" if not os.path.exists(p_kit) else "falta na origem"))
+            continue
+        a = json.load(open(p_kit, encoding="utf-8"))
+        b = json.load(open(p_esc, encoding="utf-8"))
+        for d in (a, b):
+            (d.get("appState") or {}).pop("gridSize", None)
+        if json.dumps(a, sort_keys=True, ensure_ascii=False) != json.dumps(b, sort_keys=True, ensure_ascii=False):
+            bad("kit: %s divergiu do Escrita-Templates — rode `make-canvas.py --write --kit`" % titulo)
+        else:
+            ok("kit: %s espelhado de %s" % (titulo, origem))
+
+
 def check_zip(titles):
     if not os.path.exists(ZIP):
         bad("zip: %s não existe" % ZIP)
@@ -365,6 +394,7 @@ def main():
         )
     check_readme(titles)
     check_svg()
+    check_kit()
     check_zip(titles)
 
     print("PASS  %d" % len(OK))

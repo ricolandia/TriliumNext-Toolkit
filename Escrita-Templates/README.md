@@ -49,8 +49,8 @@ template** (não do pack de 13) — o `+` da pasta já cria pronto:
 | `02 Prosa → Estrutura → Mapa de arcos & plotlines` | atos × tramas + paradas (o esqueleto) |
 | `04 HQ → Storyboard` | página com 4 quadros (ação · balão · tempo) |
 
-Os modelos trazem **exemplo dentro** (o leigo vê o formato), não têm `#canvasTemplate`
-(e não poluem o menu 🧩) e as notas de exemplo vêm com selo `◇` + "renomeie ou apague".
+Os modelos trazem **exemplo dentro** (o leigo vê o formato) e **não** têm `#canvasTemplate`
+(o menu 🧩 do Canvas Note Tools lista o catálogo do kit, sem duplicata) e as notas de exemplo vêm com selo `◇` + "renomeie ou apague".
 
 > **Como criar:** o `+` abre uma lista que começa com os tipos de nota (o primeiro,
 > *Text*, já vem selecionado — confirmar cria uma nota vazia comum). Desça até a seção
@@ -59,9 +59,13 @@ Os modelos trazem **exemplo dentro** (o leigo vê o formato), não têm `#canvas
 > próprio projeto (`Author template master`).
 
 ```bash
-python3 make-canvas.py --write --png    # regera os JSONs (e os PNGs de conferência)
-python3 make-canvas.py --check          # fonte >=12px, contraste AA, origem >=0
+python3 make-canvas.py --write --png --kit   # JSONs (+ PNG de conferência) e espelho no pack
+python3 make-canvas.py --check               # fonte >=12px, contraste AA, origem >=0
 ```
+
+O `--kit` espelha os três no pack do kit (fonte única: este script); depois de mudar o
+desenho rode `Canvas-Templates/render-canvas.py --svg` e regenere o zip. O harness do pack
+**falha** se o espelho divergir.
 
 ## Contratos (espelhados dos templates já em uso na VPS)
 

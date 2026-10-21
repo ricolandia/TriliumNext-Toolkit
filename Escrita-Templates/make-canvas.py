@@ -17,6 +17,12 @@ Uso:
     python3 make-canvas.py --write        # grava Canvas/*.json
     python3 make-canvas.py --png          # gera Canvas/*.png (conferência visual)
     python3 make-canvas.py --check        # valida (fonte, contraste, origem, ids)
+    python3 make-canvas.py --write --kit  # grava também no pack do kit (fonte única)
+
+O `--kit` espelha os três no `Canvas-Templates` (pasta "Templates - Escrita"), com o
+appState do pack (sem `gridSize`). Depois de mudar o desenho, rode também
+`Canvas-Templates/render-canvas.py --svg` e regenere o zip (o harness do pack checa o
+espelho, não o SVG).
 """
 
 import json
@@ -25,6 +31,16 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "Canvas")
+# Espelho no pack do kit (fonte única é este script; o harness do pack confere)
+KIT_DIR = os.path.join(
+    HERE, "..", "Canvas-Templates", "Canvas-templates", "Canvas - templates",
+    "Templates - Escrita",
+)
+KIT = {
+    "_tpl-Storyboard": "Template - Storyboard (HQ)",
+    "_tpl-Mapa": "Template - Mapa de relações",
+    "_tpl-Arcos": "Template - Mapa de arcos & plotlines",
+}
 STAMP = 1780000000000  # determinístico: o JSON não muda entre execuções
 FONT = 2  # 2 = Helvetica (neutro); o pack da rodada 15 usa isto no grosso
 LINE_H = 1.2857142857142858
@@ -444,6 +460,23 @@ def png(nome, doc, escala=1.0):
     print("   png %-28s %dx%d -> %s" % (nome, im.width, im.height, os.path.basename(p)))
 
 
+def escreve_kit(nome, doc):
+    """Espelha o canvas no pack (appState do pack não tem gridSize). Devolve True se mudou."""
+    d = json.loads(json.dumps(doc))
+    d["appState"].pop("gridSize", None)
+    p = os.path.join(KIT_DIR, KIT[nome] + ".json")
+    texto = json.dumps(d, ensure_ascii=False, separators=(",", ":"))
+    antes = open(p, encoding="utf-8").read() if os.path.exists(p) else None
+    if antes == texto:
+        print("   kit  %-40s já igual" % KIT[nome])
+        return False
+    os.makedirs(KIT_DIR, exist_ok=True)
+    with open(p, "w", encoding="utf-8") as fh:
+        fh.write(texto)
+    print("   kit  %-40s ATUALIZADO (%d B)" % (KIT[nome], len(texto)))
+    return True
+
+
 CANVASES = {
     "_tpl-Storyboard": storyboard,
     "_tpl-Mapa": mapa,
@@ -454,6 +487,7 @@ CANVASES = {
 def main():
     quer_write = "--write" in sys.argv
     quer_png = "--png" in sys.argv
+    quer_kit = "--kit" in sys.argv
     quer_check = "--check" in sys.argv or not (quer_write or quer_png)
     os.makedirs(OUT, exist_ok=True)
     falhas = 0
@@ -480,6 +514,14 @@ def main():
             )
         if quer_png:
             png(nome, doc)
+        if quer_kit:
+            mudou_kit = escreve_kit(nome, doc) or globals().get("_mudou_kit", False)
+            globals()["_mudou_kit"] = mudou_kit
+    if quer_kit and globals().get("_mudou_kit"):
+        print(
+            "\n   kit mudou: rode `python3 ../Canvas-Templates/render-canvas.py --svg`"
+            " e regenere o zip (o harness do pack checa o espelho)."
+        )
     return 1 if falhas else 0
 
 

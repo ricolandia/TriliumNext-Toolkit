@@ -145,8 +145,11 @@ Os moldes trazem **exemplo dentro**: o leigo vê o formato em vez de pasta vazia
 | `Mapa de arcos (modelo)` | `02 Trilha — Prosa → Estrutura → Mapa de arcos & plotlines` | 3 atos × 3 tramas (A/B/C-plot) + marcadores nas 5 paradas (C-plot com "buraco" de propósito) |
 | `Storyboard (modelo)` | `04 Trilha — HQ → Storyboard` | página com 4 quadros; Q1 preenchido (ação · balão · tempo) |
 
-- **Sem `#canvasTemplate`** de propósito: eles vêm pelo `+` da pasta e **não** devem
-  aparecer no menu 🧩 do Canvas Note Tools (que lista o pack de 13).
+- **Sem `#canvasTemplate`**: eles vêm pelo `+` da pasta; o menu 🧩 lista o **catálogo do
+  kit** (Canvas-Templates 0.9.0 tem estes mesmos três) — assim não há duplicata no 🧩.
+- **Fonte única:** `make-canvas.py --write --kit` espelha os três no pack
+  (`Canvas-templates/…/Templates - Escrita/`, appState sem `gridSize`); o harness do pack
+  (`test-canvas-templates.py`, checagem `kit:`) **falha** se os dois lados divergirem.
 - Exemplos com selo `◇` no título ("renomeie ou apague"): `◇ Personagem 1`,
   `◇ Cena 1`, `◇ Página 1`.
 - `Storyboard` deixou de ser nota de texto solta: virou pasta-com-conteúdo com
@@ -253,7 +256,7 @@ resultado no demo, agora com as duas telas.
   de canvas gera uma nota canvas **vazia**. O `+` da UI só se prova com clique no Trilium.
 - **Instanciação leva canvas**: a cópia em profundidade trouxe os 3 canvases
   (12,5 / 19,6 / 19,2 KB) e remapeou `child:template` para as cópias internas; os
-  canvases **não** têm `#canvasTemplate` (não poluem o menu 🧩).
+  canvases **não** têm `#canvasTemplate` (o 🧩 lista o kit) e o espelho é checado pelo harness.
 - O `POST /etapi/notes/{id}/import` (importar ZIP) dá erro interno na 0.106 com corpo
   binário (`req.body` não é o `ZipSource` esperado): por ETAPI, publicar/escrever por
   conteúdo (`PUT /notes/{id}/content`) — e no VPS isso também evita duplicar as notas.
