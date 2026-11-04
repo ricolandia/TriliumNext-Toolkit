@@ -65,6 +65,10 @@ window.api = {
     const iso = m ? m[1] : null;
     return Promise.resolve(iso && window.__notas[iso] ? window.__notas[iso] : null);
   },
+  searchForNotes: (q) => {
+    if (window.__falharBusca) return Promise.reject(new Error('boom'));
+    return Promise.resolve(Object.keys(window.__notas).map((k) => window.__notas[k]));
+  },
   getDayNote: (iso) => { window.__nav.created.push(iso); const n = notaDia(iso); window.__notas[iso] = n; return Promise.resolve(n); },
   activateNote: (id) => { window.__nav.activated.push(id); return Promise.resolve(); },
   showMessage: (m) => logs.push('[msg] ' + m)
@@ -178,10 +182,13 @@ ${BOOT}
 ${BOOT}
     r.todayClasse = $('#dnn-label').hasClass('dnn-today');
     r.ariaCurrent = $('#dnn-label').attr('aria-current') || '';
+    r.nextDisabled = $('#dnn-next-day').prop('disabled');
+    r.nextMonthDisabled = $('#dnn-next-month').prop('disabled');
 `
     }));
     if (b.erroExec) { console.log('  ✗ exceção → ' + b.erroExec); falhas++; }
     ok('marca o dia atual (classe + aria-current)', b.todayClasse === true && b.ariaCurrent === 'date', [b.todayClasse, b.ariaCurrent]);
+    ok('hoje: avançar (dia e mês) fica desabilitado', b.nextDisabled === true && b.nextMonthDisabled === true, [b.nextDisabled, b.nextMonthDisabled]);
     ok('console limpo (B)', semErros(b).length === 0, semErros(b));
 
     console.log('C) boot em EN');
@@ -221,6 +228,61 @@ ${BOOT}
     ok('aviso de erro de navegação', /Falha ao navegar/.test(d.msgTexto || '') && d.erroClasse === true, [d.msgTexto, d.erroClasse]);
     ok('botões reabilitam após o erro', d.botoesHabilitados === true, d.botoesHabilitados);
     ok('console limpo (D)', semErros(d).length === 0, semErros(d));
+    console.log('E) dia anterior ausente → cai no mais próximo anterior (com aviso)');
+    const e = rodar('smoke-e.html', pagina({
+        cenario: `
+    window.__dataNote = '2026-09-20';
+    window.__notas['2026-09-17'] = { noteId: 'd2026-09-17', getLabelValue: (l) => l === 'dateNote' ? '2026-09-17' : null };
+${BOOT}
+    $('#dnn-prev-day').trigger('click');
+    await wait(120);
+    r.act = window.__nav.activated.slice();
+    r.label = $('#dnn-label').text();
+    r.msg = $('#dnn-msg-text').text();
+    r.createVisivel = !$('#dnn-create').prop('hidden');
+    r.nadaCriado = window.__nav.created.length === 0;
+`
+    }));
+    if (e.erroExec) { console.log('  ✗ exceção → ' + e.erroExec); falhas++; }
+    ok('cai no anterior mais próximo', e.act.length === 1 && e.act[0] === 'd2026-09-17', e.act);
+    ok('label reflete a data encontrada', /17\/09\/2026/.test(e.label || ''), e.label);
+    ok('avisa o pulo (sem botão criar)', /Sem nota em/.test(e.msg || '') && /17\/09\/2026/.test(e.msg || '') && e.createVisivel === false, [e.msg, e.createVisivel]);
+    ok('pulo não cria nota', e.nadaCriado === true);
+    ok('console limpo (E)', semErros(e).length === 0, semErros(e));
+
+    console.log('F) sem nenhum dia anterior → aviso + criar (não navega)');
+    const f = rodar('smoke-f.html', pagina({
+        cenario: `
+    window.__dataNote = '2026-09-20';
+${BOOT}
+    $('#dnn-prev-day').trigger('click');
+    await wait(120);
+    r.act = window.__nav.activated.slice();
+    r.msg = $('#dnn-msg-text').text();
+    r.createVisivel = !$('#dnn-create').prop('hidden');
+`
+    }));
+    if (f.erroExec) { console.log('  ✗ exceção → ' + f.erroExec); falhas++; }
+    ok('não navega sem anterior', f.act.length === 0, f.act);
+    ok('aviso do dia ausente + criar', /Sem nota para/.test(f.msg || '') && f.createVisivel === true, [f.msg, f.createVisivel]);
+    ok('console limpo (F)', semErros(f).length === 0, semErros(f));
+
+    console.log('G) mês anterior ausente → cai no mais próximo anterior');
+    const g = rodar('smoke-g.html', pagina({
+        cenario: `
+    window.__dataNote = '2026-09-20';
+    window.__notas['2026-08-15'] = { noteId: 'd2026-08-15', getLabelValue: (l) => l === 'dateNote' ? '2026-08-15' : null };
+${BOOT}
+    $('#dnn-prev-month').trigger('click');
+    await wait(120);
+    r.act = window.__nav.activated.slice();
+    r.label = $('#dnn-label').text();
+`
+    }));
+    if (g.erroExec) { console.log('  ✗ exceção → ' + g.erroExec); falhas++; }
+    ok('mês cai no anterior mais próximo', g.act.length === 1 && g.act[0] === 'd2026-08-15', g.act);
+    ok('label do mês cai na data real', /15\/08\/2026/.test(g.label || ''), g.label);
+    ok('console limpo (G)', semErros(g).length === 0, semErros(g));
 } catch (e) {
     falhas++;
     console.log('  ✗ falha inesperada: ' + ((e && e.stack) || e));

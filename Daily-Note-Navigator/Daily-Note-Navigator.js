@@ -86,7 +86,8 @@ const DNN_I18N = {
         'navError': 'Falha ao navegar \u2014 tente de novo.',
         'createError': 'Falha ao criar a nota.',
         'create': 'Criar nota',
-        'created': 'Nota do dia criada.'
+        'created': 'Nota do dia criada.',
+        'fellBack': 'Sem nota em {date} \u2014 indo para {found}.'
     },
     en: {
         'title': 'Daily Note Navigator',
@@ -102,7 +103,8 @@ const DNN_I18N = {
         'navError': 'Navigation failed \u2014 try again.',
         'createError': 'Failed to create the note.',
         'create': 'Create note',
-        'created': 'Day note created.'
+        'created': 'Day note created.',
+        'fellBack': 'No note on {date} \u2014 going to {found}.'
     }
 };
 
@@ -223,6 +225,7 @@ class DayNoteNavigatorWidget extends api.RightPanelWidget {
     constructor() {
         super();
         this._dayCache = new Map();
+        this._allDays = null; // índice de #dateNote (só no fallback; invalidado ao criar)
         this._resetTimer = null;
         this._busy = false;
         this._createIso = null;
@@ -318,6 +321,22 @@ class DayNoteNavigatorWidget extends api.RightPanelWidget {
         if (proximo) this.$nextDay.attr('title', tr('nextDay') + ' \u2014 ' + formatLabel(proximo, _lang));
         if (mesAnterior) this.$prevMonth.attr('title', tr('prevMonth') + ' \u2014 ' + formatLabel(mesAnterior, _lang));
         if (mesProximo) this.$nextMonth.attr('title', tr('nextMonth') + ' \u2014 ' + formatLabel(mesProximo, _lang));
+        this._atualizaLimites(iso);
+    }
+
+    // Nunca deixa avançar além de hoje: o botão de amanhã/mês seguinte fica
+    // desabilitado quando o alvo passaria da data atual (decisão do Ricardo).
+    _atualizaLimites(iso) {
+        const hoje = todayIso();
+        const p = parseIso(iso);
+        const semProximoDia = !p || addDays(iso, +1) > hoje;
+        if (this.$nextDay) {
+            this.$nextDay.prop('disabled', semProximoDia).attr('aria-disabled', semProximoDia ? 'true' : null);
+        }
+        const semProximoMes = !p || addMonthsClamped(iso, +1) > hoje;
+        if (this.$nextMonth) {
+            this.$nextMonth.prop('disabled', semProximoMes).attr('aria-disabled', semProximoMes ? 'true' : null);
+        }
     }
 
     _setBusy(on) {
@@ -351,28 +370,43 @@ class DayNoteNavigatorWidget extends api.RightPanelWidget {
     async _navigate(offset) {
         const dateStr = this._getDateStr();
         if (!parseIso(dateStr)) { this._mostrarMsg(tr('invalid'), true); return; }
-        await this._goTo(addDays(dateStr, offset), 'day');
+        await this._goTo(addDays(dateStr, offset), 'day', offset < 0 ? 'back' : 'exact');
     }
 
     async _navigateMonth(offset) {
         const dateStr = this._getDateStr();
         if (!parseIso(dateStr)) { this._mostrarMsg(tr('invalid'), true); return; }
-        await this._goTo(addMonthsClamped(dateStr, offset), 'month');
+        await this._goTo(addMonthsClamped(dateStr, offset), 'month', offset < 0 ? 'back' : 'exact');
     }
 
     async _goToday() {
         await this._goTo(todayIso(), 'day');
     }
 
-    async _goTo(iso, tipo) {
+    async _goTo(iso, tipo, modo) {
+        modo = modo || 'exact';
         if (!parseIso(iso)) { this._mostrarMsg(tr('invalid'), true); return; }
         if (this._busy) return;
+        if (iso > todayIso()) return; // futuro: o widget não passa de hoje
         this._setBusy(true);
+        let exibido = iso;
         try {
-            const nota = await this._findDayNote(iso);
+            let nota = await this._findDayNote(iso);
+            let alvo = iso;
+            if (!nota && modo === 'back') {
+                const anterior = await this._findPrevDayNote(iso);
+                if (anterior) { nota = anterior.nota; alvo = anterior.iso; }
+            }
+            exibido = nota ? alvo : iso;
             if (nota) {
                 this._ocultarMsg();
-                this._renderLabel(iso);
+                if (alvo !== iso) {
+                    this._mostrarMsg(
+                        tr('fellBack', { date: formatLabel(iso, _lang), found: formatLabel(alvo, _lang) }),
+                        false
+                    );
+                }
+                this._renderLabel(alvo);
                 await api.activateNote(nota.noteId);
             } else {
                 this._mostrarMsg(
@@ -386,7 +420,33 @@ class DayNoteNavigatorWidget extends api.RightPanelWidget {
             this._mostrarMsg(tr('navError'), true);
         } finally {
             this._setBusy(false);
+            this._atualizaLimites(exibido);
         }
+    }
+
+    // A nota mais próxima ANTES de `iso` (maior #dateNote < iso). O índice é montado
+    // uma vez por sessão (a VPS tem ~164 notas com o label) e invalidado ao criar.
+    async _findPrevDayNote(iso) {
+        if (!this._allDays) {
+            try {
+                const notas = await api.searchForNotes('#dateNote');
+                const mapa = new Map();
+                (notas || []).forEach((n) => {
+                    const d = this._dateOf(n);
+                    if (parseIso(d) && !mapa.has(d)) mapa.set(d, n);
+                });
+                this._allDays = mapa;
+            } catch (e) {
+                console.warn('[DayNoteNav] busca de dias falhou:', e);
+                return null;
+            }
+        }
+        let melhor = null;
+        this._allDays.forEach((_n, d) => { if (d < iso && (!melhor || d > melhor)) melhor = d; });
+        if (!melhor) return null;
+        const nota = this._allDays.get(melhor);
+        this._dayCache.set(melhor, nota);
+        return { iso: melhor, nota: nota };
     }
 
     async _findDayNote(iso) {
@@ -412,6 +472,7 @@ class DayNoteNavigatorWidget extends api.RightPanelWidget {
             const nota = await api.getDayNote(iso); // ação explícita do usuário
             if (nota) {
                 this._dayCache.set(iso, nota);
+                this._allDays = null; // o índice precisa ver a nota nova
                 this._ocultarMsg();
                 this._renderLabel(iso);
                 await api.activateNote(nota.noteId);

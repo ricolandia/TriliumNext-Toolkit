@@ -5,7 +5,8 @@ A right-pane widget for TriliumNext that adds **previous / next day** navigation
 ## Features
 
 - **Read-only navigation:** ← → buttons (and arrow keys) move between daily notes; « » jump between months. The widget **never creates notes by itself**.
-- **Missing days:** when there is no note for the target day, an inline notice appears with a **Create note** button (the only place a note is created, on your explicit action).
+- **Going back never gets stuck:** if the previous day has no note, it jumps to the **closest earlier day** that exists (and says so: *"Sem nota em 19/10 — indo para 17/10"*). The month buttons («/») follow the same rule. When there is no earlier note at all, an inline notice appears with a **Create note** button (the only place a note is created, on your explicit action).
+- **Never into the future:** →/» only open an existing note and **stop at today** — on today's note the forward buttons are disabled (a note already created for tomorrow is reached through the tree/calendar, not here).
 - **Keyboard (scoped to the widget):** with the focus inside the bar, `←`/`→` change days, `PageUp`/`PageDown` change months and `t` goes to today — it does **not** steal arrows from the note editor or the note tree.
 - **Date label:** shows the target date with the short weekday (`dom 20/09/2026` / `Sun 09/20/2026`), follows the interface language and marks the current day (`aria-current="date"`).
 - **Locale-aware:** PT/EN UI following Trilium's `locale`.
@@ -52,6 +53,7 @@ Days you visit are cached, so navigating back is instant. If a day has no note, 
 ## Notes & limitations
 
 - Date math is done with local components (no UTC drift): at 22:00 in UTC-3 the "today" button still opens the current day.
+- The "closest earlier day" lookup indexes every note with `#dateNote` once per session (read-only; invalidated when you create a note) — it is only used when a day is missing.
 - The widget only appears for notes with a valid `#dateNote` (ISO date); the panel card may stay visible (header only) outside daily notes depending on the layout.
 - The day lookup is a read-only search (`#dateNote="YYYY-MM-DD"`); notes are created only through the explicit action.
 
