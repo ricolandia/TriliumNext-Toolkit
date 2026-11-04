@@ -267,6 +267,44 @@ ${BOOT}
     ok('aviso do dia ausente + criar', /Sem nota para/.test(f.msg || '') && f.createVisivel === true, [f.msg, f.createVisivel]);
     ok('console limpo (F)', semErros(f).length === 0, semErros(f));
 
+    console.log('H) dia seguinte ausente → cai no mais próximo seguinte (sem criar)');
+    const h = rodar('smoke-h.html', pagina({
+        cenario: `
+    window.__dataNote = '2026-09-17';
+    window.__notas['2026-09-20'] = { noteId: 'd2026-09-20', getLabelValue: (l) => l === 'dateNote' ? '2026-09-20' : null };
+${BOOT}
+    $('#dnn-next-day').trigger('click');
+    await wait(120);
+    r.act = window.__nav.activated.slice();
+    r.label = $('#dnn-label').text();
+    r.msg = $('#dnn-msg-text').text();
+    r.createVisivel = !$('#dnn-create').prop('hidden');
+    r.nadaCriado = window.__nav.created.length === 0;
+`
+    }));
+    if (h.erroExec) { console.log('  ✗ exceção → ' + h.erroExec); falhas++; }
+    ok('avança para o próximo existente', h.act.length === 1 && h.act[0] === 'd2026-09-20', h.act);
+    ok('avisa o pulo para frente', /Sem nota em/.test(h.msg || '') && /20\/09\/2026/.test(h.msg || ''), h.msg);
+    ok('pulo para frente não oferece criar', h.createVisivel === false && h.nadaCriado === true, [h.createVisivel, h.nadaCriado]);
+    ok('console limpo (H)', semErros(h).length === 0, semErros(h));
+
+    console.log('I) avançar nunca usa nota futura (limite de hoje)');
+    const i = rodar('smoke-i.html', pagina({
+        cenario: `
+    window.__dataNote = '2026-09-20';
+    window.__notas['2027-01-01'] = { noteId: 'd2027-01-01', getLabelValue: (l) => l === 'dateNote' ? '2027-01-01' : null };
+${BOOT}
+    $('#dnn-next-day').trigger('click');
+    await wait(120);
+    r.act = window.__nav.activated.slice();
+    r.msg = $('#dnn-msg-text').text();
+`
+    }));
+    if (i.erroExec) { console.log('  ✗ exceção → ' + i.erroExec); falhas++; }
+    ok('nota futura não é usada como vizinha', i.act.length === 0, i.act);
+    ok('aviso do dia ausente (passado)', /Sem nota para/.test(i.msg || ''), i.msg);
+    ok('console limpo (I)', semErros(i).length === 0, semErros(i));
+
     console.log('G) mês anterior ausente → cai no mais próximo anterior');
     const g = rodar('smoke-g.html', pagina({
         cenario: `

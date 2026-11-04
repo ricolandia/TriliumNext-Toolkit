@@ -5,8 +5,8 @@ A right-pane widget for TriliumNext that adds **previous / next day** navigation
 ## Features
 
 - **Read-only navigation:** ← → buttons (and arrow keys) move between daily notes; « » jump between months. The widget **never creates notes by itself**.
-- **Going back never gets stuck:** if the previous day has no note, it jumps to the **closest earlier day** that exists (and says so: *"Sem nota em 19/10 — indo para 17/10"*). The month buttons («/») follow the same rule. When there is no earlier note at all, an inline notice appears with a **Create note** button (the only place a note is created, on your explicit action).
-- **Never into the future:** →/» only open an existing note and **stop at today** — on today's note the forward buttons are disabled (a note already created for tomorrow is reached through the tree/calendar, not here).
+- **Missing days don't get you stuck:** if the target day has no note, it jumps to the **closest** existing day in that direction — earlier for ←/«, later for →/» — and says so (*"Sem nota em 19/10 — indo para 17/10"*). When there is no neighbour at all in that direction, an inline notice appears with a **Create note** button (the only place a note is created, on your explicit action).
+- **Never into the future:** forward jumps stop at **today** (a note already created for tomorrow is reached through the tree/calendar, not here); on today's note both forward buttons are disabled.
 - **Keyboard (scoped to the widget):** with the focus inside the bar, `←`/`→` change days, `PageUp`/`PageDown` change months and `t` goes to today — it does **not** steal arrows from the note editor or the note tree.
 - **Date label:** shows the target date with the short weekday (`dom 20/09/2026` / `Sun 09/20/2026`), follows the interface language and marks the current day (`aria-current="date"`).
 - **Locale-aware:** PT/EN UI following Trilium's `locale`.

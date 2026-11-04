@@ -370,13 +370,13 @@ class DayNoteNavigatorWidget extends api.RightPanelWidget {
     async _navigate(offset) {
         const dateStr = this._getDateStr();
         if (!parseIso(dateStr)) { this._mostrarMsg(tr('invalid'), true); return; }
-        await this._goTo(addDays(dateStr, offset), 'day', offset < 0 ? 'back' : 'exact');
+        await this._goTo(addDays(dateStr, offset), 'day', offset < 0 ? 'back' : 'forward');
     }
 
     async _navigateMonth(offset) {
         const dateStr = this._getDateStr();
         if (!parseIso(dateStr)) { this._mostrarMsg(tr('invalid'), true); return; }
-        await this._goTo(addMonthsClamped(dateStr, offset), 'month', offset < 0 ? 'back' : 'exact');
+        await this._goTo(addMonthsClamped(dateStr, offset), 'month', offset < 0 ? 'back' : 'forward');
     }
 
     async _goToday() {
@@ -393,9 +393,11 @@ class DayNoteNavigatorWidget extends api.RightPanelWidget {
         try {
             let nota = await this._findDayNote(iso);
             let alvo = iso;
-            if (!nota && modo === 'back') {
-                const anterior = await this._findPrevDayNote(iso);
-                if (anterior) { nota = anterior.nota; alvo = anterior.iso; }
+            if (!nota) {
+                const vizinho =
+                    modo === 'back' ? await this._findPrevDayNote(iso) :
+                    modo === 'forward' ? await this._findNextDayNote(iso) : null;
+                if (vizinho) { nota = vizinho.nota; alvo = vizinho.iso; }
             }
             exibido = nota ? alvo : iso;
             if (nota) {
@@ -424,29 +426,48 @@ class DayNoteNavigatorWidget extends api.RightPanelWidget {
         }
     }
 
-    // A nota mais próxima ANTES de `iso` (maior #dateNote < iso). O índice é montado
-    // uma vez por sessão (a VPS tem ~164 notas com o label) e invalidado ao criar.
-    async _findPrevDayNote(iso) {
-        if (!this._allDays) {
-            try {
-                const notas = await api.searchForNotes('#dateNote');
-                const mapa = new Map();
-                (notas || []).forEach((n) => {
-                    const d = this._dateOf(n);
-                    if (parseIso(d) && !mapa.has(d)) mapa.set(d, n);
-                });
-                this._allDays = mapa;
-            } catch (e) {
-                console.warn('[DayNoteNav] busca de dias falhou:', e);
-                return null;
-            }
+    // Índice de #dateNote montado uma vez por sessão (a VPS tem ~164 notas com o
+    // label) e invalidado ao criar. Só é usado quando um dia está faltando.
+    async _garanteIndice() {
+        if (this._allDays) return true;
+        try {
+            const notas = await api.searchForNotes('#dateNote');
+            const mapa = new Map();
+            (notas || []).forEach((n) => {
+                const d = this._dateOf(n);
+                if (parseIso(d) && !mapa.has(d)) mapa.set(d, n);
+            });
+            this._allDays = mapa;
+            return true;
+        } catch (e) {
+            console.warn('[DayNoteNav] busca de dias falhou:', e);
+            return false;
         }
-        let melhor = null;
-        this._allDays.forEach((_n, d) => { if (d < iso && (!melhor || d > melhor)) melhor = d; });
+    }
+
+    _vizinho(melhor) {
         if (!melhor) return null;
         const nota = this._allDays.get(melhor);
         this._dayCache.set(melhor, nota);
         return { iso: melhor, nota: nota };
+    }
+
+    // A nota mais próxima ANTES de `iso` (maior #dateNote < iso).
+    async _findPrevDayNote(iso) {
+        if (!(await this._garanteIndice())) return null;
+        let melhor = null;
+        this._allDays.forEach((_n, d) => { if (d < iso && (!melhor || d > melhor)) melhor = d; });
+        return this._vizinho(melhor);
+    }
+
+    // A nota mais próxima DEPOIS de `iso`, sem passar de hoje (o widget nunca vai
+    // ao futuro) — é o espelho do _findPrevDayNote.
+    async _findNextDayNote(iso) {
+        if (!(await this._garanteIndice())) return null;
+        const hoje = todayIso();
+        let melhor = null;
+        this._allDays.forEach((_n, d) => { if (d > iso && d <= hoje && (!melhor || d < melhor)) melhor = d; });
+        return this._vizinho(melhor);
     }
 
     async _findDayNote(iso) {
